@@ -1,6 +1,15 @@
 ![Logo](splash.png)
 # RSMNFDB
 **RedstoneShell Microsoft Not-documented Functions DB. Hidden functions, normal exapmles, real structures.**
+<script>
+  if (window.location.hostname === 'github.com') {
+      resultsDiv.innerHTML = `
+          <div style="background: #ff5555; color: white; padding: 10px; border-radius: 8px;">
+              ⚠️ You visible code in repo. 
+              <a href="https://redstoneshell.github.io/RSMNFDB/" style="color: yellow;">Open a site</a>, for search work.
+          </div>`;
+  }
+</script>
 
 Specialy database for driver devs, C# coders and other system researchers. Contains many count of undocumented functions from MDSN
 
@@ -72,11 +81,4 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
   }
 
   searchInput.addEventListener('input', renderRes);
-  if (window.location.hostname === 'github.com') {
-      resultsDiv.innerHTML = `
-          <div style="background: #ff5555; color: white; padding: 10px; border-radius: 8px;">
-              ⚠️ You visible code in repo. 
-              <a href="https://redstoneshell.github.io/RSMNFDB/" style="color: yellow;">Open a site</a>, for search work.
-          </div>`;
-  }
 </script>
