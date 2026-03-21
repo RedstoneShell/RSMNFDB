@@ -82,3 +82,11 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
 
   searchInput.addEventListener('input', renderRes);
 </script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-S8VJ6NZGFX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-S8VJ6NZGFX');
+</script>
