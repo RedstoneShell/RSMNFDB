@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RSMNFDB | NTStatus Lookup</title>
+    <style>
+        body { background: #111; color: #eee; font-family: 'Segoe UI', sans-serif; padding: 50px; text-align: center; }
+        input { background: #222; border: 1px solid #444; color: #fff; padding: 15px; width: 300px; font-size: 1.1em; border-radius: 5px; }
+        .result-box { margin-top: 30px; padding: 20px; background: #1a1a1a; border-left: 5px solid #0078d4; display: none; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto; }
+        .code-name { color: #569cd6; font-weight: bold; font-size: 1.2em; }
+        .desc { margin-top: 10px; color: #ccc; }
+    </style>
+</head>
+<body>
+    <h1>NTStatus Checker</h1>
+    <input type="text" id="statusInput" placeholder="Enter code (e.g. 0xc0000005)" oninput="checkStatus()">
+
+    <div id="result" class="result-box">
+        <div id="resName" class="code-name"></div>
+        <div id="resDesc" class="desc"></div>
+    </div>
+
+    <script>
+      const ntData = [
+        { "code": "0x00000000", "name": "STATUS_SUCCESS", "desc": "The operation completed successfully." },
+        { "code": "0x00000103", "name": "STATUS_PENDING", "desc": "The operation is currently pending." },
+        { "code": "0x40000000", "name": "STATUS_OBJECT_NAME_EXISTS", "desc": "The object name already exists." },
+        { "code": "0xc0000005", "name": "STATUS_ACCESS_DENIED", "desc": "Access violation: memory cannot be read or written." },
+        { "code": "0xc0000022", "name": "STATUS_ACCESS_DENIED", "desc": "Process lacks the required access rights for the operation." },
+        { "code": "0xc0000008", "name": "STATUS_INVALID_HANDLE", "desc": "An invalid handle was specified." },
+        { "code": "0xc0000021", "name": "STATUS_ALREADY_COMMITTED", "desc": "The specified page range is already committed." },
+        { "code": "0xc0000001", "name": "STATUS_UNSUCCESSFUL", "desc": "The requested operation was unsuccessful (generic error)." },
+        { "code": "0xc000000d", "name": "STATUS_INVALID_PARAMETER", "desc": "An invalid parameter was passed to a service or function." },
+        { "code": "0xc0000033", "name": "STATUS_OBJECT_NAME_INVALID", "desc": "The object name is invalid or contains illegal characters." },
+        { "code": "0xc0000034", "name": "STATUS_OBJECT_NAME_NOT_FOUND", "desc": "The object name was not found (file or section does not exist)." },
+        { "code": "0xc0000035", "name": "STATUS_OBJECT_NAME_COLLISION", "desc": "The object name already exists in the namespace." },
+        { "code": "0xc0000017", "name": "STATUS_NO_MEMORY", "desc": "Not enough virtual memory or paging file quota is available." },
+        { "code": "0xc0000018", "name": "STATUS_CONFLICTING_ADDRESSES", "desc": "The starting and ending addresses conflict with existing mappings." },
+        { "code": "0xc00000f0", "name": "STATUS_PAGE_FAULT_RETRY", "desc": "The page fault could not be resolved, retry the operation." },
+        { "code": "0xc0000019", "name": "STATUS_NOT_MAPPED_VIEW", "desc": "Address range does not refer to a mapped view of a file." },
+        { "code": "0xc000000b", "name": "STATUS_INVALID_CID", "desc": "The client ID (Process or Thread ID) is invalid." },
+        { "code": "0xc000010a", "name": "STATUS_PROCESS_IS_TERMINATING", "desc": "The process is in the process of terminating." },
+        { "code": "0xc0000120", "name": "STATUS_CANCELLED", "desc": "The I/O operation was cancelled." },
+        { "code": "0xc00000bb", "name": "STATUS_NOT_SUPPORTED", "desc": "The requested operation is not supported on this system." },
+        { "code": "0xc0000002", "name": "STATUS_NOT_IMPLEMENTED", "desc": "The requested system service is not implemented." },
+        { "code": "0xc0000003", "name": "STATUS_INVALID_INFO_CLASS", "desc": "The specified information class is not valid for the object." },
+        { "code": "0xc0000004", "name": "STATUS_INFO_LENGTH_MISMATCH", "desc": "The specified data length is incorrect for the information class." },
+        { "code": "0xc0000135", "name": "STATUS_DLL_NOT_FOUND", "desc": "A dynamic link library (DLL) could not be located." },
+        { "code": "0xc0000142", "name": "STATUS_DLL_INIT_FAILED", "desc": "The DLL initialization routine failed." },
+        { "code": "0xc0000061", "name": "STATUS_PRIVILEGE_NOT_HELD", "desc": "A required privilege is not held by the client." },
+        { "code": "0xc0000353", "name": "STATUS_PORT_DISCONNECTED", "desc": "The LPC port has been disconnected." },
+        { "code": "0x80000003", "name": "STATUS_BREAKPOINT", "desc": "A breakpoint has been reached (debug event)." },
+        { "code": "0x80000004", "name": "STATUS_SINGLE_STEP", "desc": "A single step execution has completed." }
+      ];
+
+        function checkStatus() {
+            const val = document.getElementById('statusInput').value.toLowerCase().trim();
+            const resDiv = document.getElementById('result');
+            
+            const found = ntData.find(item => item.code.toLowerCase() === val);
+
+            if (found) {
+                resDiv.style.display = 'block';
+                document.getElementById('resName').innerText = found.name;
+                document.getElementById('resDesc').innerText = found.desc;
+            } else {
+                resDiv.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
