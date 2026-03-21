@@ -48,7 +48,7 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
 </div>
 
 ## Can you find something?
-<button onclick="window.open('ntstatus.html', '_blank')" class="nt-btn">
+<button onclick="window.open('database/NTStatusFAQ.html', '_blank')" class="nt-btn">
     NTStatus Lookup
 </button>
 <input type="text" id="searchInput" placeholder="Enter something..." style="width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #333; background: #1e1e2e; color: #fff;">
