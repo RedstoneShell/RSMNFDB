@@ -25,7 +25,7 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
 </div>
 
 <script>
-  const fileList = ["RtlGetVersion"]; 
+  const fileList = ["RtlGetVersion", "NtCreateThreadEx", "LdrLoadDll"]; 
   const searchInput = document.getElementById('searchInput');
   const resultsDiv = document.getElementById('results');
 
