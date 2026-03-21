@@ -2,66 +2,130 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>RSMNFDB | NTStatus Lookup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSMNFDB | Ultimate NTStatus Lookup</title>
     <style>
-        body { background: #111; color: #eee; font-family: 'Segoe UI', sans-serif; padding: 50px; text-align: center; }
-        input { background: #222; border: 1px solid #444; color: #fff; padding: 15px; width: 300px; font-size: 1.1em; border-radius: 5px; }
-        .result-box { margin-top: 30px; padding: 20px; background: #1a1a1a; border-left: 5px solid #0078d4; display: none; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto; }
-        .code-name { color: #569cd6; font-weight: bold; font-size: 1.2em; }
-        .desc { margin-top: 10px; color: #ccc; }
+        body { background: #0f0f0f; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px 20px; text-align: center; line-height: 1.6; }
+        .container { max-width: 700px; margin: 0 auto; }
+        h1 { color: #0078d4; margin-bottom: 10px; font-weight: 300; letter-spacing: 1px; }
+        p.subtitle { color: #888; margin-bottom: 30px; font-size: 0.9em; }
+        
+        input { 
+            background: #1e1e1e; border: 2px solid #333; color: #fff; 
+            padding: 15px 20px; width: 100%; max-width: 400px; 
+            font-size: 1.1em; border-radius: 8px; outline: none; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        input:focus { border-color: #0078d4; box-shadow: 0 0 15px rgba(0, 120, 212, 0.4); }
+
+        .result-box { 
+            margin-top: 40px; padding: 25px; background: #161616; 
+            border-left: 4px solid #0078d4; border-radius: 4px;
+            display: none; text-align: left; 
+            animation: fadeIn 0.3s ease-out;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .code-name { color: #569cd6; font-family: 'Consolas', monospace; font-weight: bold; font-size: 1.3em; margin-bottom: 10px; display: block; }
+        .hex-val { color: #ce9178; font-size: 0.9em; margin-bottom: 15px; display: block; }
+        .desc { color: #b5cea8; font-size: 1.05em; border-top: 1px solid #333; padding-top: 15px; }
+        
+        .counter { margin-top: 50px; color: #444; font-size: 0.8em; }
     </style>
 </head>
 <body>
-    <h1>NTStatus Checker</h1>
-    <input type="text" id="statusInput" placeholder="Enter code (e.g. 0xc0000005)" oninput="checkStatus()">
 
-    <div id="result" class="result-box">
-        <div id="resName" class="code-name"></div>
-        <div id="resDesc" class="desc"></div>
+    <div class="container">
+        <h1>NTStatus Explorer</h1>
+        <p class="subtitle">Enter HEX (0x...), clear code (c000...) or SIGNED INT (-1073...)</p>
+        
+        <input type="text" id="statusInput" placeholder="Наприклад: -1073741819 або 0xc0000005" oninput="checkStatus()">
+
+        <div id="result" class="result-box">
+            <span id="resName" class="code-name"></span>
+            <span id="resHex" class="hex-val"></span>
+            <div id="resDesc" class="desc"></div>
+        </div>
+
+        <div class="counter">DB have main NT system codes</div>
     </div>
 
     <script>
       const ntData = [
-        { "code": "0x00000000", "name": "STATUS_SUCCESS", "desc": "The operation completed successfully." },
-        { "code": "0x00000103", "name": "STATUS_PENDING", "desc": "The operation is currently pending." },
-        { "code": "0x40000000", "name": "STATUS_OBJECT_NAME_EXISTS", "desc": "The object name already exists." },
-        { "code": "0xc0000005", "name": "STATUS_ACCESS_DENIED", "desc": "Access violation: memory cannot be read or written." },
-        { "code": "0xc0000022", "name": "STATUS_ACCESS_DENIED", "desc": "Process lacks the required access rights for the operation." },
-        { "code": "0xc0000008", "name": "STATUS_INVALID_HANDLE", "desc": "An invalid handle was specified." },
-        { "code": "0xc0000021", "name": "STATUS_ALREADY_COMMITTED", "desc": "The specified page range is already committed." },
-        { "code": "0xc0000001", "name": "STATUS_UNSUCCESSFUL", "desc": "The requested operation was unsuccessful (generic error)." },
-        { "code": "0xc000000d", "name": "STATUS_INVALID_PARAMETER", "desc": "An invalid parameter was passed to a service or function." },
-        { "code": "0xc0000033", "name": "STATUS_OBJECT_NAME_INVALID", "desc": "The object name is invalid or contains illegal characters." },
-        { "code": "0xc0000034", "name": "STATUS_OBJECT_NAME_NOT_FOUND", "desc": "The object name was not found (file or section does not exist)." },
-        { "code": "0xc0000035", "name": "STATUS_OBJECT_NAME_COLLISION", "desc": "The object name already exists in the namespace." },
-        { "code": "0xc0000017", "name": "STATUS_NO_MEMORY", "desc": "Not enough virtual memory or paging file quota is available." },
-        { "code": "0xc0000018", "name": "STATUS_CONFLICTING_ADDRESSES", "desc": "The starting and ending addresses conflict with existing mappings." },
-        { "code": "0xc00000f0", "name": "STATUS_PAGE_FAULT_RETRY", "desc": "The page fault could not be resolved, retry the operation." },
-        { "code": "0xc0000019", "name": "STATUS_NOT_MAPPED_VIEW", "desc": "Address range does not refer to a mapped view of a file." },
-        { "code": "0xc000000b", "name": "STATUS_INVALID_CID", "desc": "The client ID (Process or Thread ID) is invalid." },
-        { "code": "0xc000010a", "name": "STATUS_PROCESS_IS_TERMINATING", "desc": "The process is in the process of terminating." },
-        { "code": "0xc0000120", "name": "STATUS_CANCELLED", "desc": "The I/O operation was cancelled." },
-        { "code": "0xc00000bb", "name": "STATUS_NOT_SUPPORTED", "desc": "The requested operation is not supported on this system." },
-        { "code": "0xc0000002", "name": "STATUS_NOT_IMPLEMENTED", "desc": "The requested system service is not implemented." },
-        { "code": "0xc0000003", "name": "STATUS_INVALID_INFO_CLASS", "desc": "The specified information class is not valid for the object." },
-        { "code": "0xc0000004", "name": "STATUS_INFO_LENGTH_MISMATCH", "desc": "The specified data length is incorrect for the information class." },
-        { "code": "0xc0000135", "name": "STATUS_DLL_NOT_FOUND", "desc": "A dynamic link library (DLL) could not be located." },
-        { "code": "0xc0000142", "name": "STATUS_DLL_INIT_FAILED", "desc": "The DLL initialization routine failed." },
-        { "code": "0xc0000061", "name": "STATUS_PRIVILEGE_NOT_HELD", "desc": "A required privilege is not held by the client." },
-        { "code": "0xc0000353", "name": "STATUS_PORT_DISCONNECTED", "desc": "The LPC port has been disconnected." },
-        { "code": "0x80000003", "name": "STATUS_BREAKPOINT", "desc": "A breakpoint has been reached (debug event)." },
-        { "code": "0x80000004", "name": "STATUS_SINGLE_STEP", "desc": "A single step execution has completed." }
+        { "code": "0x00000000", "name": "STATUS_SUCCESS", "desc": "Операція завершена успішно." },
+        { "code": "0x00000102", "name": "STATUS_TIMEOUT", "desc": "Час очікування операції вичерпано." },
+        { "code": "0x00000103", "name": "STATUS_PENDING", "desc": "Операція знаходиться в стані очікування." },
+        { "code": "0x40000000", "name": "STATUS_OBJECT_NAME_EXISTS", "desc": "Назва об'єкта вже існує." },
+        { "code": "0x4000001a", "name": "STATUS_WORKING_SET_LIMIT_RANGE", "desc": "Робочий набір пам'яті виходить за межі діапазону." },
+        { "code": "0x80000001", "name": "STATUS_GUARD_PAGE_VIOLATION", "desc": "Доступ до сторінки пам'яті типу Guard Page." },
+        { "code": "0x80000003", "name": "STATUS_BREAKPOINT", "desc": "Досягнута точка зупину (Breakpoint) для дебагера." },
+        { "code": "0x80000004", "name": "STATUS_SINGLE_STEP", "desc": "Виконано один крок інструкції (Single step)." },
+        { "code": "0x80000005", "name": "STATUS_BUFFER_OVERFLOW", "desc": "Буфер занадто малий для отримання даних." },
+        { "code": "0x8000001a", "name": "STATUS_NO_MORE_FILES", "desc": "Більше файлів не знайдено." },
+        { "code": "0xc0000001", "name": "STATUS_UNSUCCESSFUL", "desc": "Загальна помилка виконання операції." },
+        { "code": "0xc0000002", "name": "STATUS_NOT_IMPLEMENTED", "desc": "Запитана функція або сервіс не реалізовані." },
+        { "code": "0xc0000003", "name": "STATUS_INVALID_INFO_CLASS", "desc": "Некоректний клас інформації для об'єкта." },
+        { "code": "0xc0000004", "name": "STATUS_INFO_LENGTH_MISMATCH", "desc": "Довжина даних не відповідає очікуваній для цього класу." },
+        { "code": "0xc0000005", "name": "STATUS_ACCESS_VIOLATION", "desc": "Помилка доступу до пам'яті (читання/запис за невірною адресою)." },
+        { "code": "0xc0000008", "name": "STATUS_INVALID_HANDLE", "desc": "Використано недійсний дескриптор (Handle) об'єкта." },
+        { "code": "0xc000000d", "name": "STATUS_INVALID_PARAMETER", "desc": "Один із параметрів функції є некоректним." },
+        { "code": "0xc000000e", "name": "STATUS_NO_SUCH_DEVICE", "desc": "Вказаний пристрій не існує." },
+        { "code": "0xc000000f", "name": "STATUS_NO_SUCH_FILE", "desc": "Файл не знайдено." },
+        { "code": "0xc0000011", "name": "STATUS_END_OF_FILE", "desc": "Досягнуто кінець файлу." },
+        { "code": "0xc0000017", "name": "STATUS_NO_MEMORY", "desc": "Недостатньо системної пам'яті для виконання запиту." },
+        { "code": "0xc0000018", "name": "STATUS_CONFLICTING_ADDRESSES", "desc": "Конфлікт адрес пам'яті." },
+        { "code": "0xc0000022", "name": "STATUS_ACCESS_DENIED", "desc": "Відмовлено в доступі (недостатньо прав)." },
+        { "code": "0xc0000033", "name": "STATUS_OBJECT_NAME_INVALID", "desc": "Некоректне ім'я об'єкта." },
+        { "code": "0xc0000034", "name": "STATUS_OBJECT_NAME_NOT_FOUND", "desc": "Об'єкт з таким ім'ям не знайдений." },
+        { "code": "0xc0000035", "name": "STATUS_OBJECT_NAME_COLLISION", "desc": "Ім'я об'єкта вже використовується іншим процесом." },
+        { "code": "0xc000003a", "name": "STATUS_OBJECT_PATH_NOT_FOUND", "desc": "Шлях до об'єкта не знайдений." },
+        { "code": "0xc0000043", "name": "STATUS_SHARING_VIOLATION", "desc": "Помилка спільного доступу (файл зайнятий іншим процесом)." },
+        { "code": "0xc000007b", "name": "STATUS_INVALID_IMAGE_FORMAT", "desc": "Помилка формату .exe або .dll (наприклад, x64 замість x86)." },
+        { "code": "0xc000009a", "name": "STATUS_INSUFFICIENT_RESOURCES", "desc": "Недостатньо системних ресурсів (крім пам'яті)." },
+        { "code": "0xc00000bb", "name": "STATUS_NOT_SUPPORTED", "desc": "Запит не підтримується системою." },
+        { "code": "0xc00000ef", "name": "STATUS_INVALID_PARAMETER_MIX", "desc": "Некоректна комбінація параметрів." },
+        { "code": "0xc0000120", "name": "STATUS_CANCELLED", "desc": "Операцію вводу-виводу було скасовано." },
+        { "code": "0xc0000135", "name": "STATUS_DLL_NOT_FOUND", "desc": "Необхідну DLL бібліотеку не знайдено." },
+        { "code": "0xc0000142", "name": "STATUS_DLL_INIT_FAILED", "desc": "Помилка ініціалізації DLL." },
+        { "code": "0xc0000225", "name": "STATUS_NOT_FOUND", "desc": "Об'єкт або дані не знайдені." },
+        { "code": "0xc0010001", "name": "STATUS_RPC_SEC_PKG_ERROR", "desc": "Помилка пакету безпеки RPC." }
       ];
 
+        function normalizeInput(val) {
+            val = val.trim().toLowerCase();
+            if (!val) return null;
+
+            let hexValue = "";
+
+            if (/^-?\d+$/.test(val)) {
+                hexValue = (parseInt(val, 10) >>> 0).toString(16);
+            } 
+            else {
+                hexValue = val.replace(/^0x/, "");
+            }
+
+            return "0x" + hexValue.padStart(8, '0');
+        }
+
         function checkStatus() {
-            const val = document.getElementById('statusInput').value.toLowerCase().trim();
+            const rawInput = document.getElementById('statusInput').value;
+            const normalized = normalizeInput(rawInput);
             const resDiv = document.getElementById('result');
             
-            const found = ntData.find(item => item.code.toLowerCase() === val);
+            if (!normalized) {
+                resDiv.style.display = 'none';
+                return;
+            }
+
+            const found = ntData.find(item => item.code.toLowerCase() === normalized);
 
             if (found) {
                 resDiv.style.display = 'block';
                 document.getElementById('resName').innerText = found.name;
+                document.getElementById('resHex').innerText = "Hex: " + found.code.toUpperCase();
                 document.getElementById('resDesc').innerText = found.desc;
             } else {
                 resDiv.style.display = 'none';
