@@ -18,6 +18,35 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
 **System calls**: Names, functions, examples (C#), structures
 **Is a new project, but can be at high**
 
+## But why?
+<div style="text-align: center; margin-top: 40px; padding-bottom: 20px;">
+    <a href="https://uk.wikipedia.org/wiki/RSMNFDB" target="_blank" style="
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #313244;
+        color: #cdd6f4;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-family: 'Segoe UI', sans-serif;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: 1px solid #45475a;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    " onmouseover="this.style.background='#45475a'; this.style.transform='translateY(-2px)';" 
+       onmouseout="this.style.background='#313244'; this.style.transform='translateY(0)';"
+       onclick="gtag('event', 'click_wiki', {'event_category': 'Social'});">
+        
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L1 21H23L12 2Z" stroke="#89b4fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="7" y="18" fill="#89b4fa" font-size="12" font-family="serif" font-weight="bold">W</text>
+        </svg>
+        
+        Читати на Вікіпедії
+    </a>
+</div>
+
 ## Can you find something?
 <input type="text" id="searchInput" placeholder="Enter something..." style="width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #333; background: #1e1e2e; color: #fff;">
 <div id="results" style="margin-top: 20px;">
