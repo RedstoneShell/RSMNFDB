@@ -1,0 +1,54 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 900px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">RtlGetVersion(RTL_OSVERSIONINFOW lpVersionInformation)</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">PATRIALY DOCUMENTED</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">WIN 7 / NT 6.1</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">ntdll.dll</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Опис:</strong>Return as `lpVersionInformation` version of installed OS, firset documented func at RSMNFDB.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">C# P/Invoke Structure:</p>
+        <button onclick="copyCode('code_cs')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_cs" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
+[DllImport("ntdll.dll", SetLastError = true)]
+public static extern int RtlGetVersion(ref RTL_OSVERSIONINFOW lpVersionInformation);</pre>
+    </div>
+
+    <div style="position: relative; margin-top: 25px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Associated Structure:</p>
+        <button onclick="copyCode('code_struct')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_struct" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 14px;">
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+public struct RTL_OSVERSIONINFOW {
+    public uint dwOSVersionInfoSize;
+    public uint dwMajorVersion;
+    public uint dwMinorVersion;
+    public uint dwBuildNumber;
+    public uint dwPlatformId;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+    public string szCSDVersion;
+}</pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNINGS:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">No warnings...</p>
+    </div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
