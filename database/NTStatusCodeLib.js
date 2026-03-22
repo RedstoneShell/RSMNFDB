@@ -63,7 +63,7 @@ const ntData = [
 { "code": "0x00000171", "name": "STATUS_PNP_DEVICE_CONFIGURATION_PENDING", "desc": "Device configuration is still pending in the PnP subsystem." },
 { "code": "0x00000180", "name": "STATUS_POWER_STATE_INVALID", "desc": "The requested power state is invalid for the current device configuration." },
 { "code": "0x00000190", "name": "STATUS_FVE_LOCKED_VOLUME", "desc": "The BitLocker (FVE) volume is locked and requires a key to access." },
-{ "code": "0x000001FF", "name": "STATUS_SERIAL_MORE_WRITES", "desc": "The serial driver has more write requests pending." }
+{ "code": "0x000001FF", "name": "STATUS_SERIAL_MORE_WRITES", "desc": "The serial driver has more write requests pending." },
  
 // INFORMATION (0x40000000 - 0x4FFFFFFF)
 { "code": "0x40000000", "name": "STATUS_OBJECT_NAME_EXISTS", "desc": "Object name already exists (informational, not an error)." },
