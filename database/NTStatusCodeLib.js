@@ -218,6 +218,24 @@ const ntData = [
 { "code": "0xC00000D0", "name": "STATUS_PIPE_WRITE", "desc": "Pipe write." },
 { "code": "0xC00000D1", "name": "STATUS_PIPE_OPERATION", "desc": "Pipe operation." },
 { "code": "0xC00000D2", "name": "STATUS_PIPE_OPERATION", "desc": "Pipe operation." },
+{ 
+  "code": "0xC000012F", 
+  "name": "STATUS_INVALID_IMAGE_FORMAT", 
+  "desc": "The image file (DLL, EXE, or SYS) is either not a valid PE format or is corrupted. This status is returned by functions like LdrLoadDll or NtCreateSection when attempting to map an invalid executable image into memory. Common causes include: \n" +
+          "- The file is not a Windows PE file (e.g., a Linux ELF or plain binary).\n" +
+          "- The file is corrupted, truncated, or missing headers.\n" +
+          "- The architecture of the file does not match the process (e.g., x86 DLL in x64 process).\n" +
+          "- The file signature or checksum is invalid.\n\n" +
+          "Implications:\n" +
+          "- Loading the DLL or executable will fail.\n" +
+          "- The calling function typically returns this status immediately without mapping any memory.\n" +
+          "- May trigger exceptions if code assumes the module loaded successfully.\n\n" +
+          "Usage Notes:\n" +
+          "- Always verify the PE header using RtlImageNtHeader before mapping.\n" +
+          "- Ensure file matches process bitness.\n" +
+          "- Handle this NTSTATUS in loader code to prevent crashes.\n\n" +
+          "See also: <a href=\"https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC000012F\">[0xC000012F]</a>"
+}
 { "code": "0xC00002EE", "name": "STATUS_INVALID_PARAMETER_1", "desc": "Invalid parameter 1." },
 { "code": "0xC00002EF", "name": "STATUS_INVALID_PARAMETER_2", "desc": "Invalid parameter 2." },
 { "code": "0xC00002F0", "name": "STATUS_INVALID_PARAMETER_3", "desc": "Invalid parameter 3." },
