@@ -315,7 +315,7 @@ const ntData = [
   { "code": "0xC0000306", "name": "STATUS_DEVICE_FAILED", "desc": "The device failed." },
   { "code": "0xC0000307", "name": "STATUS_IO_BUS_ERROR", "desc": "An I/O bus error has occurred." },
   { "code": "0xC0000308", "name": "STATUS_BUS_RESET", "desc": "The I/O bus has been reset." },
-  { "code": "0xC0000309", "name": "STATUS_UNABLE_TO_LOAD_DRIVER", "desc": "Unable to load the driver." }
+  { "code": "0xC0000309", "name": "STATUS_UNABLE_TO_LOAD_DRIVER", "desc": "Unable to load the driver." },
 
 // ADVANCED / SYSTEM ERRORS (0xC0000400 - 0xC00004FF)
 { "code": "0xC0000400", "name": "STATUS_BAD_VALIDATION_CLASS", "desc": "Bad validation class." },
