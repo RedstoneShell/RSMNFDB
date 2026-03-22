@@ -661,7 +661,7 @@ const ntData = [
   
   // SPECIAL / DEBUG / INTERNAL USE
   { "code": "0xE8000001", "name": "STATUS_DEBUG_TRAP", "desc": "Debug trap triggered; execution halted for debug." },
-  { "code": "0xE8000002", "name": "STATUS_BREAK_ON_FIRST_CHANCE", "desc": "Debugger first‑chance break occurred." }
+  { "code": "0xE8000002", "name": "STATUS_BREAK_ON_FIRST_CHANCE", "desc": "Debugger first‑chance break occurred." },
    
   // INTERNAL CODES (0xFFFFFF00-FF)
   { "code": "0xFFFFFF00", "name": "STATUS_ASSERTION_FAILURE", "desc": "Critical assertion failure in kernel or driver code; indicates a serious internal logic error. Usually triggers a bugcheck or debugger break." },
@@ -680,5 +680,5 @@ const ntData = [
   { "code": "0xFFFFFF0D", "name": "STATUS_INTERNAL_ERROR_13", "desc": "Reserved NTSTATUS code; used for internal debugging or fatal driver conditions." },
   { "code": "0xFFFFFF0E", "name": "STATUS_INTERNAL_ERROR_14", "desc": "Reserved code for non-public system or driver errors." },
   { "code": "0xFFFFFF0F", "name": "STATUS_INTERNAL_ERROR_15", "desc": "Internal NTSTATUS code; typically for debugging or assertions." },
-  { "code": "0xFFFFFF10", "name": "STATUS_INTERNAL_ERROR_16", "desc": "Reserved for customer-defined or system internal use." },
+  { "code": "0xFFFFFF10", "name": "STATUS_INTERNAL_ERROR_16", "desc": "Reserved for customer-defined or system internal use." }
 ];
