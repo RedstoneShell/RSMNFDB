@@ -28,16 +28,6 @@ NTSTATUS BeepDeviceControl(
         <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">C# P/Invoke Structure:</p>
         <button onclick="copyCode('code_cs')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
         <pre id="code_cs" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
-NTSTATUS BeepDeviceControl(
-    PDEVICE_OBJECT DeviceObject,
-    PIRP Irp
-)</pre>
-    </div>
-
-    <div style="position: relative; margin-top: 25px;">
-        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Associated Structure:</p>
-        <button onclick="copyCode('code_struct')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
-        <pre id="code_struct" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 14px;">
 IntPtr h = CreateFile("\\\\.\\Beep", ...);
 
 BEEP_SET_PARAMETERS beep = new BEEP_SET_PARAMETERS
@@ -56,6 +46,30 @@ DeviceIoControl(
     out _,
     IntPtr.Zero
 );</pre>
+    </div>
+
+    <div style="position: relative; margin-top: 25px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Associated Structure:</p>
+        <button onclick="copyCode('code_struct')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_struct" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 14px;">
+[StructLayout(LayoutKind.Sequential)]
+public struct BEEP_SET_PARAMETERS
+{
+    /// <summary>
+    /// Sound frequency in Hz. 
+    /// Range: from 37 (0x25) to 32767 (0x7FFF).
+    /// Value 0 stop sound.
+    /// </summary>
+    public uint Frequency;
+
+    /// <summary>
+    /// Sound playing length in milliseconds.
+    /// Value 0xFFFFFFFF (uint.MaxValue) start infinity beep, 
+    /// before new ask sent with frequency 0.
+    /// </summary>
+    public uint Duration;
+}
+        </pre>
     </div>
 
     <div style="margin-top: 20px;">
