@@ -43,9 +43,12 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
             <text x="7" y="18" fill="#89b4fa" font-size="12" font-family="serif" font-weight="bold">W</text>
         </svg>
         
-        Читати на Вікіпедії
+        Read at Wikipedia
     </a>
 </div>
+
+## !!API!!
+Now you can use **https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=** for universal search of NTStatus codes, raw from owm softwares!
 
 ## Can you find something?
 <button onclick="window.open('database/NTStatusFAQ.html', '_blank')" class="nt-btn">
