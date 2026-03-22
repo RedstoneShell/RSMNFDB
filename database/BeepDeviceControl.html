@@ -1,0 +1,93 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 900px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">BeepDeviceControl</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">UNDOCUMENTED</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">WIN 7</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">beep.sys</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong>Function BeepDeviceControl is a specially DeviceIOControl invokable function, to beep a PC Speaker, can not work :(.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">C++ Raw Structure:</p>
+        <button onclick="copyCode('code_cs')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_cs" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
+NTSTATUS BeepDeviceControl(
+    PDEVICE_OBJECT DeviceObject,
+    PIRP Irp
+)</pre>
+    </div>
+
+  <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">C# P/Invoke Structure:</p>
+        <button onclick="copyCode('code_cs')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_cs" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
+NTSTATUS BeepDeviceControl(
+    PDEVICE_OBJECT DeviceObject,
+    PIRP Irp
+)</pre>
+    </div>
+
+    <div style="position: relative; margin-top: 25px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Associated Structure:</p>
+        <button onclick="copyCode('code_struct')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_struct" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 14px;">
+IntPtr h = CreateFile("\\\\.\\Beep", ...);
+
+BEEP_SET_PARAMETERS beep = new BEEP_SET_PARAMETERS
+{
+    Frequency = 1000,
+    Duration = 500
+};
+
+DeviceIoControl(
+    h,
+    0x00010000, // Beep command, in Windows other versions this code can be not equals this
+    ref beep,
+    Marshal.SizeOf(beep),
+    IntPtr.Zero,
+    0,
+    out _,
+    IntPtr.Zero
+);</pre>
+    </div>
+
+    <div style="margin-top: 20px;">
+<p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Possible NTSTATUS Codes:</p>
+<pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f38ba8; font-size: 14px;">0x00000000 - STATUS_SUCCESS - The driver successfully accepted the parameters and initiated the beep.
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0x00000000" style="color:#89b4fa;">[0x00000000]</a>
+0xC000000D - STATUS_INVALID_PARAMETER - Frequency is out of range (37Hz - 32767Hz) or the data structure is malformed.
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC000000D" style="color:#89b4fa;">[0xC000000D]</a>
+0xC0000022 - STATUS_ACCESS_DENIED - Insufficient privileges. The caller must have administrative rights or SeDebugPrivilege.
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000022" style="color:#89b4fa;">[0xC0000022]</a>
+0xC0000004 - STATUS_INFO_LENGTH_MISMATCH - The input buffer size does not match the size of BEEP_SET_PARAMETERS (8 bytes).
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000004" style="color:#89b4fa;">[0xC0000004]</a>
+0xC0000010 - STATUS_INVALID_DEVICE_REQUEST - The IOCTL code provided is not 0x10000 or is unsupported by this device object.
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000010" style="color:#89b4fa;">[0xC0000010]</a>
+0xC000009A - STATUS_INSUFFICIENT_RESOURCES - The kernel failed to allocate a timer or non-paged pool memory to process the beep.
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC000009A" style="color:#89b4fa;">[0xC000009A]</a>
+0xC0000120 - STATUS_CANCELLED - The beep request was terminated before completion (e.g., a new beep command overrode it).
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000120" style="color:#89b4fa;">[0xC0000120]</a>
+</pre>
+</div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">Run as Admin: Without this, CreateFile return INVALID_HANDLE_VALUE (Err 5: Access Denied). If "Frequency" parameter in structure <37 or >32767, driver return STATUS_INVALID_PARAMETER</p>
+    </div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
