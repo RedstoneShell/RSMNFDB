@@ -586,6 +586,7 @@ const ntData = [
 { "code": "0xC0000189", "name": "STATUS_NO_PAGEFILE", "desc": "No pagefile configured." },
 { "code": "0xC000018A", "name": "STATUS_FILE_DELETED", "desc": "File has been deleted." },
 { "code": "0xC000018B", "name": "STATUS_FILE_RENAMED", "desc": "File has been renamed." },
+ 
   // NOT-STD NTStatus (0xF0000001-FFFFFF00)
   { "code": "0xF0000001", "name": "STATUS_VIRTUAL_DISK_LIMITATION", "desc": "An operation failed because the virtual disk reached a limit (size, sectors, or capacity)." },
   { "code": "0xF0000002", "name": "STATUS_VIRTUAL_DISK_NOT_OPEN", "desc": "The virtual disk handle is not opened; operations cannot be performed without an open handle." },
