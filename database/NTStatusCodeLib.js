@@ -293,34 +293,29 @@ const ntData = [
 { "code": "0xC0000158", "name": "STATUS_INVALID_VIEW_SIZE", "desc": "Invalid view size." },
 { "code": "0xC0000159", "name": "STATUS_INVALID_VIEW_SIZE", "desc": "Invalid view size." },
 
-// RPC / LPC ERRORS (0xC0000200 - 0xC00002FF)
-{ "code": "0xC0000200", "name": "STATUS_PIPE_BROKEN", "desc": "Pipe broken." },
-{ "code": "0xC0000201", "name": "STATUS_PIPE_BUSY", "desc": "Pipe busy." },
-{ "code": "0xC0000202", "name": "STATUS_PIPE_DISCONNECTED", "desc": "Pipe disconnected." },
-{ "code": "0xC0000203", "name": "STATUS_PIPE_SERVER_END", "desc": "Pipe server end." },
-{ "code": "0xC0000204", "name": "STATUS_PIPE_CLOSING", "desc": "Pipe closing." },
-{ "code": "0xC0000205", "name": "STATUS_PIPE_CONNECTED", "desc": "Pipe connected." },
-{ "code": "0xC0000206", "name": "STATUS_PIPE_LISTENING", "desc": "Pipe listening." },
-{ "code": "0xC0000207", "name": "STATUS_INVALID_READ_MODE", "desc": "Invalid read mode." },
-{ "code": "0xC0000208", "name": "STATUS_IO_TIMEOUT", "desc": "I/O timeout." },
-{ "code": "0xC0000209", "name": "STATUS_FILE_FORCED_CLOSED", "desc": "File forced closed." },
-{ "code": "0xC0000210", "name": "STATUS_PIPE_NOT_AVAILABLE", "desc": "Pipe not available." },
-{ "code": "0xC0000211", "name": "STATUS_PIPE_READ_MODE", "desc": "Pipe read mode." },
-{ "code": "0xC0000212", "name": "STATUS_PIPE_NAMED_PIPE_OPEN", "desc": "Named pipe open." },
-{ "code": "0xC0000213", "name": "STATUS_PIPE_WAIT", "desc": "Pipe wait." },
-{ "code": "0xC0000214", "name": "STATUS_PIPE_READ", "desc": "Pipe read." },
-{ "code": "0xC0000215", "name": "STATUS_PIPE_WRITE", "desc": "Pipe write." },
-{ "code": "0xC0000216", "name": "STATUS_PIPE_OPERATION", "desc": "Pipe operation." },
+// SECURITY STATUS (0xC0000200 - 0xC00002FF)
+  { "code": "0xC0000200", "name": "STATUS_ACCOUNT_DISABLED", "desc": "The account is disabled." },
+  { "code": "0xC0000201", "name": "STATUS_ACCOUNT_EXPIRED", "desc": "The account has expired." },
+  { "code": "0xC0000202", "name": "STATUS_ACCOUNT_RESTRICTION", "desc": "Account logon restrictions prevent access." },
+  { "code": "0xC0000203", "name": "STATUS_LOGON_FAILURE", "desc": "Logon attempt failed." },
+  { "code": "0xC0000204", "name": "STATUS_PASSWORD_EXPIRED", "desc": "The password has expired." },
+  { "code": "0xC0000205", "name": "STATUS_ACCOUNT_LOCKED_OUT", "desc": "The account is locked out." },
+  { "code": "0xC0000206", "name": "STATUS_PASSWORD_MUST_CHANGE", "desc": "The user must change password at next logon." },
+  { "code": "0xC0000207", "name": "STATUS_PRIVILEGE_NOT_HELD", "desc": "The required privilege is not held by the client." },
+  { "code": "0xC0000208", "name": "STATUS_NO_TOKEN", "desc": "No security token is available for the operation." },
+  { "code": "0xC0000209", "name": "STATUS_CANNOT_IMPERSONATE", "desc": "The server process cannot impersonate the client." },
 
-// REGISTRY ERRORS (0xC0000300 - 0xC00003FF)
-{ "code": "0xC0000300", "name": "STATUS_REGISTRY_CORRUPT", "desc": "Registry corrupted." },
-{ "code": "0xC0000301", "name": "STATUS_REGISTRY_IO_FAILED", "desc": "Registry I/O failed." },
-{ "code": "0xC0000302", "name": "STATUS_NOT_REGISTRY_FILE", "desc": "Not registry file." },
-{ "code": "0xC0000303", "name": "STATUS_KEY_DELETED", "desc": "Key deleted." },
-{ "code": "0xC0000304", "name": "STATUS_NO_LOG_SPACE", "desc": "No log space." },
-{ "code": "0xC0000305", "name": "STATUS_KEY_HAS_CHILDREN", "desc": "Key has children." },
-{ "code": "0xC0000306", "name": "STATUS_CHILD_MUST_BE_VOLATILE", "desc": "Child must be volatile." },
-{ "code": "0xC0000307", "name": "STATUS_NOTIFY_ENUM_DIR", "desc": "Notify enum dir." },
+  // DRIVER / HARDWARE STATUS (0xC0000300 - 0xC00003FF)
+  { "code": "0xC0000300", "name": "STATUS_HARDWARE_FAILURE", "desc": "A hardware failure has occurred." },
+  { "code": "0xC0000301", "name": "STATUS_IO_DEVICE_ERROR", "desc": "The I/O device reported an error." },
+  { "code": "0xC0000302", "name": "STATUS_DEVICE_CONFIGURATION_ERROR", "desc": "Device configuration is invalid." },
+  { "code": "0xC0000303", "name": "STATUS_DRIVER_INTERNAL_ERROR", "desc": "The driver has detected an internal error." },
+  { "code": "0xC0000304", "name": "STATUS_DEVICE_NOT_READY", "desc": "The device is not ready for use." },
+  { "code": "0xC0000305", "name": "STATUS_DEVICE_DOES_NOT_EXIST", "desc": "The device does not exist." },
+  { "code": "0xC0000306", "name": "STATUS_DEVICE_FAILED", "desc": "The device failed." },
+  { "code": "0xC0000307", "name": "STATUS_IO_BUS_ERROR", "desc": "An I/O bus error has occurred." },
+  { "code": "0xC0000308", "name": "STATUS_BUS_RESET", "desc": "The I/O bus has been reset." },
+  { "code": "0xC0000309", "name": "STATUS_UNABLE_TO_LOAD_DRIVER", "desc": "Unable to load the driver." }
 
 // ADVANCED / SYSTEM ERRORS (0xC0000400 - 0xC00004FF)
 { "code": "0xC0000400", "name": "STATUS_BAD_VALIDATION_CLASS", "desc": "Bad validation class." },
@@ -590,5 +585,99 @@ const ntData = [
 { "code": "0xC0000188", "name": "STATUS_PAGEFILE_CREATE_FAILED", "desc": "Pagefile creation failed." },
 { "code": "0xC0000189", "name": "STATUS_NO_PAGEFILE", "desc": "No pagefile configured." },
 { "code": "0xC000018A", "name": "STATUS_FILE_DELETED", "desc": "File has been deleted." },
-{ "code": "0xC000018B", "name": "STATUS_FILE_RENAMED", "desc": "File has been renamed." }
+{ "code": "0xC000018B", "name": "STATUS_FILE_RENAMED", "desc": "File has been renamed." },
+  // NOT-STD NTStatus (0xF0000001-FFFFFF00)
+  { "code": "0xF0000001", "name": "STATUS_VIRTUAL_DISK_LIMITATION", "desc": "An operation failed because the virtual disk reached a limit (size, sectors, or capacity)." },
+  { "code": "0xF0000002", "name": "STATUS_VIRTUAL_DISK_NOT_OPEN", "desc": "The virtual disk handle is not opened; operations cannot be performed without an open handle." },
+  { "code": "0xF0000003", "name": "STATUS_VHD_PARENT_VHD_ACCESS_DENIED", "desc": "Access denied to the parent of a virtual hard disk (VHD); possibly due to insufficient permissions." },
+  { "code": "0xF0000004", "name": "STATUS_VHD_CHILD_PARENT_SIZE_MISMATCH", "desc": "The child virtual disk and its parent differ in size; cannot chain snapshots." },
+  { "code": "0xF0100000", "name": "STATUS_TPM_NOT_FOUND", "desc": "The TPM (Trusted Platform Module) could not be found on this system." },
+  { "code": "0xF0100001", "name": "STATUS_TPM_DISABLED", "desc": "The Trusted Platform Module is present but disabled." },
+  { "code": "0xF0100002", "name": "STATUS_TPM_AUTHORIZATION_FAILED", "desc": "Authorization to the TPM failed (bad credentials or policy violation)." },
+  { "code": "0xF0100003", "name": "STATUS_TPM_COMMAND_BLOCKED", "desc": "A command sent to the TPM was blocked due to policy or lock state." },
+  { "code": "0xF0200000", "name": "STATUS_SECUREBOOT_NOT_ENABLED", "desc": "Secure Boot is not enabled on this machine; some security operations depend on Secure Boot." },
+  { "code": "0xF0200001", "name": "STATUS_MEASURED_BOOT_REQUIRED", "desc": "Measured Boot policy requires TPM attestation for this operation." },
+  { "code": "0xF0200002", "name": "STATUS_SECUREBOOT_POLICY_VIOLATION", "desc": "Secure Boot policy violation detected; binary signature or configuration is invalid." },
+  { "code": "0xF0300000", "name": "STATUS_HYPERV_NOT_INSTALLED", "desc": "Hyper‑V is not installed on this system; virtualization features dependent on Hyper‑V cannot run." },
+  { "code": "0xF0300001", "name": "STATUS_HYPERV_ROOT_PARTITION_NOT_RUNNING", "desc": "The Hyper‑V root partition is not running; VM operations cannot proceed." },
+  { "code": "0xF0300002", "name": "STATUS_HYPERV_VM_EXIT", "desc": "A VM exit occurred; control returned from guest to host due to virtualization event." },
+  { "code": "0xF0300003", "name": "STATUS_HYPERV_UNSUPPORTED_FEATURE", "desc": "The requested virtualization feature is not supported by this Hyper‑V version." },
+  { "code": "0xF0400000", "name": "STATUS_CLUSTER_NODE_DOWN", "desc": "A cluster node is down or unreachable; cluster operations may be degraded." },
+  { "code": "0xF0400001", "name": "STATUS_CLUSTER_NETWORK_UNREACHABLE", "desc": "The cluster network is unreachable; internal communication failed." },
+  { "code": "0xF0400002", "name": "STATUS_CLUSTER_DATA_NOT_SYNCHRONIZED", "desc": "Cluster state data is not synchronized; consistency checks failed." },
+  { "code": "0xF0500000", "name": "STATUS_CRYPTO_ENGINE_NOT_INITIALIZED", "desc": "The cryptographic engine has not been initialized; crypto operations cannot be performed." },
+  { "code": "0xF0500001", "name": "STATUS_CRYPTO_KEY_NOT_FOUND", "desc": "Requested cryptographic key not found in key store or HSM." },
+  { "code": "0xF0500002", "name": "STATUS_CRYPTO_OPERATION_FAILED", "desc": "Cryptographic operation failed due to internal error or unsupported algorithm." },
+  { "code": "0xF0600000", "name": "STATUS_FIRMWARE_UPDATE_REQUIRED", "desc": "System firmware must be updated to proceed with this operation." },
+  { "code": "0xF0600001", "name": "STATUS_FIRMWARE_CORRUPT", "desc": "System firmware detected as corrupted; recovery required." },
+  { "code": "0xF0600002", "name": "STATUS_FIRMWARE_AUTHENTICATION_FAILED", "desc": "Firmware authentication failed due to signature mismatch or hash error." },
+  { "code": "0xF0700000", "name": "STATUS_BIOS_MODE_NOT_SUPPORTED", "desc": "The current BIOS/UEFI mode is not supported for this operation (e.g., Secure Boot required)." },
+  { "code": "0xF0700001", "name": "STATUS_OPERATION_IN_PROGRESS", "desc": "The requested operation is currently in progress; wait and retry." },
+  { "code": "0xF0800000", "name": "STATUS_ENCRYPTION_POLICY_NOT_SUPPORTED", "desc": "The configured encryption policy is not supported by system or TPM." },
+  { "code": "0xF0800001", "name": "STATUS_DECRYPTION_FAILED", "desc": "Decryption operation failed due to invalid key or data integrity error." }
+
+  // CRYPTO / CNG / KEY STORAGE
+  { "code": "0xE0000001", "name": "STATUS_CNG_KEY_NOT_FOUND", "desc": "CNG key not found in Key Storage Provider (KSP) or key container." },
+  { "code": "0xE0000002", "name": "STATUS_CNG_NO_SUCH_PROVIDER", "desc": "Specified Cryptographic Provider not available on this system." },
+  { "code": "0xE0000100", "name": "STATUS_CNG_HASH_NOT_SUPPORTED", "desc": "Requested hash algorithm or mode is not supported by the CNG implementation." },
+  { "code": "0xE0000200", "name": "STATUS_CNG_INVALID_PADDING", "desc": "Invalid padding discovered during a decryption operation." },
+  
+  // EFI/UEFI & SECURE BOOT
+  { "code": "0xE1000001", "name": "STATUS_SECUREBOOT_POLICY_VIOLATION_EXT", "desc": "Secure Boot policy violation for UEFI executable or platform config detected." },
+  { "code": "0xE1000002", "name": "STATUS_EFI_VARIABLE_AUTHENTICATION_FAILED", "desc": "EFI variable authentication failed due to bad signature or invalid data." },
+  { "code": "0xE1000003", "name": "STATUS_EFI_INVALID_TIME", "desc": "EFI Runtime Service returned invalid time information." },
+  
+  // VIRTUALIZATION / HYPERVISOR
+  { "code": "0xE2000001", "name": "STATUS_HYPERV_INSUFFICIENT_MEMORY", "desc": "Hyper‑V cannot allocate memory for the VM due to host resource limits." },
+  { "code": "0xE2000002", "name": "STATUS_HYPERV_UNSUPPORTED_VMFEATURE", "desc": "The VM or guest requested a feature not supported by Hyper‑V or the host CPU." },
+  { "code": "0xE2000003", "name": "STATUS_VIRTUALIZATION_CLIENT_UNAVAILABLE", "desc": "Virtualization subsystem not available (e.g., Guest additions not installed)." },
+  { "code": "0xE2000004", "name": "STATUS_VIRTUAL_DISK_CORRUPTED", "desc": "Virtual disk metadata encountered corruption and cannot be mounted." },
+  
+  // VHD (Hyper‑V / Disk API)
+  { "code": "0xE3000001", "name": "STATUS_VHD_INVALID_SECTOR_SIZE", "desc": "VHD/VHDX has an unsupported sector size." },
+  { "code": "0xE3000002", "name": "STATUS_VHD_PARENT_VHD_NOT_ACCESSIBLE", "desc": "Snapshot parent disk not accessible; cannot open differencing disk." },
+  { "code": "0xE3000003", "name": "STATUS_VHD_TOO_MANY_LINKS", "desc": "Too many differencing chain links; limit reached." },
+  
+  // MMC / STORAGE / SMART
+  { "code": "0xE4000001", "name": "STATUS_SMART_WARNING", "desc": "Storage SMART warning detected; drive may be failing soon." },
+  { "code": "0xE4000002", "name": "STATUS_SMART_FAILURE_PREDICTED", "desc": "SMART predicted imminent drive failure." },
+  { "code": "0xE4000003", "name": "STATUS_STORAGE_DEVICE_ERROR_EXT", "desc": "Extended storage device error from controller or firmware." },
+  
+  // TPM / SECURE MODULES
+  { "code": "0xE5000001", "name": "STATUS_TPM_REBOOT_REQUIRED", "desc": "TPM requires system reboot to complete operation." },
+  { "code": "0xE5000002", "name": "STATUS_TPM_OWNERSHIP_NOT_DONE", "desc": "TPM ownership has not been established." },
+  { "code": "0xE5000003", "name": "STATUS_TPM_COMMAND_RETRY", "desc": "TPM returned retry code; operation should be attempted again." },
+  
+  // NETWORK / SMB / CLUSTER
+  { "code": "0xE6000001", "name": "STATUS_SMB_NOT_SUPPORTED", "desc": "SMB protocol version not supported by server." },
+  { "code": "0xE6000002", "name": "STATUS_SMB_SIGNATURE_INVALID", "desc": "SMB packet signature invalid or failed verification." },
+  { "code": "0xE6000003", "name": "STATUS_CLUSTER_QUORUM_LOST", "desc": "Cluster quorum lost due to node failure or split‑brain detection." },
+  { "code": "0xE6000004", "name": "STATUS_CLUSTER_SHUTTING_DOWN", "desc": "Cluster service shutting down; operations may fail." },
+  
+  // SECURE POLICY / SHIELDING
+  { "code": "0xE7000001", "name": "STATUS_APP_SHIELD_POLICY_VIOLATION", "desc": "Application shielding policy violation; blocked by security subsystem." },
+  { "code": "0xE7000002", "name": "STATUS_SHIELD_TOKEN_EXPIRED", "desc": "Shielding token or credential expired; re‑authentication required." },
+  
+  // SPECIAL / DEBUG / INTERNAL USE
+  { "code": "0xE8000001", "name": "STATUS_DEBUG_TRAP", "desc": "Debug trap triggered; execution halted for debug." },
+  { "code": "0xE8000002", "name": "STATUS_BREAK_ON_FIRST_CHANCE", "desc": "Debugger first‑chance break occurred." }
+   
+  // INTERNAL CODES (0xFFFFFF00-FF)
+  { "code": "0xFFFFFF00", "name": "STATUS_ASSERTION_FAILURE", "desc": "Critical assertion failure in kernel or driver code; indicates a serious internal logic error. Usually triggers a bugcheck or debugger break." },
+  { "code": "0xFFFFFF01", "name": "STATUS_INTERNAL_ERROR_1", "desc": "Internal Windows or driver-defined error; reserved for customer or system-specific diagnostics." },
+  { "code": "0xFFFFFF02", "name": "STATUS_INTERNAL_ERROR_2", "desc": "Internal error code; typically used by drivers for unrecoverable conditions." },
+  { "code": "0xFFFFFF03", "name": "STATUS_INTERNAL_ERROR_3", "desc": "Reserved for internal or vendor-specific use; not defined in standard NTSTATUS headers." },
+  { "code": "0xFFFFFF04", "name": "STATUS_INTERNAL_ERROR_4", "desc": "Reserved code for internal diagnostics or debug assertions." },
+  { "code": "0xFFFFFF05", "name": "STATUS_INTERNAL_ERROR_5", "desc": "Reserved for system or driver-defined fatal conditions." },
+  { "code": "0xFFFFFF06", "name": "STATUS_INTERNAL_ERROR_6", "desc": "Customer-defined or internal reserved NTSTATUS code." },
+  { "code": "0xFFFFFF07", "name": "STATUS_INTERNAL_ERROR_7", "desc": "Reserved for custom or internal error reporting in drivers or kernel." },
+  { "code": "0xFFFFFF08", "name": "STATUS_INTERNAL_ERROR_8", "desc": "Reserved for internal diagnostics or non-standard fatal conditions." },
+  { "code": "0xFFFFFF09", "name": "STATUS_INTERNAL_ERROR_9", "desc": "Internal NTSTATUS code, not publicly documented; may be used by drivers." },
+  { "code": "0xFFFFFF0A", "name": "STATUS_INTERNAL_ERROR_10", "desc": "Reserved; potentially used for assertion failures or critical errors in kernel modules." },
+  { "code": "0xFFFFFF0B", "name": "STATUS_INTERNAL_ERROR_11", "desc": "Customer or system-specific internal NTSTATUS code." },
+  { "code": "0xFFFFFF0C", "name": "STATUS_INTERNAL_ERROR_12", "desc": "Internal or vendor-defined diagnostic code." },
+  { "code": "0xFFFFFF0D", "name": "STATUS_INTERNAL_ERROR_13", "desc": "Reserved NTSTATUS code; used for internal debugging or fatal driver conditions." },
+  { "code": "0xFFFFFF0E", "name": "STATUS_INTERNAL_ERROR_14", "desc": "Reserved code for non-public system or driver errors." },
+  { "code": "0xFFFFFF0F", "name": "STATUS_INTERNAL_ERROR_15", "desc": "Internal NTSTATUS code; typically for debugging or assertions." },
+  { "code": "0xFFFFFF10", "name": "STATUS_INTERNAL_ERROR_16", "desc": "Reserved for customer-defined or system internal use." },
 ];
