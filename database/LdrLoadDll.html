@@ -10,7 +10,7 @@
 
     <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
         <strong style="color: #f9e2af;">Description:</strong>Low level analog of "LoadLibrary" function, load DLL in process address space. Used by all DLL loaders.
-        Returns a NTSTATUS, 0xc0000005 is a Access Violation
+        Returns a NTSTATUS.
     </p>
 
     <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
@@ -47,9 +47,60 @@ public struct UNICODE_STRING {
 }</pre>
     </div>
 
+    <div style="margin-top: 20px;">
+    <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Possible NTSTATUS Codes:</p>
+    <pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f38ba8; font-size: 14px;">
+0x00000000 - STATUS_SUCCESS - Operation completed successfully
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0x00000000">[0x00000000]</a>
+
+0xC0000002 - STATUS_NOT_IMPLEMENTED - Function not implemented
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000002">[0xC0000002]</a>
+
+0xC0000022 - STATUS_ACCESS_DENIED - Insufficient privileges
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000022">[0xC0000022]</a>
+
+0xC0000005 - STATUS_ACCESS_VIOLATION - Invalid memory access
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000005">[0xC0000005]</a>
+
+0xC0000034 - STATUS_OBJECT_NAME_NOT_FOUND - DLL not found
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000034">[0xC0000034]</a>
+
+        0xC0000008 - STATUS_INVALID_HANDLE - Invalid handle passed
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000008">[0xC0000008]</a>
+
+0xC0000142 - STATUS_DLL_INIT_FAILED - DLL entry point initialization failed
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000142">[0xC0000142]</a>
+
+0xC000012F - STATUS_INVALID_IMAGE_FORMAT - Not a valid DLL
+<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC000012F">[0xC000012F]</a>
+    </pre>
+</div>
+
+    <div style="margin-top: 20px;">
+    <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Example Usage:</p>
+    <pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 14px;">
+UNICODE_STRING us = new UNICODE_STRING("kernel32.dll");
+uint flags = 0;
+IntPtr hModule;
+
+int status = LdrLoadDll(null, ref flags, ref us, out hModule);
+
+if(status == 0) // STATUS_SUCCESS
+{
+    Console.WriteLine("DLL loaded successfully: " + hModule);
+}
+else
+{
+    Console.WriteLine("Failed to load DLL. NTSTATUS: 0x" + status.ToString("X8"));
+}
+    </pre>
+</div>
+
     <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
         <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
-        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">Paramter DllPath can be "NULL", in this situation, Windows use standard method to found DLL. Function can throw a "AccessViolationException" if in "UNICODE_STRING", variable "Buffer" initialized incorrectly!</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            Parameter <b>DllPath</b> can be <b>NULL</b>, in this case Windows uses standard DLL search. Function may throw <b>AccessViolationException</b> if <b>UNICODE_STRING.Buffer</b> is not initialized correctly!
+        </p>
     </div>
 
 </div>
