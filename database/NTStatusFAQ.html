@@ -226,8 +226,6 @@
     <script>
         let databaseLoaded = false;
         let currentFound = null;
-        
-        // ========== HRESULT CONVERSION FUNCTIONS ==========
         const FACILITY_NT_BIT = 0x10000000;
         
         function normalizeToInt(value) {
@@ -293,7 +291,6 @@
                 `${formatHex(nt)} (${ntSigned})<br>
                  ℹ️ This extracts NTSTATUS by removing FACILITY_NT_BIT`;
         }
-        // ==================================================
         
         function normalizeInput(val) {
             val = val.trim().toLowerCase();
@@ -383,6 +380,56 @@
             updateURL(normalized);
         }
 
+        function respondWithJSON(data) {
+            document.write(JSON.stringify(data, null, 2));
+            document.close();
+        }
+
+        function checkIfJSONRequest() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const wantJson = urlParams.has('json') || 
+                             (window.location.search.includes('?json') ||
+                                (window.navigator && window.navigator.userAgent.includes('curl')));
+    
+            if (wantJson) {
+                const codeParam = urlParams.get('code') || urlParams.get('hresult');
+                let result = { error: "No code provided" };
+                if (codeParam) {
+                    let nt = hresultToNtstatus(codeParam) || normalizeInput(codeParam);
+                    if (nt) {
+                        const found = ntData.find(item => item.code.toLowerCase() === nt.toLowerCase());
+                        if (found) {
+                            result = {
+                                success: true,
+                                code: found.code,
+                                name: found.name,
+                                description: found.desc,
+                                severity: getSeverityClass(found.code)
+                            };
+                        } else {
+                            result = {
+                                success: false,
+                                code: nt,
+                                error: "NTSTATUS code not found in database"
+                            };
+                        }
+                    }
+                }
+        
+                respondWithJSON(result);
+                return true;
+            }
+            return false;
+        }
+
+        function hresultToNtstatus(hresult) {
+            let hr = normalizeToInt(hresult);
+            if (isNaN(hr)) return null;
+            let nt = hr & ~FACILITY_NT_BIT;
+            if (nt > 0xFFFFFFFF) return null;
+            return formatHex(nt);
+        }
+
         function checkStatus(inputValue = null) {
             if (!databaseLoaded) return;
             
@@ -416,7 +463,19 @@
 
         function handleInitialLoad() {
             const codeParam = getUrlParameter('code');
-            if (codeParam) {
+            const hresultParam = getUrlParameter('hresult');
+            if (hresultParam) {
+                let nt = hresultToNtstatus(hresultParam);
+                if (nt) {
+                    document.getElementById('statusInput').value = nt;
+                    checkStatus(nt);
+                    document.getElementById('hrInput').value = hresultParam;
+                    convertHRtoNT();
+                } else {
+                    document.getElementById('statusInput').value = hresultParam;
+                    checkStatus(hresultParam);
+                }
+            } else if (codeParam) {
                 document.getElementById('statusInput').value = codeParam;
                 checkStatus(codeParam);
             }
@@ -425,6 +484,7 @@
         function waitForDatabase() {
             if (typeof ntData !== 'undefined') {
                 databaseLoaded = true;
+                if (checkIfJSONRequest()) return;
                 document.getElementById('dbCount').innerText = ntData.length;
                 document.getElementById('loadingMsg').style.display = 'none';
                 
