@@ -824,7 +824,7 @@ const ntData = [
 { "code": "0xC00000B8", "name": "STATUS_PROFILING_NOT_STOPPED", "desc": "Profiling has not been stopped." },
 { "code": "0xC00000B9", "name": "STATUS_COULD_NOT_INTERPRET", "desc": "The passed ACL/Security Descriptor could not be interpreted." },
 { "code": "0xC00000BA", "name": "STATUS_FILE_IS_A_DIRECTORY", "desc": "The file is a directory (invalid for the requested file-only operation)." },
-{ "code": "0xC00000BC", "name": "STATUS_NOT_SUPPORTED", "desc": "The requested operation is not supported on this file system/device." }
+{ "code": "0xC00000BC", "name": "STATUS_NOT_SUPPORTED", "desc": "The requested operation is not supported on this file system/device." },
 
   // ADDITIONAL DLL/IMAGE CODES
 { "code": "0xC0000130", "name": "STATUS_DLL_NOT_FOUND", "desc": "DLL not found (missing dependency)." },
@@ -865,7 +865,7 @@ const ntData = [
 { "code": "0xC0000188", "name": "STATUS_PAGEFILE_CREATE_FAILED", "desc": "Pagefile creation failed." },
 { "code": "0xC0000189", "name": "STATUS_NO_PAGEFILE", "desc": "No pagefile configured." },
 { "code": "0xC000018A", "name": "STATUS_FILE_DELETED", "desc": "The file cannot be accessed because it has been marked for deletion." },
-{ "code": "0xC000018B", "name": "STATUS_FILE_RENAMED", "desc": "The file handle is no longer valid because the file has been renamed." }
+{ "code": "0xC000018B", "name": "STATUS_FILE_RENAMED", "desc": "The file handle is no longer valid because the file has been renamed." },
  
   // NOT-STD NTStatus (0xF0000001-FFFFFF00)
   { "code": "0xF0000001", "name": "STATUS_VIRTUAL_DISK_LIMITATION", "desc": "An operation failed because the virtual disk reached a limit (size, sectors, or capacity)." },
