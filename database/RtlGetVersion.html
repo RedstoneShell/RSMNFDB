@@ -37,6 +37,41 @@ public struct RTL_OSVERSIONINFOW {
     public string szCSDVersion;
 }</pre>
     </div>
+    <div style="margin-top: 15px; background: rgba(137, 180, 250, 0.05); border-left: 4px solid #89b4fa; padding: 12px; border-radius: 5px;">
+    <p style="margin: 0; font-weight: bold; color: #89b4fa;">Field Explanation:</p>
+    <ul style="margin: 5px 0 0 15px; color: #a6adc8; font-size: 14px; line-height: 1.5;">
+        <li><b>dwOSVersionInfoSize:</b> Size of this structure in bytes.</li>
+        <li><b>dwMajorVersion:</b> Major version number of the OS.</li>
+        <li><b>dwMinorVersion:</b> Minor version number of the OS.</li>
+        <li><b>dwBuildNumber:</b> OS build number.</li>
+        <li><b>dwPlatformId:</b> Platform ID (e.g., NT, Windows 9x).</li>
+        <li><b>szCSDVersion:</b> Service pack string (Unicode, up to 128 chars).</li>
+    </ul>
+
+    <div style="margin-top: 20px;">
+    <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Example Usage:</p>
+    <pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 14px;">
+RTL_OSVERSIONINFOW osInfo = new RTL_OSVERSIONINFOW();
+osInfo.dwOSVersionInfoSize = (uint)Marshal.SizeOf(typeof(RTL_OSVERSIONINFOW));
+uint status = RtlGetVersion(ref osInfo); // P/Invoke to ntdll.dll
+if (status == 0x00000000) {
+    Console.WriteLine($"OS Version: {osInfo.dwMajorVersion}.{osInfo.dwMinorVersion} Build {osInfo.dwBuildNumber}");
+}
+    </pre>
+</div>
+</div>
+
+    <div style="margin-top: 20px;">
+    <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Possible NTSTATUS Codes:</p>
+    <pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f38ba8; font-size: 14px;">
+0x00000000 - STATUS_SUCCESS - Operation completed successfully
+    <a href="https://redstoneshell.github.io/RSMNFDB/NTStatusFAQ.html?code=0x00000000" style="color:#89b4fa;">[0x00000000]</a>
+0xC0000002 - STATUS_NOT_IMPLEMENTED - Function not implemented
+    <a href="https://redstoneshell.github.io/RSMNFDB/NTStatusFAQ.html?code=0xC0000002" style="color:#89b4fa;">[0xC0000002]</a>
+0xC0000022 - STATUS_ACCESS_DENIED - Insufficient privileges
+    <a href="https://redstoneshell.github.io/RSMNFDB/NTStatusFAQ.html?code=0xC0000022" style="color:#89b4fa;">[0xC0000022]</a>
+    </pre>
+</div>
 
     <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
         <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNINGS:</p>
