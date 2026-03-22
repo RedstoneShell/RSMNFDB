@@ -223,295 +223,310 @@
     </div>
 
     <script src="NTStatusCodeLib.js"></script>
-    <script>
-        let databaseLoaded = false;
-        let currentFound = null;
-        const FACILITY_NT_BIT = 0x10000000;
-        
-        function normalizeToInt(value) {
-            if (!value) return NaN;
-            let str = value.toString().trim().toLowerCase();
-            if (str.startsWith('0x')) {
-                return parseInt(str, 16);
-            }
-            return parseInt(str, 10);
-        }
-        
-        function formatHex(value) {
-            return '0x' + (value >>> 0).toString(16).toUpperCase().padStart(8, '0');
-        }
-        
-        function formatSigned(value) {
-            let unsigned = value >>> 0;
-            if (unsigned > 0x7FFFFFFF) {
-                return unsigned - 0x100000000;
-            }
-            return unsigned;
-        }
-        
-        function convertNTtoHR() {
-            const input = document.getElementById('ntInput').value;
-            if (!input) {
-                document.getElementById('hresultResult').innerHTML = '❌ Enter NTSTATUS value';
-                return;
-            }
-            
-            let nt = normalizeToInt(input);
-            if (isNaN(nt)) {
-                document.getElementById('hresultResult').innerHTML = '❌ Invalid number format';
-                return;
-            }
-            
-            let hrDirect = nt | FACILITY_NT_BIT;
-            let hrUnsigned = hrDirect >>> 0;
-            let hrSigned = hrUnsigned > 0x7FFFFFFF ? hrUnsigned - 0x100000000 : hrUnsigned;
-            
-            document.getElementById('hresultResult').innerHTML = 
-                `Direct: ${formatHex(hrDirect)} (${hrSigned})<br>
-                 ⚠️ For correct Win32 HRESULT, use RtlNtStatusToDosError() first`;
-        }
-        
-        function convertHRtoNT() {
-            const input = document.getElementById('hrInput').value;
-            if (!input) {
-                document.getElementById('ntResult').innerHTML = '❌ Enter HRESULT value';
-                return;
-            }
-            
-            let hr = normalizeToInt(input);
-            if (isNaN(hr)) {
-                document.getElementById('ntResult').innerHTML = '❌ Invalid number format';
-                return;
-            }
-            
-            let nt = hr & ~FACILITY_NT_BIT;
-            let ntSigned = nt > 0x7FFFFFFF ? nt - 0x100000000 : nt;
-            
-            document.getElementById('ntResult').innerHTML = 
-                `${formatHex(nt)} (${ntSigned})<br>
-                 ℹ️ This extracts NTSTATUS by removing FACILITY_NT_BIT`;
-        }
-        
-        function normalizeInput(val) {
-            val = val.trim().toLowerCase();
-            if (!val) return null;
-
-            let hexValue = "";
-
-            if (/^-?\d+$/.test(val)) {
-                let intVal = parseInt(val, 10);
-                hexValue = (intVal >>> 0).toString(16);
-            } 
-            else {
-                hexValue = val.replace(/^0x/, "");
-            }
-
-            if (hexValue.length > 8) {
-                hexValue = hexValue.slice(-8);
-            }
-
-            return "0x" + hexValue.padStart(8, '0');
-        }
-
-        function getSeverityClass(code) {
-            const val = parseInt(code, 16);
-            if (val === 0) return "SUCCESS";
-            if (val < 0x40000000) return "INFORMATIONAL";
-            if (val < 0x80000000) return "SUCCESS (INFO)";
-            if (val < 0xC0000000) return "WARNING";
-            return "ERROR";
-        }
-        
-        function getSeverityColor(severity) {
-            switch(severity) {
-                case "SUCCESS": return "#6a9955";
-                case "INFORMATIONAL": return "#4ec9b0";
-                case "SUCCESS (INFO)": return "#4ec9b0";
-                case "WARNING": return "#dcdcaa";
-                default: return "#f48771";
-            }
-        }
-
-        function updateURL(code) {
-            if (code && code !== '') {
-                const newUrl = window.location.pathname + '?code=' + encodeURIComponent(code);
-                window.history.pushState({}, '', newUrl);
-                document.getElementById('shareLink').innerHTML = `🔗 Shareable link: <a href="${newUrl}">${window.location.origin}${newUrl}</a>`;
-            } else {
-                window.history.pushState({}, '', window.location.pathname);
-                document.getElementById('shareLink').innerHTML = '';
-            }
-        }
-
-        function copyResult() {
-            if (!currentFound) return;
-            const text = `${currentFound.name} (${currentFound.code})\n${currentFound.desc}\nSeverity: ${getSeverityClass(currentFound.code)}`;
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.getElementById('copyBtn');
-                const originalText = btn.innerText;
-                btn.innerText = '✓ Copied!';
-                setTimeout(() => btn.innerText = originalText, 2000);
-            });
-        }
-
-        function showResult(found, normalized) {
-            currentFound = found;
-            const severity = getSeverityClass(found.code);
-            const severityColor = getSeverityColor(severity);
-            
-            document.getElementById('result').style.display = 'block';
-            document.getElementById('errorBox').style.display = 'none';
-            document.getElementById('resName').innerHTML = `${found.name} <span class="badge" style="background: ${severityColor}20; color: ${severityColor};">${severity}</span>`;
-            document.getElementById('resHex').innerHTML = `Hex: ${found.code.toUpperCase()} | Decimal: ${parseInt(found.code, 16)}`;
-            document.getElementById('resDesc').innerText = found.desc;
-            
-            updateURL(normalized);
-        }
-        
-        function showError(normalized) {
-            currentFound = null;
-            const severity = getSeverityClass(normalized);
-            
-            document.getElementById('result').style.display = 'none';
-            document.getElementById('errorBox').style.display = 'block';
-            document.getElementById('errHex').innerHTML = `Hex: ${normalized.toUpperCase()} | Decimal: ${parseInt(normalized, 16)}`;
-            document.getElementById('errName').innerHTML = `❌ UNKNOWN (${severity})`;
-            
-            updateURL(normalized);
-        }
-
-        function respondWithJSON(data) {
-            document.write(JSON.stringify(data, null, 2));
-            document.close();
-        }
-
-        function checkIfJSONRequest() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const wantJson = urlParams.has('json') || 
-                             (window.location.search.includes('?json') ||
-                                (window.navigator && window.navigator.userAgent.includes('curl')));
+<script>
+    let databaseLoaded = false;
+    let currentFound = null;
+    const FACILITY_NT_BIT = 0x10000000;
     
-            if (wantJson) {
-                const codeParam = urlParams.get('code') || urlParams.get('hresult');
-                let result = { error: "No code provided" };
-                if (codeParam) {
-                    let nt = hresultToNtstatus(codeParam) || normalizeInput(codeParam);
-                    if (nt) {
-                        const found = ntData.find(item => item.code.toLowerCase() === nt.toLowerCase());
-                        if (found) {
-                            result = {
-                                success: true,
-                                code: found.code,
-                                name: found.name,
-                                description: found.desc,
-                                severity: getSeverityClass(found.code)
-                            };
-                        } else {
-                            result = {
-                                success: false,
-                                code: nt,
-                                error: "NTSTATUS code not found in database"
-                            };
-                        }
-                    }
-                }
+    function normalizeToInt(value) {
+        if (!value) return NaN;
+        let str = value.toString().trim().toLowerCase();
+        if (str.startsWith('0x')) {
+            return parseInt(str, 16);
+        }
+        return parseInt(str, 10);
+    }
+    
+    function formatHex(value) {
+        return '0x' + (value >>> 0).toString(16).toUpperCase().padStart(8, '0');
+    }
+    
+    function formatSigned(value) {
+        let unsigned = value >>> 0;
+        if (unsigned > 0x7FFFFFFF) {
+            return unsigned - 0x100000000;
+        }
+        return unsigned;
+    }
+    
+    function convertNTtoHR() {
+        const input = document.getElementById('ntInput').value;
+        if (!input) {
+            document.getElementById('hresultResult').innerHTML = '❌ Enter NTSTATUS value';
+            return;
+        }
         
-                respondWithJSON(result);
-                return true;
-            }
-            return false;
+        let nt = normalizeToInt(input);
+        if (isNaN(nt)) {
+            document.getElementById('hresultResult').innerHTML = '❌ Invalid number format';
+            return;
+        }
+        
+        let hrDirect = nt | FACILITY_NT_BIT;
+        let hrUnsigned = hrDirect >>> 0;
+        let hrSigned = hrUnsigned > 0x7FFFFFFF ? hrUnsigned - 0x100000000 : hrUnsigned;
+        
+        document.getElementById('hresultResult').innerHTML = 
+            `Direct: ${formatHex(hrDirect)} (${hrSigned})<br>
+             ⚠️ For correct Win32 HRESULT, use RtlNtStatusToDosError() first`;
+    }
+    
+    function convertHRtoNT() {
+        const input = document.getElementById('hrInput').value;
+        if (!input) {
+            document.getElementById('ntResult').innerHTML = '❌ Enter HRESULT value';
+            return;
+        }
+        
+        let hr = normalizeToInt(input);
+        if (isNaN(hr)) {
+            document.getElementById('ntResult').innerHTML = '❌ Invalid number format';
+            return;
+        }
+        
+        let nt = hr & ~FACILITY_NT_BIT;
+        let ntSigned = nt > 0x7FFFFFFF ? nt - 0x100000000 : nt;
+        
+        document.getElementById('ntResult').innerHTML = 
+            `${formatHex(nt)} (${ntSigned})<br>
+             ℹ️ This extracts NTSTATUS by removing FACILITY_NT_BIT`;
+    }
+    
+    function normalizeInput(val) {
+        val = val.trim().toLowerCase();
+        if (!val) return null;
+
+        let hexValue = "";
+
+        if (/^-?\d+$/.test(val)) {
+            let intVal = parseInt(val, 10);
+            hexValue = (intVal >>> 0).toString(16);
+        } 
+        else {
+            hexValue = val.replace(/^0x/, "");
         }
 
-        function hresultToNtstatus(hresult) {
-            let hr = normalizeToInt(hresult);
-            if (isNaN(hr)) return null;
-            let nt = hr & ~FACILITY_NT_BIT;
-            if (nt > 0xFFFFFFFF) return null;
-            return formatHex(nt);
+        if (hexValue.length > 8) {
+            hexValue = hexValue.slice(-8);
         }
 
-        function checkStatus(inputValue = null) {
-            if (!databaseLoaded) return;
-            
-            let rawInput = inputValue;
-            if (rawInput === null) {
-                rawInput = document.getElementById('statusInput').value;
+        return "0x" + hexValue.padStart(8, '0');
+    }
+
+    function getSeverityClass(code) {
+        const val = parseInt(code, 16);
+        if (val === 0) return "SUCCESS";
+        if (val < 0x40000000) return "INFORMATIONAL";
+        if (val < 0x80000000) return "SUCCESS (INFO)";
+        if (val < 0xC0000000) return "WARNING";
+        return "ERROR";
+    }
+    
+    function getSeverityColor(severity) {
+        switch(severity) {
+            case "SUCCESS": return "#6a9955";
+            case "INFORMATIONAL": return "#4ec9b0";
+            case "SUCCESS (INFO)": return "#4ec9b0";
+            case "WARNING": return "#dcdcaa";
+            default: return "#f48771";
+        }
+    }
+
+    function updateURL(code) {
+        if (code && code !== '') {
+            const newUrl = window.location.pathname + '?code=' + encodeURIComponent(code);
+            window.history.pushState({}, '', newUrl);
+            document.getElementById('shareLink').innerHTML = `🔗 Shareable link: <a href="${newUrl}">${window.location.origin}${newUrl}</a>`;
+        } else {
+            window.history.pushState({}, '', window.location.pathname);
+            document.getElementById('shareLink').innerHTML = '';
+        }
+    }
+
+    function copyResult() {
+        if (!currentFound) return;
+        const text = `${currentFound.name} (${currentFound.code})\n${currentFound.desc}\nSeverity: ${getSeverityClass(currentFound.code)}`;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.getElementById('copyBtn');
+            const originalText = btn.innerText;
+            btn.innerText = '✓ Copied!';
+            setTimeout(() => btn.innerText = originalText, 2000);
+        });
+    }
+
+    function showResult(found, normalized) {
+        currentFound = found;
+        const severity = getSeverityClass(found.code);
+        const severityColor = getSeverityColor(severity);
+        
+        document.getElementById('result').style.display = 'block';
+        document.getElementById('errorBox').style.display = 'none';
+        document.getElementById('resName').innerHTML = `${found.name} <span class="badge" style="background: ${severityColor}20; color: ${severityColor};">${severity}</span>`;
+        document.getElementById('resHex').innerHTML = `Hex: ${found.code.toUpperCase()} | Decimal: ${parseInt(found.code, 16)}`;
+        document.getElementById('resDesc').innerText = found.desc;
+        
+        updateURL(normalized);
+    }
+    
+    function showError(normalized) {
+        currentFound = null;
+        const severity = getSeverityClass(normalized);
+        
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('errorBox').style.display = 'block';
+        document.getElementById('errHex').innerHTML = `Hex: ${normalized.toUpperCase()} | Decimal: ${parseInt(normalized, 16)}`;
+        document.getElementById('errName').innerHTML = `❌ UNKNOWN (${severity})`;
+        
+        updateURL(normalized);
+    }
+
+    function respondWithJSON(data) {
+        // Очищаємо сторінку і показуємо тільки JSON
+        document.write(JSON.stringify(data, null, 2));
+        document.close();
+    }
+
+    // ГОЛОВНА ФУНКЦІЯ ПЕРЕВІРКИ JSON ЗАПИТУ
+    function isJSONRequest() {
+        const urlParams = new URLSearchParams(window.location.search);
+        // Перевіряємо наявність параметра json (навіть без значення)
+        const hasJsonParam = urlParams.has('json');
+        // Також перевіряємо через .search для надійності
+        const searchContainsJson = window.location.search.includes('json');
+        
+        return hasJsonParam || searchContainsJson;
+    }
+
+    function hresultToNtstatus(hresult) {
+        let hr = normalizeToInt(hresult);
+        if (isNaN(hr)) return null;
+        let nt = hr & ~FACILITY_NT_BIT;
+        if (nt > 0xFFFFFFFF) return null;
+        return formatHex(nt);
+    }
+
+    function checkStatus(inputValue = null) {
+        if (!databaseLoaded) return;
+        
+        let rawInput = inputValue;
+        if (rawInput === null) {
+            rawInput = document.getElementById('statusInput').value;
+        }
+        
+        const normalized = normalizeInput(rawInput);
+        
+        if (!normalized) {
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('errorBox').style.display = 'none';
+            updateURL('');
+            return;
+        }
+
+        const found = ntData.find(item => item.code.toLowerCase() === normalized);
+
+        if (found) {
+            showResult(found, rawInput);
+        } else {
+            showError(rawInput);
+        }
+    }
+
+    function getUrlParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    function handleInitialLoad() {
+        const codeParam = getUrlParameter('code');
+        const hresultParam = getUrlParameter('hresult');
+        if (hresultParam) {
+            let nt = hresultToNtstatus(hresultParam);
+            if (nt) {
+                document.getElementById('statusInput').value = nt;
+                checkStatus(nt);
+                document.getElementById('hrInput').value = hresultParam;
+                convertHRtoNT();
+            } else {
+                document.getElementById('statusInput').value = hresultParam;
+                checkStatus(hresultParam);
             }
+        } else if (codeParam) {
+            document.getElementById('statusInput').value = codeParam;
+            checkStatus(codeParam);
+        }
+    }
+
+    function buildJSONResponse() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const codeParam = urlParams.get('code') || urlParams.get('hresult');
+        
+        if (!codeParam) {
+            return { error: "No code provided", usage: "?code=0xC0000005 or ?hresult=-1073741819&json" };
+        }
+        
+        let nt = hresultToNtstatus(codeParam) || normalizeInput(codeParam);
+        if (!nt) {
+            return { success: false, code: codeParam, error: "Invalid code format" };
+        }
+        
+        const found = ntData.find(item => item.code.toLowerCase() === nt.toLowerCase());
+        if (found) {
+            return {
+                success: true,
+                code: found.code,
+                name: found.name,
+                description: found.desc,
+                severity: getSeverityClass(found.code)
+            };
+        } else {
+            return {
+                success: false,
+                code: nt,
+                error: "NTSTATUS code not found in database"
+            };
+        }
+    }
+
+    function waitForDatabase() {
+        if (typeof ntData !== 'undefined') {
+            databaseLoaded = true;
             
-            const normalized = normalizeInput(rawInput);
-            
-            if (!normalized) {
-                document.getElementById('result').style.display = 'none';
-                document.getElementById('errorBox').style.display = 'none';
-                updateURL('');
+            // ЯКЩО ЦЕ JSON-ЗАПИТ — ВІДПОВІДАЄМО І ЗУПИНЯЄМОСЬ
+            if (isJSONRequest()) {
+                const jsonResponse = buildJSONResponse();
+                respondWithJSON(jsonResponse);
                 return;
             }
-
-            const found = ntData.find(item => item.code.toLowerCase() === normalized);
-
-            if (found) {
-                showResult(found, rawInput);
-            } else {
-                showError(rawInput);
-            }
-        }
-
-        function getUrlParameter(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        }
-
-        function handleInitialLoad() {
-            const codeParam = getUrlParameter('code');
-            const hresultParam = getUrlParameter('hresult');
-            if (hresultParam) {
-                let nt = hresultToNtstatus(hresultParam);
-                if (nt) {
-                    document.getElementById('statusInput').value = nt;
-                    checkStatus(nt);
-                    document.getElementById('hrInput').value = hresultParam;
-                    convertHRtoNT();
+            
+            // Інакше — показуємо HTML-інтерфейс
+            document.getElementById('dbCount').innerText = ntData.length;
+            document.getElementById('loadingMsg').style.display = 'none';
+            
+            const input = document.getElementById('statusInput');
+            input.addEventListener('input', () => checkStatus());
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') checkStatus();
+            });
+            
+            window.addEventListener('popstate', function() {
+                const codeParam = getUrlParameter('code');
+                if (codeParam) {
+                    document.getElementById('statusInput').value = codeParam;
+                    checkStatus(codeParam);
                 } else {
-                    document.getElementById('statusInput').value = hresultParam;
-                    checkStatus(hresultParam);
+                    document.getElementById('statusInput').value = '';
+                    document.getElementById('result').style.display = 'none';
+                    document.getElementById('errorBox').style.display = 'none';
                 }
-            } else if (codeParam) {
-                document.getElementById('statusInput').value = codeParam;
-                checkStatus(codeParam);
-            }
+            });
+            
+            handleInitialLoad();
+        } else {
+            setTimeout(waitForDatabase, 100);
         }
-
-        function waitForDatabase() {
-            if (typeof ntData !== 'undefined') {
-                databaseLoaded = true;
-                if (checkIfJSONRequest()) return;
-                document.getElementById('dbCount').innerText = ntData.length;
-                document.getElementById('loadingMsg').style.display = 'none';
-                
-                const input = document.getElementById('statusInput');
-                input.addEventListener('input', () => checkStatus());
-                input.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') checkStatus();
-                });
-                
-                window.addEventListener('popstate', function() {
-                    const codeParam = getUrlParameter('code');
-                    if (codeParam) {
-                        document.getElementById('statusInput').value = codeParam;
-                        checkStatus(codeParam);
-                    } else {
-                        document.getElementById('statusInput').value = '';
-                        document.getElementById('result').style.display = 'none';
-                        document.getElementById('errorBox').style.display = 'none';
-                    }
-                });
-                
-                handleInitialLoad();
-            } else {
-                setTimeout(waitForDatabase, 100);
-            }
-        }
-        waitForDatabase();
-    </script>
+    }
+    
+    waitForDatabase();
+</script>
 </body>
 </html>
