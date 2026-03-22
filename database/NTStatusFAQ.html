@@ -40,9 +40,9 @@
 
     <div class="container">
         <h1>NTStatus Explorer</h1>
-        <p class="subtitle">Enter HEX (0x...), clear code (c000...) or SIGNED INT (-1073...)</p>
+        <p class="subtitle">Enter HEX (0x...), raw code (c000...) or SIGNED INT (-1073...)</p>
         
-        <input type="text" id="statusInput" placeholder="Наприклад: -1073741819 або 0xc0000005" oninput="checkStatus()">
+        <input type="text" id="statusInput" placeholder="Example: -1073741819 or 0xc0000005" oninput="checkStatus()">
 
         <div id="result" class="result-box">
             <span id="resName" class="code-name"></span>
@@ -50,50 +50,10 @@
             <div id="resDesc" class="desc"></div>
         </div>
 
-        <div class="counter">DB have main NT system codes</div>
+        <div class="counter">Database contains core NT system codes</div>
     </div>
 
     <script>
-      const ntData = [
-        { "code": "0x00000000", "name": "STATUS_SUCCESS", "desc": "Операція завершена успішно." },
-        { "code": "0x00000102", "name": "STATUS_TIMEOUT", "desc": "Час очікування операції вичерпано." },
-        { "code": "0x00000103", "name": "STATUS_PENDING", "desc": "Операція знаходиться в стані очікування." },
-        { "code": "0x40000000", "name": "STATUS_OBJECT_NAME_EXISTS", "desc": "Назва об'єкта вже існує." },
-        { "code": "0x4000001a", "name": "STATUS_WORKING_SET_LIMIT_RANGE", "desc": "Робочий набір пам'яті виходить за межі діапазону." },
-        { "code": "0x80000001", "name": "STATUS_GUARD_PAGE_VIOLATION", "desc": "Доступ до сторінки пам'яті типу Guard Page." },
-        { "code": "0x80000003", "name": "STATUS_BREAKPOINT", "desc": "Досягнута точка зупину (Breakpoint) для дебагера." },
-        { "code": "0x80000004", "name": "STATUS_SINGLE_STEP", "desc": "Виконано один крок інструкції (Single step)." },
-        { "code": "0x80000005", "name": "STATUS_BUFFER_OVERFLOW", "desc": "Буфер занадто малий для отримання даних." },
-        { "code": "0x8000001a", "name": "STATUS_NO_MORE_FILES", "desc": "Більше файлів не знайдено." },
-        { "code": "0xc0000001", "name": "STATUS_UNSUCCESSFUL", "desc": "Загальна помилка виконання операції." },
-        { "code": "0xc0000002", "name": "STATUS_NOT_IMPLEMENTED", "desc": "Запитана функція або сервіс не реалізовані." },
-        { "code": "0xc0000003", "name": "STATUS_INVALID_INFO_CLASS", "desc": "Некоректний клас інформації для об'єкта." },
-        { "code": "0xc0000004", "name": "STATUS_INFO_LENGTH_MISMATCH", "desc": "Довжина даних не відповідає очікуваній для цього класу." },
-        { "code": "0xc0000005", "name": "STATUS_ACCESS_VIOLATION", "desc": "Помилка доступу до пам'яті (читання/запис за невірною адресою)." },
-        { "code": "0xc0000008", "name": "STATUS_INVALID_HANDLE", "desc": "Використано недійсний дескриптор (Handle) об'єкта." },
-        { "code": "0xc000000d", "name": "STATUS_INVALID_PARAMETER", "desc": "Один із параметрів функції є некоректним." },
-        { "code": "0xc000000e", "name": "STATUS_NO_SUCH_DEVICE", "desc": "Вказаний пристрій не існує." },
-        { "code": "0xc000000f", "name": "STATUS_NO_SUCH_FILE", "desc": "Файл не знайдено." },
-        { "code": "0xc0000011", "name": "STATUS_END_OF_FILE", "desc": "Досягнуто кінець файлу." },
-        { "code": "0xc0000017", "name": "STATUS_NO_MEMORY", "desc": "Недостатньо системної пам'яті для виконання запиту." },
-        { "code": "0xc0000018", "name": "STATUS_CONFLICTING_ADDRESSES", "desc": "Конфлікт адрес пам'яті." },
-        { "code": "0xc0000022", "name": "STATUS_ACCESS_DENIED", "desc": "Відмовлено в доступі (недостатньо прав)." },
-        { "code": "0xc0000033", "name": "STATUS_OBJECT_NAME_INVALID", "desc": "Некоректне ім'я об'єкта." },
-        { "code": "0xc0000034", "name": "STATUS_OBJECT_NAME_NOT_FOUND", "desc": "Об'єкт з таким ім'ям не знайдений." },
-        { "code": "0xc0000035", "name": "STATUS_OBJECT_NAME_COLLISION", "desc": "Ім'я об'єкта вже використовується іншим процесом." },
-        { "code": "0xc000003a", "name": "STATUS_OBJECT_PATH_NOT_FOUND", "desc": "Шлях до об'єкта не знайдений." },
-        { "code": "0xc0000043", "name": "STATUS_SHARING_VIOLATION", "desc": "Помилка спільного доступу (файл зайнятий іншим процесом)." },
-        { "code": "0xc000007b", "name": "STATUS_INVALID_IMAGE_FORMAT", "desc": "Помилка формату .exe або .dll (наприклад, x64 замість x86)." },
-        { "code": "0xc000009a", "name": "STATUS_INSUFFICIENT_RESOURCES", "desc": "Недостатньо системних ресурсів (крім пам'яті)." },
-        { "code": "0xc00000bb", "name": "STATUS_NOT_SUPPORTED", "desc": "Запит не підтримується системою." },
-        { "code": "0xc00000ef", "name": "STATUS_INVALID_PARAMETER_MIX", "desc": "Некоректна комбінація параметрів." },
-        { "code": "0xc0000120", "name": "STATUS_CANCELLED", "desc": "Операцію вводу-виводу було скасовано." },
-        { "code": "0xc0000135", "name": "STATUS_DLL_NOT_FOUND", "desc": "Необхідну DLL бібліотеку не знайдено." },
-        { "code": "0xc0000142", "name": "STATUS_DLL_INIT_FAILED", "desc": "Помилка ініціалізації DLL." },
-        { "code": "0xc0000225", "name": "STATUS_NOT_FOUND", "desc": "Об'єкт або дані не знайдені." },
-        { "code": "0xc0010001", "name": "STATUS_RPC_SEC_PKG_ERROR", "desc": "Помилка пакету безпеки RPC." }
-      ];
-
         function normalizeInput(val) {
             val = val.trim().toLowerCase();
             if (!val) return null;
