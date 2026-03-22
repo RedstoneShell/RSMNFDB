@@ -60,7 +60,7 @@ Now you can use **https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.h
 </div>
 
 <script>
-  const fileList = ["RtlGetVersion", "NtCreateThreadEx", "LdrLoadDll"]; 
+  const fileList = ["RtlGetVersion", "NtCreateThreadEx", "LdrLoadDll", "BeepDeviceControl"]; 
   const searchInput = document.getElementById('searchInput');
   const resultsDiv = document.getElementById('results');
 
