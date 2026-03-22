@@ -235,7 +235,7 @@ const ntData = [
           "- Ensure file matches process bitness.\n" +
           "- Handle this NTSTATUS in loader code to prevent crashes.\n\n" +
           "See also: <a href=\"https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC000012F\">[0xC000012F]</a>"
-}
+},
 { "code": "0xC00002EE", "name": "STATUS_INVALID_PARAMETER_1", "desc": "Invalid parameter 1." },
 { "code": "0xC00002EF", "name": "STATUS_INVALID_PARAMETER_2", "desc": "Invalid parameter 2." },
 { "code": "0xC00002F0", "name": "STATUS_INVALID_PARAMETER_3", "desc": "Invalid parameter 3." },
