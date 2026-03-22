@@ -34,26 +34,94 @@
         .desc { color: #b5cea8; font-size: 1.05em; border-top: 1px solid #333; padding-top: 15px; }
         
         .counter { margin-top: 50px; color: #444; font-size: 0.8em; }
+        
+        .error-box {
+            margin-top: 40px;
+            padding: 25px;
+            background: #1e1a1a;
+            border-left: 4px solid #d46b6b;
+            border-radius: 4px;
+            display: none;
+            text-align: left;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .error-box .code-name { color: #d46b6b; }
+        .counter span { color: #0078d4; font-weight: bold; }
+        
+        .loading { color: #888; font-size: 0.8em; margin-top: 20px; }
+        
+        .share-link {
+            margin-top: 20px;
+            font-size: 0.8em;
+            color: #666;
+        }
+        .share-link a {
+            color: #0078d4;
+            text-decoration: none;
+        }
+        .share-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .copy-btn {
+            background: #2d2d2d;
+            border: 1px solid #444;
+            color: #ccc;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-top: 15px;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover {
+            background: #3d3d3d;
+            border-color: #0078d4;
+            color: #fff;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: #2d2d2d;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            margin-left: 10px;
+            font-weight: normal;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>NTStatus Explorer</h1>
+        <h1>🔍 NTStatus Explorer</h1>
         <p class="subtitle">Enter HEX (0x...), raw code (c000...) or SIGNED INT (-1073...)</p>
         
-        <input type="text" id="statusInput" placeholder="Example: -1073741819 or 0xc0000005" oninput="checkStatus()">
+        <input type="text" id="statusInput" placeholder="Example: -1073741819 or 0xc0000005" autofocus>
 
         <div id="result" class="result-box">
             <span id="resName" class="code-name"></span>
             <span id="resHex" class="hex-val"></span>
             <div id="resDesc" class="desc"></div>
+            <button id="copyBtn" class="copy-btn" onclick="copyResult()">📋 Copy to clipboard</button>
+        </div>
+        
+        <div id="errorBox" class="error-box">
+            <span id="errName" class="code-name">❌ UNKNOWN</span>
+            <span id="errHex" class="hex-val"></span>
+            <div id="errDesc" class="desc">This NTSTATUS code was not found in the database.</div>
         </div>
 
-        <div class="counter">Database contains core NT system codes</div>
+        <div class="counter">Database contains <span id="dbCount">0</span> NT status codes</div>
+        <div class="loading" id="loadingMsg">Loading database...</div>
+        <div class="share-link" id="shareLink"></div>
     </div>
 
+    <script src="NTStatusCodeLib.js"></script>
     <script>
+        let databaseLoaded = false;
+        let currentFound = null;
+        
         function normalizeInput(val) {
             val = val.trim().toLowerCase();
             if (!val) return null;
@@ -61,36 +129,162 @@
             let hexValue = "";
 
             if (/^-?\d+$/.test(val)) {
-                hexValue = (parseInt(val, 10) >>> 0).toString(16);
+                let intVal = parseInt(val, 10);
+                hexValue = (intVal >>> 0).toString(16);
             } 
             else {
                 hexValue = val.replace(/^0x/, "");
             }
 
+            if (hexValue.length > 8) {
+                hexValue = hexValue.slice(-8);
+            }
+
             return "0x" + hexValue.padStart(8, '0');
         }
 
-        function checkStatus() {
-            const rawInput = document.getElementById('statusInput').value;
+        function getSeverityClass(code) {
+            const val = parseInt(code, 16);
+            if (val === 0) return "SUCCESS";
+            if (val < 0x40000000) return "INFORMATIONAL";
+            if (val < 0x80000000) return "SUCCESS (INFO)";
+            if (val < 0xC0000000) return "WARNING";
+            return "ERROR";
+        }
+        
+        function getSeverityColor(severity) {
+            switch(severity) {
+                case "SUCCESS": return "#6a9955";
+                case "INFORMATIONAL": return "#4ec9b0";
+                case "SUCCESS (INFO)": return "#4ec9b0";
+                case "WARNING": return "#dcdcaa";
+                default: return "#f48771";
+            }
+        }
+
+        function updateURL(code) {
+            if (code && code !== '') {
+                const newUrl = window.location.pathname + '?code=' + encodeURIComponent(code);
+                window.history.pushState({}, '', newUrl);
+                document.getElementById('shareLink').innerHTML = `🔗 Shareable link: <a href="${newUrl}">${window.location.origin}${newUrl}</a>`;
+            } else {
+                window.history.pushState({}, '', window.location.pathname);
+                document.getElementById('shareLink').innerHTML = '';
+            }
+        }
+
+        function copyResult() {
+            if (!currentFound) return;
+            const text = `${currentFound.name} (${currentFound.code})\n${currentFound.desc}\nSeverity: ${getSeverityClass(currentFound.code)}`;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const originalText = btn.innerText;
+                btn.innerText = '✓ Copied!';
+                setTimeout(() => btn.innerText = originalText, 2000);
+            });
+        }
+
+        function showResult(found, normalized) {
+            currentFound = found;
+            const severity = getSeverityClass(found.code);
+            const severityColor = getSeverityColor(severity);
+            
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('errorBox').style.display = 'none';
+            document.getElementById('resName').innerHTML = `${found.name} <span class="badge" style="background: ${severityColor}20; color: ${severityColor};">${severity}</span>`;
+            document.getElementById('resHex').innerHTML = `Hex: ${found.code.toUpperCase()} | Decimal: ${parseInt(found.code, 16)}`;
+            document.getElementById('resDesc').innerText = found.desc;
+            
+            updateURL(normalized);
+        }
+        
+        function showError(normalized) {
+            currentFound = null;
+            const severity = getSeverityClass(normalized);
+            
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('errorBox').style.display = 'block';
+            document.getElementById('errHex').innerHTML = `Hex: ${normalized.toUpperCase()} | Decimal: ${parseInt(normalized, 16)}`;
+            document.getElementById('errName').innerHTML = `❌ UNKNOWN (${severity})`;
+            
+            updateURL(normalized);
+        }
+
+        function checkStatus(inputValue = null) {
+            if (!databaseLoaded) return;
+            
+            let rawInput = inputValue;
+            if (rawInput === null) {
+                rawInput = document.getElementById('statusInput').value;
+            }
+            
             const normalized = normalizeInput(rawInput);
-            const resDiv = document.getElementById('result');
             
             if (!normalized) {
-                resDiv.style.display = 'none';
+                document.getElementById('result').style.display = 'none';
+                document.getElementById('errorBox').style.display = 'none';
+                updateURL('');
                 return;
             }
 
             const found = ntData.find(item => item.code.toLowerCase() === normalized);
 
             if (found) {
-                resDiv.style.display = 'block';
-                document.getElementById('resName').innerText = found.name;
-                document.getElementById('resHex').innerText = "Hex: " + found.code.toUpperCase();
-                document.getElementById('resDesc').innerText = found.desc;
+                showResult(found, rawInput);
             } else {
-                resDiv.style.display = 'none';
+                showError(rawInput);
             }
         }
+
+        // Get URL parameter
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Handle initial load with URL parameter
+        function handleInitialLoad() {
+            const codeParam = getUrlParameter('code');
+            if (codeParam) {
+                document.getElementById('statusInput').value = codeParam;
+                checkStatus(codeParam);
+            }
+        }
+
+        // Wait for database to load
+        function waitForDatabase() {
+            if (typeof ntData !== 'undefined') {
+                databaseLoaded = true;
+                document.getElementById('dbCount').innerText = ntData.length;
+                document.getElementById('loadingMsg').style.display = 'none';
+                
+                // Add event listeners
+                const input = document.getElementById('statusInput');
+                input.addEventListener('input', () => checkStatus());
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') checkStatus();
+                });
+                
+                // Handle browser back/forward navigation
+                window.addEventListener('popstate', function() {
+                    const codeParam = getUrlParameter('code');
+                    if (codeParam) {
+                        document.getElementById('statusInput').value = codeParam;
+                        checkStatus(codeParam);
+                    } else {
+                        document.getElementById('statusInput').value = '';
+                        document.getElementById('result').style.display = 'none';
+                        document.getElementById('errorBox').style.display = 'none';
+                    }
+                });
+                
+                handleInitialLoad();
+            } else {
+                setTimeout(waitForDatabase, 100);
+            }
+        }
+        
+        waitForDatabase();
     </script>
 </body>
 </html>
