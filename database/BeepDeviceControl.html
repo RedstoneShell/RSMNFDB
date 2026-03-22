@@ -16,8 +16,8 @@
 
     <div style="position: relative;">
         <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">C++ Raw Structure:</p>
-        <button onclick="copyCode('code_cs')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
-        <pre id="code_cs" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
+        <button onclick="copyCode('code_cpp')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_cpp" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
 NTSTATUS BeepDeviceControl(
     PDEVICE_OBJECT DeviceObject,
     PIRP Irp
@@ -28,7 +28,7 @@ NTSTATUS BeepDeviceControl(
         <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">C# P/Invoke Structure:</p>
         <button onclick="copyCode('code_cs')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
         <pre id="code_cs" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
-IntPtr h = CreateFile("\\\\.\\Beep", ...);
+IntPtr h = CreateFile("\\\\.\\\\Beep", ...);
 
 BEEP_SET_PARAMETERS beep = new BEEP_SET_PARAMETERS
 {
