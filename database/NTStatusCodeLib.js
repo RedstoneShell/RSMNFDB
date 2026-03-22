@@ -615,7 +615,7 @@ const ntData = [
   { "code": "0xF0700000", "name": "STATUS_BIOS_MODE_NOT_SUPPORTED", "desc": "The current BIOS/UEFI mode is not supported for this operation (e.g., Secure Boot required)." },
   { "code": "0xF0700001", "name": "STATUS_OPERATION_IN_PROGRESS", "desc": "The requested operation is currently in progress; wait and retry." },
   { "code": "0xF0800000", "name": "STATUS_ENCRYPTION_POLICY_NOT_SUPPORTED", "desc": "The configured encryption policy is not supported by system or TPM." },
-  { "code": "0xF0800001", "name": "STATUS_DECRYPTION_FAILED", "desc": "Decryption operation failed due to invalid key or data integrity error." }
+  { "code": "0xF0800001", "name": "STATUS_DECRYPTION_FAILED", "desc": "Decryption operation failed due to invalid key or data integrity error." },
 
   // CRYPTO / CNG / KEY STORAGE
   { "code": "0xE0000001", "name": "STATUS_CNG_KEY_NOT_FOUND", "desc": "CNG key not found in Key Storage Provider (KSP) or key container." },
