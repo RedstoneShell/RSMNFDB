@@ -6,7 +6,7 @@
     <title>RSMNFDB | Ultimate NTStatus Lookup</title>
     <style>
         body { background: #0f0f0f; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px 20px; text-align: center; line-height: 1.6; }
-        .container { max-width: 700px; margin: 0 auto; }
+        .container { max-width: 800px; margin: 0 auto; }
         h1 { color: #0078d4; margin-bottom: 10px; font-weight: 300; letter-spacing: 1px; }
         p.subtitle { color: #888; margin-bottom: 30px; font-size: 0.9em; }
         
@@ -89,6 +89,91 @@
             margin-left: 10px;
             font-weight: normal;
         }
+
+        /* HRESULT Converter Panel Styles */
+        .converter-panel {
+            margin-top: 40px;
+            padding: 25px;
+            background: #161616;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            text-align: left;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .converter-panel h3 {
+            color: #0078d4;
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .converter-panel h3::before {
+            content: "🔄";
+            font-size: 1.1em;
+        }
+        .conv-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            margin: 15px 0;
+            background: #0f0f0f;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border-left: 3px solid #0078d4;
+        }
+        .conv-row input {
+            flex: 2;
+            min-width: 200px;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            font-family: 'Consolas', monospace;
+            margin: 0;
+        }
+        .conv-row button {
+            background: #0078d4;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            font-size: 0.9em;
+        }
+        .conv-row button:hover {
+            background: #005a9e;
+            transform: scale(1.02);
+        }
+        .conv-result {
+            flex: 2;
+            font-family: 'Consolas', monospace;
+            background: #0a0a0a;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #2a2a2a;
+            color: #ce9178;
+            word-break: break-all;
+            font-size: 0.85em;
+        }
+        .conv-note {
+            margin-top: 15px;
+            padding: 12px;
+            background: #0a0a0a;
+            border-radius: 6px;
+            font-size: 0.8em;
+            color: #888;
+            border-left: 3px solid #d46b6b;
+        }
+        .conv-note strong {
+            color: #d46b6b;
+        }
+        @media (max-width: 700px) {
+            .conv-row { flex-direction: column; align-items: stretch; }
+            .conv-row button { align-self: center; width: auto; min-width: 120px; }
+            .conv-result { text-align: center; }
+        }
     </style>
 </head>
 <body>
@@ -112,6 +197,26 @@
             <div id="errDesc" class="desc">This NTSTATUS code was not found in the database.</div>
         </div>
 
+        <!-- HRESULT CONVERTER PANEL -->
+        <div class="converter-panel">
+            <h3>NTSTATUS ↔ HRESULT Converter</h3>
+            <div class="conv-row">
+                <input type="text" id="ntInput" placeholder="NTSTATUS (e.g., 0xC000022A or -1073741270)">
+                <button onclick="convertNTtoHR()">→ HRESULT</button>
+                <span id="hresultResult" class="conv-result">—</span>
+            </div>
+            <div class="conv-row">
+                <input type="text" id="hrInput" placeholder="HRESULT (e.g., 0x80071392 or -2147019886)">
+                <button onclick="convertHRtoNT()">→ NTSTATUS</button>
+                <span id="ntResult" class="conv-result">—</span>
+            </div>
+            <div class="conv-note">
+                <strong>ℹ️ Note:</strong> Direct conversion (NTSTATUS | 0x10000000) gives HRESULT in FACILITY_NT range (0xDxxxxxxx).<br>
+                Some NTSTATUS codes map to Win32 errors first, then to HRESULT in FACILITY_WIN32 range (0x8xxxxxxx).<br>
+                <strong>Example:</strong> STATUS_DUPLICATE_OBJECTID (0xC000022A) → Direct HR: 0xD000022A, Win32 HR: 0x80071392
+            </div>
+        </div>
+
         <div class="counter">Database contains <span id="dbCount">0</span> NT status codes</div>
         <div class="loading" id="loadingMsg">Loading database...</div>
         <div class="share-link" id="shareLink"></div>
@@ -121,6 +226,74 @@
     <script>
         let databaseLoaded = false;
         let currentFound = null;
+        
+        // ========== HRESULT CONVERSION FUNCTIONS ==========
+        const FACILITY_NT_BIT = 0x10000000;
+        
+        function normalizeToInt(value) {
+            if (!value) return NaN;
+            let str = value.toString().trim().toLowerCase();
+            if (str.startsWith('0x')) {
+                return parseInt(str, 16);
+            }
+            return parseInt(str, 10);
+        }
+        
+        function formatHex(value) {
+            return '0x' + (value >>> 0).toString(16).toUpperCase().padStart(8, '0');
+        }
+        
+        function formatSigned(value) {
+            let unsigned = value >>> 0;
+            if (unsigned > 0x7FFFFFFF) {
+                return unsigned - 0x100000000;
+            }
+            return unsigned;
+        }
+        
+        function convertNTtoHR() {
+            const input = document.getElementById('ntInput').value;
+            if (!input) {
+                document.getElementById('hresultResult').innerHTML = '❌ Enter NTSTATUS value';
+                return;
+            }
+            
+            let nt = normalizeToInt(input);
+            if (isNaN(nt)) {
+                document.getElementById('hresultResult').innerHTML = '❌ Invalid number format';
+                return;
+            }
+            
+            let hrDirect = nt | FACILITY_NT_BIT;
+            let hrUnsigned = hrDirect >>> 0;
+            let hrSigned = hrUnsigned > 0x7FFFFFFF ? hrUnsigned - 0x100000000 : hrUnsigned;
+            
+            document.getElementById('hresultResult').innerHTML = 
+                `Direct: ${formatHex(hrDirect)} (${hrSigned})<br>
+                 ⚠️ For correct Win32 HRESULT, use RtlNtStatusToDosError() first`;
+        }
+        
+        function convertHRtoNT() {
+            const input = document.getElementById('hrInput').value;
+            if (!input) {
+                document.getElementById('ntResult').innerHTML = '❌ Enter HRESULT value';
+                return;
+            }
+            
+            let hr = normalizeToInt(input);
+            if (isNaN(hr)) {
+                document.getElementById('ntResult').innerHTML = '❌ Invalid number format';
+                return;
+            }
+            
+            let nt = hr & ~FACILITY_NT_BIT;
+            let ntSigned = nt > 0x7FFFFFFF ? nt - 0x100000000 : nt;
+            
+            document.getElementById('ntResult').innerHTML = 
+                `${formatHex(nt)} (${ntSigned})<br>
+                 ℹ️ This extracts NTSTATUS by removing FACILITY_NT_BIT`;
+        }
+        // ==================================================
         
         function normalizeInput(val) {
             val = val.trim().toLowerCase();
@@ -236,13 +409,11 @@
             }
         }
 
-        // Get URL parameter
         function getUrlParameter(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         }
 
-        // Handle initial load with URL parameter
         function handleInitialLoad() {
             const codeParam = getUrlParameter('code');
             if (codeParam) {
@@ -251,21 +422,18 @@
             }
         }
 
-        // Wait for database to load
         function waitForDatabase() {
             if (typeof ntData !== 'undefined') {
                 databaseLoaded = true;
                 document.getElementById('dbCount').innerText = ntData.length;
                 document.getElementById('loadingMsg').style.display = 'none';
                 
-                // Add event listeners
                 const input = document.getElementById('statusInput');
                 input.addEventListener('input', () => checkStatus());
                 input.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') checkStatus();
                 });
                 
-                // Handle browser back/forward navigation
                 window.addEventListener('popstate', function() {
                     const codeParam = getUrlParameter('code');
                     if (codeParam) {
@@ -283,7 +451,6 @@
                 setTimeout(waitForDatabase, 100);
             }
         }
-        
         waitForDatabase();
     </script>
 </body>
