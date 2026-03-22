@@ -42,6 +42,32 @@ public static extern uint NtCreateThreadEx(
         THREAD_CREATE_FLAGS_HIDE_FROM_DEBUGGER = 0x00000004;</pre>
     </div>
 
+    <div style="position: relative; margin-top: 30px;">
+    <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Possible NTSTATUS Return Codes:</p>
+    <pre id="ntstatus_codes" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f38ba8; font-size: 14px;">
+0x00000000 - STATUS_SUCCESS - Operation completed successfully
+   [Link](NTStatusFAQ.html?code=0x00000000)
+0xC0000001 - STATUS_UNSUCCESSFUL - Operation failed for unspecified reason
+   [Link](NTStatusFAQ.html?code=0xC0000001)
+0xC0000022 - STATUS_ACCESS_DENIED - SeDebugPrivilege missing or access denied
+   [Link](NTStatusFAQ.html?code=0xC0000022)
+0xC0000005 - STATUS_ACCESS_VIOLATION - Invalid memory access (read/write/execute)
+   [Link](NTStatusFAQ.html?code=0xC0000005)
+0x80000001 - STATUS_GUARD_PAGE_VIOLATION - Guard page violation
+   [Link](NTStatusFAQ.html?code=0x80000001)
+0x80000002 - STATUS_DATATYPE_MISALIGNMENT - Data misalignment error
+   [Link](NTStatusFAQ.html?code=0x80000002)
+0x80000003 - STATUS_BREAKPOINT - Breakpoint reached (debugger)
+   [Link](NTStatusFAQ.html?code=0x80000003)
+0x80000004 - STATUS_SINGLE_STEP - Single-step executed (debugger)
+   [Link](NTStatusFAQ.html?code=0x80000004)
+0xC000001D - STATUS_ILLEGAL_INSTRUCTION - Illegal instruction executed
+   [Link](NTStatusFAQ.html?code=0xC000001D)
+0xC0000002 - STATUS_NOT_IMPLEMENTED - Function not implemented
+   [Link](NTStatusFAQ.html?code=0xC0000002)
+    </pre>
+</div>
+
     <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
         <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
         <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">Using this function for code injection into system processes requires <b>SeDebugPrivilege</b>. Incorrectly filling the <b>PS_ATTRIBUTE_LIST</b> will immediately crash the calling process.</p>
