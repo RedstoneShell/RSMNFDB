@@ -305,11 +305,6 @@ const ntData = [
 { "code": "0xC000005E", "name": "STATUS_LPC_UNKNOWN_MESSAGE_TYPE", "desc": "An unknown message type was passed to the LPC port." },
 { "code": "0xC000005F", "name": "STATUS_LPC_REPLY_LOST", "desc": "The LPC reply message was lost (target thread may have terminated)." },
 { "code": "0xC0000060", "name": "STATUS_LPC_REPLY_MISMATCH", "desc": "The LPC reply does not match the pending request." },
-Це найважливіший розділ для будь-якого системного розробника. Діапазон 0xC0000000 – 0xC0000FFF містить "фундаментальні" помилки ядра, пам'яті та взаємодії процесів (LPC).
-
-Ось порція кодів, яких не вистачало у твоєму списку, щоб закрити прогалини в цьому критичному блоці.
-
-💀 Системні та Процесні помилки (0xC0000061 - 0xC0000099)
 { "code": "0xC0000061", "name": "STATUS_PRIVILEGE_NOT_HELD", "desc": "A required privilege is not held by the client (Check security token)." },
 { "code": "0xC0000062", "name": "STATUS_INVALID_ACCOUNT_NAME", "desc": "The account name is not valid or incorrectly formatted." },
 { "code": "0xC0000063", "name": "STATUS_USER_EXISTS", "desc": "The specified user already exists in the security database." },
