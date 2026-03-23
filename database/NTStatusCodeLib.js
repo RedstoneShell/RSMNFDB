@@ -877,7 +877,8 @@ const ntData = [
 { "code": "0xC000018A", "name": "STATUS_FILE_DELETED", "desc": "The file cannot be accessed because it has been marked for deletion." },
 { "code": "0xC000018B", "name": "STATUS_FILE_RENAMED", "desc": "The file handle is no longer valid because the file has been renamed." },
 
-// VSS Codes (0xC004000B-C0040FF)
+// VSS Codes (0xC0040000-C0040FF)
+{ "code": "0xC0040005", "name": "STATUS_VSS_VOLSNAP_DEVICE_CONTROL_FAILED", "desc": "The IOCTL sent to the volsnap.sys driver failed. Communication between the user-mode API and kernel driver is broken." },
 { "code": "0xC004000B", "name": "STATUS_VSS_FILTER_NOT_FOUND", "desc": "The VSS filter driver was not found on the specified volume storage stack." },
 { "code": "0xC004000C", "name": "STATUS_VSS_VOLUME_NOT_NTFS", "desc": "The operation is only supported on NTFS formatted volumes." },
 { "code": "0xC004000D", "name": "STATUS_VSS_VOLUME_DEDUP_NOT_SUPPORTED", "desc": "VSS cannot create a snapshot on a volume with active Data Deduplication." },
