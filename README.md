@@ -18,6 +18,53 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
 **System calls**: Names, functions, examples (C#), structures
 **Is a new project, but can be at high**
 
+<div style="
+    background: linear-gradient(135deg, #1e1e2e 0%, #313244 100%);
+    border: 2px solid #fab387;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    max-width: 800px;
+    margin: 30px auto;
+    box-shadow: 0 0 20px rgba(250, 179, 135, 0.2);
+    position: relative;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+">
+    <div style="
+        background: #fab387;
+        min-width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        box-shadow: 0 0 15px rgba(250, 179, 135, 0.5);
+    ">⚙️</div>
+    <div>
+        <div style="color: #fab387; font-size: 10px; letter-spacing: 2px; font-weight: bold;">ACHIEVEMENT UNLOCKED</div>
+        <div style="color: #cdd6f4; font-size: 18px; font-weight: bold; margin: 4px 0;">The DCI Legend: 30 Years of Silence Broken</div>
+        <div style="color: #a6adc8; font-size: 13px; line-height: 1.4;">
+            Successfully decompiled and documented the entire legacy of <b>dciman32.dll</b> (1995-2026). 
+            First public mapping of 0xFFFFFFXX error codes.
+        </div>
+    </div>
+    <div style="
+        position: absolute;
+        right: 15px;
+        top: 15px;
+        background: rgba(166, 227, 161, 0.1);
+        color: #a6e3a1;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 11px;
+    ">+2026 XP</div>
+</div>
+
 ## But why?
 <div style="text-align: center; margin-top: 40px; padding-bottom: 20px;">
     <a href="https://uk.wikipedia.org/wiki/RSMNFDB" target="_blank" style="
