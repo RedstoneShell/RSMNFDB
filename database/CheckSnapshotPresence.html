@@ -1,0 +1,69 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 900px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">CheckSnapshotPresence</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">UNDOCUMENTED</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">WIN 7 / NT 6.1</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">ifsutilx.dll</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> The CheckSnapshotPresence function verifies the current status and existence of a previously created volume shadow copy. It acts as a lightweight validation routine by querying the volsnap.sys driver via the internal IVssBackupComponents::GetSnapshotProperties method.
+
+This is essential for long-running operations to ensure the snapshot has not been automatically deleted by the system (e.g., due to storage limits or provider timeouts).
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">C# P/Invoke Structure:</p>
+        <button onclick="copyCode('code_cs')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_cs" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
+      [DllImport("ifsutilx.dll", CallingConvention = CallingConvention.FastCall)]
+      public static extern bool CheckSnapshotPresence(IntPtr snapshotData);</pre>
+    </div>
+
+    <div style="margin-bottom: 15px; color: #a6adc8; font-size: 14px;">
+    <p style="margin-bottom: 5px; font-weight: bold; color: #89b4fa;">Parameters:</p>
+    <ul style="margin-top: 5px; padding-left: 20px;">
+        <li><code style="color: #f9e2af;">snapshotData (IntPtr)</code>: A pointer to the <code>_SNAPSHOT_DATA</code> structure returned by <code>CreateVolumeSnapshot</code>.</li>
+    </ul>
+    <p style="margin-top: 10px; font-weight: bold; color: #89b4fa;">Return Value:</p>
+    <p style="margin-left: 10px;">Returns <code style="color: #a6e3a1;">true</code> if the shadow copy device is still registered and active in the Object Manager. Returns <code style="color: #f38ba8;">false</code> if the snapshot was deleted, the pointer is corrupt, or the VSS session has timed out.</p>
+    </div>
+
+    <div style="margin-top: 20px;">
+<p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Possible NTSTATUS Codes:</p>
+<pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f38ba8; font-size: 14px;">
+0x00000000 - STATUS_SUCCESS - The snapshot is present and the metadata matches the current system state.<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0x00000000" style="color:#89b4fa;">[0x00000000]</a>
+0xC0000005 - STATUS_ACCESS_VIOLATION - Invalid pointer provided. The memory block at snapshotData could not be read.<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000005" style="color:#89b4fa;">[0xC0000005]</a>
+0xC0040001 - STATUS_VSS_VOLSNAP_NOT_FOUND - The specific snapshot ID was not found in the volsnap.sys database (Snapshot was likely deleted).<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0040001" style="color:#89b4fa;">[0xC0040001]</a>
+0xC000000D - STATUS_INVALID_PARAMETER - The Magic number in the structure is not 0x1, indicating an invalid or uninitialized SNAPSHOT_DATA block.<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC000000D" style="color:#89b4fa;">[0xC000000D]</a>
+</pre>
+</div>
+
+<div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+<p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+<p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+<b>Performance Impact:</b> Avoid calling this function in a tight loop. Each check involves an IOCTL call to the kernel and potentially an RPC call to the VSS service, which can introduce latency.
+
+
+
+<b>False Positives:</b> A <code>true</code> result only guarantees that the snapshot existed at the moment of the call. In high-load scenarios, the snapshot could be evicted immediately after the function returns.
+
+
+
+<b>Data Integrity:</b> This function does not check the integrity of the data <i>within</i> the snapshot; it only verifies that the volume device object (e.g., <code>\Device\HarddiskVolumeShadowCopyX</code>) is still registered in the object manager.
+</p>
+</div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
