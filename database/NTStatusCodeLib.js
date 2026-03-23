@@ -876,8 +876,20 @@ const ntData = [
 { "code": "0xC0000189", "name": "STATUS_NO_PAGEFILE", "desc": "No pagefile configured." },
 { "code": "0xC000018A", "name": "STATUS_FILE_DELETED", "desc": "The file cannot be accessed because it has been marked for deletion." },
 { "code": "0xC000018B", "name": "STATUS_FILE_RENAMED", "desc": "The file handle is no longer valid because the file has been renamed." },
- 
-  // NOT-STD NTStatus (0xF0000001-FFFFFF00)
+
+// VSS Codes (0xC004000B-C0040FF)
+{ "code": "0xC004000B", "name": "STATUS_VSS_FILTER_NOT_FOUND", "desc": "The VSS filter driver was not found on the specified volume storage stack." },
+{ "code": "0xC004000C", "name": "STATUS_VSS_VOLUME_NOT_NTFS", "desc": "The operation is only supported on NTFS formatted volumes." },
+{ "code": "0xC004000D", "name": "STATUS_VSS_VOLUME_DEDUP_NOT_SUPPORTED", "desc": "VSS cannot create a snapshot on a volume with active Data Deduplication." },
+{ "code": "0xC004000E", "name": "STATUS_VSS_VOLUME_WRITE_PROTECTED", "desc": "The volume is write-protected; VSS cannot initialize the diff area." },
+{ "code": "0xC004000F", "name": "STATUS_VSS_DIFF_AREA_EXHAUSTED", "desc": "The shadow copy storage area (diff area) is full and cannot expand." },
+{ "code": "0xC0040010", "name": "STATUS_VSS_SNAPSHOT_NOT_READY", "desc": "The snapshot is in the process of being created and is not yet ready for I/O." },
+{ "code": "0xC0040011", "name": "STATUS_VSS_INVALID_SNAPSHOT_ORDER", "desc": "The snapshot deletion or commit order is invalid for the current set." },
+{ "code": "0xC0040012", "name": "STATUS_VSS_PROVIDER_VETO", "desc": "The VSS provider vetoed the operation due to an internal resource conflict." },
+{ "code": "0xC0040013", "name": "STATUS_VSS_SHADOW_COPY_QUOTA_EXCEEDED", "desc": "The maximum quota for shadow copy storage has been reached." },
+{ "code": "0xC004001E", "name": "STATUS_VSS_CANNOT_REVERT", "desc": "The volume cannot be reverted to this snapshot (e.g., hardware mismatch)." },
+  
+ // NOT-STD NTStatus (0xF0000001-FFFFFF00)
   { "code": "0xF0000001", "name": "STATUS_VIRTUAL_DISK_LIMITATION", "desc": "An operation failed because the virtual disk reached a limit (size, sectors, or capacity)." },
   { "code": "0xF0000002", "name": "STATUS_VIRTUAL_DISK_NOT_OPEN", "desc": "The virtual disk handle is not opened; operations cannot be performed without an open handle." },
   { "code": "0xF0000003", "name": "STATUS_VHD_PARENT_VHD_ACCESS_DENIED", "desc": "Access denied to the parent of a virtual hard disk (VHD); possibly due to insufficient permissions." },
