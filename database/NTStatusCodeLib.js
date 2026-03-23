@@ -806,6 +806,18 @@ const ntData = [
 { "code": "0xC0010022", "name": "STATUS_RPC_PROTOCOL_ERROR", "desc": "RPC protocol error." },
 { "code": "0xC0010023", "name": "STATUS_RPC_UNSUPPORTED_TRANS_SYN", "desc": "RPC unsupported transfer syntax." },
 
+// Log codes
+{ "code": "0xC01A0001", "name": "STATUS_LOG_CORRUPTION_DETECTED", "desc": "The Common Log File System (CLFS) log is corrupt and cannot be read." },
+{ "code": "0xC01A0002", "name": "STATUS_LOG_FULL", "desc": "The CLFS log is full and no more data can be written." },
+{ "code": "0xC01A0003", "name": "STATUS_LOG_POLICY_ALREADY_INSTALLED", "desc": "A log policy of the same type is already installed on the log." },
+{ "code": "0xC01A0004", "name": "STATUS_LOG_POLICY_NOT_INSTALLED", "desc": "The requested log policy is not installed on the log." },
+{ "code": "0xC01A0005", "name": "STATUS_LOG_POLICY_INVALID", "desc": "The provided log policy is invalid or improperly formatted." },
+{ "code": "0xC01A0006", "name": "STATUS_LOG_POLICY_CONFLICT", "desc": "The log policy conflicts with an existing policy on the same log." },
+{ "code": "0xC01A0007", "name": "STATUS_LOG_PINNED_ARCHIVE_TAIL", "desc": "The log tail is pinned by an archive; it cannot be recycled." },
+{ "code": "0xC01A0008", "name": "STATUS_LOG_RECORD_NONEXISTENT", "desc": "The requested log record does not exist in the CLFS log." },
+{ "code": "0xC01A0009", "name": "STATUS_LOG_RECORDS_RESERVED_INVALID", "desc": "The number of reserved log records is invalid or negative." },
+{ "code": "0xC01A000A", "name": "STATUS_LOG_SPACE_RESERVED_INVALID", "desc": "The amount of reserved log space is invalid for this operation." },
+ 
   // ADDITIONAL COMMON CODES
 { "code": "0xC00000A0", "name": "STATUS_DEVICE_CONFIGURATION_ERROR", "desc": "Device configuration error." },
 { "code": "0xC00000A1", "name": "STATUS_IO_TIMEOUT", "desc": "I/O operation timed out." },
