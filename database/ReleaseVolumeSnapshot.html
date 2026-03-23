@@ -1,0 +1,57 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 900px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">ReleaseVolumeSnapshot</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">UNDOCUMENTED</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">WIN 7 / NT 6.1</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">ifsutilx.dll</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> The ReleaseVolumeSnapshot function is a crucial cleanup routine within ifsutilx.dll. It is responsible for deallocating the internal SNAPSHOT_DATA structure and signaling the Volume Shadow Copy Service (VSS) to release the associated hardware or software provider resources.
+When called, the function invokes the IVssBackupComponents::DeleteSnapshots method (or its internal equivalent) and performs a mandatory memory cleanup using the standard C runtime free() function..
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">C# P/Invoke Structure:</p>
+        <button onclick="copyCode('code_cs')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_cs" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
+[DllImport("ifsutilx.dll", CallingConvention = CallingConvention.FastCall)]
+public static extern bool ReleaseVolumeSnapshot(IntPtr snapshotData);</pre>
+    </div>
+
+  <div style="margin-top: 20px;">
+    <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Possible NTSTATUS Codes:</p>
+    <pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f38ba8; font-size: 14px;">
+0x00000000 - STATUS_SUCCESS - The shadow copy resources were successfully released and memory was freed.<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0x00000000" style="color:#89b4fa;">[0x00000000]</a>
+0xC0000005 - STATUS_ACCESS_VIOLATION - The snapshotData pointer is null or points to an invalid/already freed memory block.<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000005" style="color:#89b4fa;">[0xC0000005]</a>
+0xC0000008 - STATUS_INVALID_HANDLE - The internal VSS interface handle within the structure is corrupt or closed by another process.<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000008" style="color:#89b4fa;">[0xC0000008]</a>
+0xC0000022 - STATUS_ACCESS_DENIED - Caller lacks the necessary privileges to terminate the VSS provider session.<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000022" style="color:#89b4fa;">[0xC0000022]</a>
+0xC0040005 - STATUS_VSS_VOLSNAP_DEVICE_CONTROL_FAILED - Failed to send the 'Delete' IOCTL to volsnap.sys. The shadow copy might remain orphaned.<a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0040005" style="color:#89b4fa;">[0xC0040005]</a>
+    </pre>
+</div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+    <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+    <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+        <b>Dangling Pointers:</b> This function calls <code>free()</code> on the <code>snapshotData</code> block internally. Ensure that your C# <code>IntPtr</code> is set to <code>IntPtr.Zero</code> immediately after calling this to avoid <b>Use-After-Free</b> vulnerabilities.
+        <br><br>
+        <b>Orphaned Snapshots:</b> If the process crashes before calling <code>ReleaseVolumeSnapshot</code>, the shadow copy may persist in the system until the next reboot or until manually deleted via <code>vssadmin delete shadows</code>. This can lead to <b>Storage Exhaustion</b>.
+        <br><br>
+        <b>FastCall Convention:</b> Note that <code>ifsutilx.dll</code> uses <code>__fastcall</code> (register-based). In C# P/Invoke, ensure <code>CallingConvention.FastCall</code> is explicitly set, otherwise, the stack will be corrupted leading to a <b>PInvokeStackImbalance</b> or <b>Access Violation</b>.
+        <br><br>
+        <b>VSS Infrastructure:</b> Releasing a snapshot triggers a sequence of RPC calls to the VSS Service. If the service is stopped or crashing, this function may hang for up to 30 seconds before returning a failure status.
+    </p>
+    </div>
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
