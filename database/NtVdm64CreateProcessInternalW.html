@@ -1,0 +1,96 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 900px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">NtVdm64CreateProcessInternalW</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">UNDOCUMENTED</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">WIN 7 / NT 6.1</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">ntvdm64.dll</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> Core function that launches 16-bit executables (NE format) on 64-bit Windows through NTVDM. Performs AppCompat checks, resolves the full path, queries the registry for application-specific settings (CommandLine, ProductName, InternalName, ProductVersion, MappedExeName), expands environment variables, updates the __PROCESS_HISTORY tracking variable, and finally calls CreateProcessInternalW in kernel32.dll to spawn the NTVDM process. This is the primary entry point for all 16-bit process creation on x64 systems.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">C# P/Invoke Structure:</p>
+        <button onclick="copyCode('code_cs_1')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_cs_1" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
+[DllImport("ntvdm64.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+public static extern int NtVdm64CreateProcessInternalW(
+    IntPtr hProcess,                // Process handle (usually NULL)
+    string lpCommandLine,           // Command line to execute
+    IntPtr lpProcessAttributes,     // Process security attributes
+    IntPtr lpThreadAttributes,      // Thread security attributes
+    bool bInheritHandles,           // Inherit handles flag
+    uint dwCreationFlags,           // Creation flags
+    IntPtr lpEnvironment,           // Environment block
+    string lpCurrentDirectory,      // Current directory
+    IntPtr lpStartupInfo,           // STARTUPINFO structure
+    IntPtr lpProcessInformation,    // PROCESS_INFORMATION structure
+    IntPtr lpUnknown1,              // Internal VDM parameters
+    IntPtr lpUnknown2               // Internal VDM context
+);</pre>
+    </div>
+
+    <div style="position: relative; margin-top: 25px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Associated Structures:</p>
+        <button onclick="copyCode('code_struct_1')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_struct_1" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 14px;">
+[StructLayout(LayoutKind.Sequential)]
+public struct VDM_PARAMETERS {
+    public uint Unknown0;           // +0x00 - Flags or mode
+    public IntPtr hVdmProcess;      // +0x04 - Handle to NTVDM process
+    public uint VdmProcessId;       // +0x08 - NTVDM process ID
+    public IntPtr VdmThreadHandle;  // +0x0C - Thread handle
+    public uint VdmThreadId;        // +0x10 - Thread ID
+    public IntPtr VdmConsoleHandle; // +0x14 - Console handle
+    public uint ConsoleId;          // +0x18 - Console session ID
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct VDM_CONTEXT {
+    public uint Size;               // +0x00 - Size of structure
+    public uint Flags;              // +0x04 - Context flags
+    public IntPtr pVdmEnvironment;  // +0x08 - Environment block
+    public IntPtr pVdmCommandLine;  // +0x0C - Command line
+    public uint VdmStackSize;       // +0x10 - Stack size
+    public uint VdmHeapSize;        // +0x14 - Heap size
+}</pre>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Return Codes (NTSTATUS):</p>
+        <pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f38ba8; font-size: 14px;">
+0x00000000 - STATUS_SUCCESS - Process created successfully
+0xC0000002 - STATUS_NOT_IMPLEMENTED - NTVDM not available on this system
+0xC0000022 - STATUS_ACCESS_DENIED - Insufficient privileges
+0xC0000135 - STATUS_DLL_NOT_FOUND - Required 16-bit subsystem missing
+0xC0000142 - STATUS_DLL_INIT_FAILED - NTVDM initialization failed
+0xC00000FD - STATUS_STACK_OVERFLOW - Stack overflow in NTVDM
+0xC0000005 - STATUS_ACCESS_VIOLATION - Memory access violation
+0xC000009A - STATUS_INSUFFICIENT_RESOURCES - Out of memory for NTVDM
+0x80070002 - ERROR_FILE_NOT_FOUND - Executable not found
+0x80070005 - ERROR_ACCESS_DENIED - Access denied to executable
+0x80070057 - ERROR_INVALID_PARAMETER - Invalid parameter passed
+0x8007007A - ERROR_INSUFFICIENT_BUFFER - Buffer too small
+0x800700D8 - ERROR_NO_MORE_ITEMS - No more registry entries
+    <a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0x00000000" style="color:#89b4fa;">[0x00000000]</a>
+    <a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000002" style="color:#89b4fa;">[0xC0000002]</a>
+    <a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000022" style="color:#89b4fa;">[0xC0000022]</a>
+    <a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000135" style="color:#89b4fa;">[0xC0000135]</a>
+    <a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000142" style="color:#89b4fa;">[0xC0000142]</a>
+    <a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC00000FD" style="color:#89b4fa;">[0xC00000FD]</a>
+    <a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC0000005" style="color:#89b4fa;">[0xC0000005]</a>
+    <a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xC000009A" style="color:#89b4fa;">[0xC000009A]</a>
+        </pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">This function is only available on 32-bit Windows and 64-bit Windows with NTVDM enabled (deprecated since Windows 10). On 64-bit Windows without NTVDM, it will display an error message box and fail. Requires SeDebugPrivilege for debugging 16-bit processes. Modifying the registry keys under HKLM\Software\Microsoft\Windows NT\CurrentVersion\NtVdm64 can cause system instability.</p>
+    </div>
+
+</div>
