@@ -1,0 +1,126 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 900px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">NtVdm64RaiseInvalid16BitError</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">UNDOCUMENTED</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">WIN 7 / NT 6.1</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">ntvdm64.dll</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> Displays an error dialog when a 16-bit application is launched on a 64-bit Windows system that lacks the NTVDM subsystem. This function checks the process error mode (via RtlGetThreadErrorMode) and only shows the dialog if error messages are enabled. It loads the error message from the ntvdm64.dll resources (message ID 0x40000455) and displays it using MessageBoxW. This is the function that produces the infamous "This program requires a 16-bit subsystem which is not present" error.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">C# P/Invoke Structure:</p>
+        <button onclick="copyCode('code_cs_2')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_cs_2" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
+[DllImport("ntvdm64.dll", SetLastError = true)]
+public static extern void NtVdm64RaiseInvalid16BitError(
+    IntPtr pExceptionRecord      // Exception record (optional)
+);</pre>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Internal Execution Flow:</p>
+        <pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 14px;">
+╔══════════════════════════════════════════════════════════════════════════════════════════╗
+║                    NtVdm64RaiseInvalid16BitError - FULL DISASSEMBLY FLOW                ║
+╚══════════════════════════════════════════════════════════════════════════════════════════╝
+
+[0x10001943] PROLOGUE
+├── __SEH_prolog4_GS(0x10003158, 544) - allocate 544 bytes stack frame
+├── Save checksum (g_ptr10004000) to local variable
+├── Save exception record pointer to local
+
+[0x10001955] CHECK PROCESS MODE
+├── Call fn1000190d() - get current process mode
+│   ├── NtQueryInformationProcess(-1, 12, &mode, 4, NULL)
+│   │   └── ProcessInformationClass = 12 (ProcessWow64Information)
+│   └── Returns: 1 if WOW64 process, 0 if native
+├── If process is WOW64 (bit 0 set):
+│   └── Jump to [0x10001A24] → return
+
+[0x1000196A] CHECK ERROR MODE
+├── RtlGetThreadErrorMode() - get current thread error mode
+│   ├── Bits:
+│   │   ├── 0x01 - SEM_FAILCRITICALERRORS
+│   │   ├── 0x02 - SEM_NOGPFAULTERRORBOX
+│   │   ├── 0x04 - SEM_NOALIGNMENTFAULTEXCEPT
+│   │   ├── 0x08 - SEM_NOOPENFILEERRORBOX
+│   │   └── 0x10 - SEM_FAILCRITICALERRORS (duplicate)
+│   └── If bit 0x10 (SEM_FAILCRITICALERRORS) is set:
+│       └── Jump to [0x10001A24] → return
+
+[0x100019A8] GET EXCEPTION ADDRESS
+├── Save exception address from record to local
+├── Initialize buffer (format string: "\\StringFileInfo\\%04X%04X\\%ws")
+
+[0x100019B9] LOAD ERROR MESSAGE
+├── GetModuleHandleW(L"ntvdm64.dll") - get own module handle
+├── If handle == NULL → jump to [0x10001A24]
+
+[0x100019C7] FORMAT ERROR MESSAGE
+├── FormatMessageW(
+│   dwFlags = 0x2900,
+│   lpSource = hModule,
+│   dwMessageId = 0x40000455,  // 16-bit subsystem not present
+│   dwLanguageId = 0,
+│   lpBuffer = &buffer,
+│   nSize = 0,
+│   Arguments = &exception_address
+│ )
+├── If FormatMessageW returns 0 → jump to [0x10001A24]
+
+[0x100019F5] LOAD DIALOG TITLE
+├── LoadStringW(
+│   hModule = hModule,
+│   uID = 100,
+│   lpBuffer = &title_buffer,
+│   cchBufferMax = 256
+│ )
+├── If LoadStringW succeeds:
+│   └── MessageBoxW(
+│       hWnd = NULL,
+│       lpText = formatted_error_message,
+│       lpCaption = title_buffer,
+│       uType = 0
+│     )
+
+[0x10001A18] CLEANUP
+├── LocalFree(error_message_buffer)
+└── Return to caller
+
+[0x10001A24] EPILOGUE
+└── __SEH_epilog4 - restore stack and return</pre>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Error Message Content:</p>
+        <pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f38ba8; font-size: 14px;">
+Resource ID 0x40000455 (English):
+    "NTVDM encountered a system error.\n\n"
+    "The specified program requires a 16-bit subsystem which is not present.\n\n"
+    "Do you want to continue? (Selecting No will terminate the program.)"
+
+Resource ID 100 (Dialog Title):
+    "16-bit Application"</pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">This function is called automatically when a 16-bit application is launched on a system without NTVDM. On Windows 10 64-bit and Windows 11 64-bit, NTVDM is not installed by default. This function will display a dialog box and block the process creation. The error can be suppressed by calling SetErrorMode(SEM_FAILCRITICALERRORS) before launching the 16-bit application.</p>
+    </div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
