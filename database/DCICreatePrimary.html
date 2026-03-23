@@ -1,0 +1,68 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 900px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">DCICreatePrimary</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">UNDOCUMENTED</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">WIN 7 / NT 6.1+</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">dciman32.dll</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> Creates a primary DCI surface for DirectDraw operations. Allocates a 0xB78-byte structure and initializes it using undocumented GDI functions (GdiEntry1, GdiEntry2, GdiEntry10). Returns a pointer to the DCISURFACE structure (offset +0xB20) in the output parameter.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">C# P/Invoke Structure:</p>
+        <button onclick="copyCode('code_cs_3')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_cs_3" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
+[DllImport("dciman32.dll", SetLastError = true)]
+public static extern int DCICreatePrimary(IntPtr hdc, out IntPtr ppSurfaceInfo);</pre>
+    </div>
+
+    <div style="position: relative; margin-top: 25px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Associated Structure (DCISURFACE):</p>
+        <button onclick="copyCode('code_struct_3')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_struct_3" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 14px;">
+[StructLayout(LayoutKind.Sequential)]
+public struct DCISURFACE {
+    public uint dwSize;        // 0x00 = 88
+    public uint dwFlags;       // 0x04 = 16
+    public uint dwAlignment;   // 0x08
+    public uint dwWidth;       // 0x0C
+    public uint dwHeight;      // 0x10
+    public uint dwPitch;       // 0x14
+    public uint dwX;           // 0x18
+    public uint dwY;           // 0x1C
+    public uint dwFormat;      // 0x20
+    public uint dwReserved;    // 0x24
+    public IntPtr pBits;       // 0x28 - pointer to video memory
+}</pre>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Return Codes:</p>
+        <pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f38ba8; font-size: 14px;">
+0x00000000 - STATUS_SUCCESS - Surface created successfully
+0xFFFFFFFC - 0xFFFFFFFC - DDERR_INVALIDPARAMS (-4)
+0xFFFFFFF4 - 0xFFFFFFF4 - DDERR_OUTOFMEMORY (-12)
+    <a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0xFFFFFFFC" style="color:#89b4fa;">[0xFFFFFFFC]</a>
+        </pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">The returned surface must be destroyed with <code>DCIDestroy</code>. Memory leak occurs if not properly freed. Structure layout may differ across Windows versions.</p>
+    </div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
