@@ -1,0 +1,92 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 900px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">DllInstall</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">UNDOCUMENTED</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">WIN 7 / NT 6.1</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">ntvdm64.dll</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> Installation function for NTVDM registry entries. This function is called by `regsvr32` or during system installation to populate the registry with information about 16-bit applications that need special handling. It iterates through a hardcoded table of application entries (starting at 0x10001388) and registers each one under `HKLM\Software\Microsoft\Windows NT\CurrentVersion\NtVdm64`. Each entry contains the command line, product name, internal name, and product version for the 16-bit application.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">C# P/Invoke Structure:</p>
+        <button onclick="copyCode('code_cs_3')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_cs_3" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 14px;">
+[DllImport("ntvdm64.dll", CharSet = CharSet.Unicode)]
+public static extern int DllInstall(
+    bool bInstall,              // TRUE = install, FALSE = uninstall
+    string pszCmdLine           // Command line parameters (optional)
+);</pre>
+    </div>
+
+    <div style="position: relative; margin-top: 25px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Installation Table Structure (0x10001388):</p>
+        <button onclick="copyCode('code_struct_3')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_struct_3" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 14px;">
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+public struct VDM_APP_ENTRY {
+    public string ProductName;      // +0x00 - Application display name
+    public string ProductVersion;   // +0x04 - Version string
+    public string InternalName;     // +0x08 - Internal executable name
+    public string CommandLine;      // +0x0C - Command line to execute
+    public string Unknown;          // +0x10 - Possibly MappedExeName
+    public string Unknown2;         // +0x14 - Possibly additional parameters
+}
+
+// Known entries in the table (from decompilation):
+// Entry 1: INSTALLSHIELD5 related
+// Entry 2-8: Various InstallShield versions
+// Total entries: 8 (0xA8 bytes / 0x18 bytes per entry)</pre>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Registry Keys Created:</p>
+        <pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f38ba8; font-size: 14px;">
+HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NtVdm64
+├── [Application Subkey]
+│   ├── CommandLine (REG_SZ)     - Command line to execute
+│   ├── ProductName (REG_SZ)     - Display name
+│   ├── InternalName (REG_SZ)    - Internal executable name
+│   ├── ProductVersion (REG_SZ)  - Version string
+│   └── MappedExeName (REG_EXPAND_SZ) - Expanded executable path
+└── ... (multiple subkeys for different applications)
+
+Example entry for INSTALLSHIELD5:
+HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NtVdm64\INSTALLSHIELD5
+    CommandLine = "C:\Windows\SysWOW64\msiexec.exe /i setup.msi"
+    ProductName = "InstallShield Setup"
+    InternalName = "ISSetup.exe"
+    ProductVersion = "5.0.0.0"
+    MappedExeName = "%SystemRoot%\SysWOW64\msiexec.exe"</pre>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">Return Codes (HRESULT):</p>
+        <pre style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f38ba8; font-size: 14px;">
+0x00000000 - S_OK - Installation completed successfully
+0x80004005 - E_FAIL - Registry operation failed
+    <a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0x00000000" style="color:#89b4fa;">[0x00000000]</a>
+    <a href="https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=0x80004005" style="color:#89b4fa;">[0x80004005]</a>
+        </pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">This function requires administrator privileges to write to HKLM. It is typically called by `regsvr32 ntvdm64.dll` or during Windows installation. Modifying these registry entries can affect how 16-bit applications are launched. Incorrect entries can cause 16-bit applications to fail to start or run with wrong parameters. This function is not intended for direct use by applications.</p>
+    </div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
