@@ -52,17 +52,6 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
             First public mapping of 0xFFFFFFXX error codes.
         </div>
     </div>
-    <div style="
-        position: absolute;
-        right: 15px;
-        top: 15px;
-        background: rgba(166, 227, 161, 0.1);
-        color: #a6e3a1;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        font-size: 11px;
-    ">+2026 XP</div>
 </div>
 
 ## But why?
