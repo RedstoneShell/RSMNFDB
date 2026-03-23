@@ -659,6 +659,11 @@ const ntData = [
 { "code": "0xC000050D", "name": "STATUS_ACCESS_DENIED_BY_POLICY", "desc": "Access denied by policy." },
 { "code": "0xC000050E", "name": "STATUS_ACCESS_DENIED_BY_POLICY", "desc": "Access denied by policy." },
 { "code": "0xC000050F", "name": "STATUS_ACCESS_DENIED_BY_POLICY", "desc": "Access denied by policy." },
+{ "code": "0xC0040001", "name": "STATUS_VSS_VOLSNAP_NOT_FOUND", "desc": "The specific shadow copy ID or the volsnap driver instance was not found." },
+{ "code": "0xC0040007", "name": "STATUS_VSS_VOLUME_NOT_SUPPORTED", "desc": "The target volume does not support shadow copies (e.g., FAT32 or network shares)." },
+{ "code": "0xC0040008", "name": "STATUS_VSS_VOLUME_NOT_LOCAL", "desc": "VSS operation failed because the volume is not a local direct-attached storage device." },
+{ "code": "0xC0040009", "name": "STATUS_VSS_MAXIMUM_NUMBER_OF_VOLUMES_REACHED", "desc": "The limit for the number of shadow copies on this volume has been reached (Default: 64)." },
+{ "code": "0xC004000A", "name": "STATUS_VSS_FLUSH_WRITES_TIMEOUT", "desc": "The system timed out waiting to flush writes to the disk before freezing it for a snapshot." },
 
 // NTSTATUS CODES (0xC0000600 - 0xC0000FFF) - COMPLETE
 { "code": "0xC0000600", "name": "STATUS_DEVICE_REMOVED", "desc": "Device removed." },
@@ -729,6 +734,11 @@ const ntData = [
 { "code": "0xC0000827", "name": "STATUS_NDIS_PM_PROTOCOL_OFFLOAD_LIST_FULL", "desc": "NDIS protocol offload list full." },
 { "code": "0xC0000828", "name": "STATUS_NDIS_INDICATION_REQUIRED", "desc": "NDIS indication required." },
 { "code": "0xC0000829", "name": "STATUS_NDIS_OFFLOAD_POLICY", "desc": "NDIS offload policy." },
+{ "code": "0xC0000901", "name": "STATUS_ASSERTION_FAILED", "desc": "An internal consistency check failed within the DLL or kernel component." },
+{ "code": "0xC0000902", "name": "STATUS_VERIFIER_STOP", "desc": "Application Verifier detected memory corruption or invalid handle usage during execution." },
+{ "code": "0xC0000903", "name": "STATUS_CALLBACK_IS_NOT_REGISTERED", "desc": "The required extension callback for the snapshot operation was not properly registered." },
+{ "code": "0xC0000904", "name": "STATUS_INSUFFICIENT_NVRAM_RESOURCES", "desc": "Internal resources for persistent storage of snapshot metadata are exhausted." },
+{ "code": "0xC0000905", "name": "STATUS_INVALID_BUFFER_FOR_IOCTL", "desc": "The buffer passed to the device driver was too small or improperly aligned for the request." },
 
 // TPM ERRORS (0xC0001000+)
 { "code": "0xC0001000", "name": "STATUS_TPM_ERROR", "desc": "TPM (Trusted Platform Module) general error." },
