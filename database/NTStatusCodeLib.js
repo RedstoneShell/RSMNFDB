@@ -995,5 +995,42 @@ const ntData = [
   { "code": "0xFFFFFF0D", "name": "STATUS_INTERNAL_ERROR_13", "desc": "Reserved NTSTATUS code; used for internal debugging or fatal driver conditions." },
   { "code": "0xFFFFFF0E", "name": "STATUS_INTERNAL_ERROR_14", "desc": "Reserved code for non-public system or driver errors." },
   { "code": "0xFFFFFF0F", "name": "STATUS_INTERNAL_ERROR_15", "desc": "Internal NTSTATUS code; typically for debugging or assertions." },
-  { "code": "0xFFFFFF10", "name": "STATUS_INTERNAL_ERROR_16", "desc": "Reserved for customer-defined or system internal use." }
+  { "code": "0xFFFFFF10", "name": "STATUS_INTERNAL_ERROR_16", "desc": "Reserved for customer-defined or system internal use." },
+
+  // Unknown codes, founded by analysis a Windows 7 system libraries
+ { 
+    "code": "0xFFFFFFFC", 
+    "name": "DDERR_INVALIDPARAMS", 
+    "desc": "The function was called with invalid parameters (e.g., NULL pointer for HDC or invalid DCISURFACE structure). Common in dciman32 stubs in Windows 7." 
+  },
+  { 
+    "code": "0xFFFFFFF4", 
+    "name": "DDERR_OUTOFMEMORY", 
+    "desc": "DirectDraw or DCI was unable to allocate the required memory (specifically the 0xB78-byte internal structure) or video memory buffer." 
+  },
+  { 
+    "code": "0xFFFFFFE1", 
+    "name": "DDERR_UNSUPPORTED", 
+    "desc": "The display driver or the current hardware configuration does not support DCI/DirectDraw operations or the requested pixel format." 
+  },
+  { 
+    "code": "0xFFFFFF92", 
+    "name": "DDERR_SURFACELOST", 
+    "desc": "The DCI surface has been lost (e.g., due to Alt+Tab or a display mode change). Access via DCIBeginAccess is denied until the surface is restored." 
+  },
+  { 
+    "code": "0xFFFFFFD0", 
+    "name": "DDERR_WASSTILLDRAWING", 
+    "desc": "The previous blit or draw operation on this DCI surface is incomplete. DCIBeginAccess will return this if the hardware is busy." 
+  },
+  { 
+    "code": "0xFFFFFFE6", 
+    "name": "DDERR_GENERIC", 
+    "desc": "An unspecified error occurred within the DCI provider or GDI-kernel transition (GdiEntry). Often indicates a driver-level failure." 
+  },
+  { 
+    "code": "0xFFFFFFB6", 
+    "name": "DDERR_DCIALREADYINITIALIZED", 
+    "desc": "Attempted to open a DCI provider or create a primary surface when one is already active for the given Device Context." 
+  }
 ];
