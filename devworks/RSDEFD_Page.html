@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSDEFD - RedstoneShell DLL Every Format Decompiler</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0e1a 0%, #0f1322 100%);
+            font-family: 'Segoe UI', 'Fira Code', monospace;
+            padding: 40px 20px;
+            min-height: 100vh;
+            color: #cdd6f4;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .glitch {
+            font-size: 3.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #89b4fa, #cba6f7, #f38ba8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 4px;
+        }
+        .subtitle { color: #a6adc8; margin-top: 10px; font-size: 0.9rem; }
+        .dropzone {
+            background: rgba(30, 30, 46, 0.8);
+            border: 2px dashed #45475a;
+            border-radius: 20px;
+            padding: 50px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+        .dropzone:hover, .dropzone.drag-over { border-color: #89b4fa; background: rgba(137, 180, 250, 0.1); }
+        .dropzone-icon { font-size: 4rem; margin-bottom: 15px; }
+        .dropzone-text { font-size: 1.2rem; color: #bac2de; }
+        .dropzone-hint { font-size: 0.8rem; color: #6c7086; margin-top: 10px; }
+        .loader { display: none; text-align: center; padding: 40px; }
+        .loader-spinner {
+            width: 50px; height: 50px;
+            border: 3px solid #313244;
+            border-top-color: #89b4fa;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .results { display: none; }
+        .table-card {
+            background: #1e1e2e;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            border: 1px solid #313244;
+        }
+        .table-header {
+            background: linear-gradient(135deg, #181825, #1e1e2e);
+            padding: 16px 20px;
+            border-bottom: 1px solid #313244;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+        .table-icon { font-size: 1.5rem; }
+        .table-header h3 { font-size: 1.1rem; color: #89b4fa; margin: 0; }
+        .table-header .badge {
+            background: #313244;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #a6adc8;
+            margin-left: auto;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { text-align: left; padding: 12px 16px; background: #11111b; color: #cba6f7; border-bottom: 1px solid #313244; }
+        td { padding: 10px 16px; border-bottom: 1px solid #2a2a3a; color: #cdd6f4; font-family: 'Fira Code', monospace; font-size: 0.75rem; }
+        tr:hover td { background: rgba(137, 180, 250, 0.05); }
+        .forward-cell { color: #f9e2af; }
+        .function-name { color: #a6e3a1; }
+        .ordinal { color: #fab387; font-size: 0.75rem; }
+        .code-rva { color: #89b4fa; font-family: monospace; }
+        .code-bytes { color: #f9e2af; font-family: monospace; }
+        .code-instr { color: #a6e3a1; font-family: monospace; }
+        .stats-panel {
+            background: #11111b;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            border: 1px solid #313244;
+        }
+        .stat-card { text-align: center; padding: 12px; background: #1e1e2e; border-radius: 12px; }
+        .stat-value { font-size: 2rem; font-weight: 700; color: #89b4fa; }
+        .stat-label { font-size: 0.7rem; color: #6c7086; text-transform: uppercase; }
+        .btn-group { display: flex; gap: 12px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
+        .btn {
+            padding: 10px 24px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .btn-primary { background: linear-gradient(135deg, #89b4fa, #cba6f7); color: #11111b; }
+        .btn-secondary { background: #313244; color: #cdd6f4; }
+        .btn-secondary:hover { background: #45475a; }
+        .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #313244; color: #6c7086; font-size: 0.75rem; }
+        .search-box { margin-bottom: 20px; display: flex; gap: 10px; }
+        .search-input {
+            flex: 1;
+            background: #11111b;
+            border: 1px solid #313244;
+            border-radius: 30px;
+            padding: 10px 20px;
+            color: #cdd6f4;
+            outline: none;
+        }
+        .search-input:focus { border-color: #89b4fa; }
+        @media (max-width: 768px) {
+            .glitch { font-size: 1.8rem; }
+            table { font-size: 0.65rem; }
+            th, td { padding: 6px 8px; }
+        }
+
+        .forward-dll {
+            color: #f9e2af;
+            font-weight: bold;
+        }
+        .forward-func {
+            color: #a6e3a1;
+            font-family: monospace;
+        }
+        .forward-arrow {
+            color: #89b4fa;
+            font-weight: bold;
+        }
+        .forward-target {
+            color: #cba6f7;
+        }
+        .code-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #181825;
+            border-radius: 30px;
+            padding: 4px 8px;
+            margin-left: auto;
+            border: 1px solid #313244;
+        }
+
+        .code-switch-btn {
+            background: none;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 0.7rem;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            color: #a6adc8;
+        }
+
+        .code-switch-btn.active {
+            background: #89b4fa;
+            color: #11111b;
+        }
+
+        .code-switch-btn:hover:not(.active) {
+            background: #313244;
+            color: #cdd6f4;
+        }
+        
+        .cpp-code {
+            color: #a6e3a1;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+
+        .copy-btn {
+            background: #313244;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #a6adc8;
+            transition: all 0.2s ease;
+            margin-left: 8px;
+        }
+
+        .copy-btn:hover {
+            background: #89b4fa;
+            color: #11111b;
+        }
+
+        .copy-btn.copied {
+            background: #a6e3a1;
+            color: #11111b;
+        }
+        
+        .table-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="glitch">RSDEFD</div>
+            <div class="subtitle">RedstoneShell DLL Every Format Decompiler</div>
+            <div style="font-size: 0.7rem; color: #6c7086;">v1.0 | PE32/PE32+ | Exports | Forwarders | Imports | Resources | Disassembler</div>
+        </div>
+
+        <div class="dropzone" id="dropzone">
+            <div class="dropzone-icon">📦</div>
+            <div class="dropzone-text">Drop DLL file here or click to select</div>
+            <div class="dropzone-hint">Supports: .dll, .exe, .ocx, .sys | Max size: 100MB</div>
+            <input type="file" id="fileInput" accept=".dll,.exe,.ocx,.sys" style="display: none;">
+        </div>
+
+        <div class="loader" id="loader">
+            <div class="loader-spinner"></div>
+            <div>🔍 Scanning PE structures...</div>
+            <div style="font-size: 0.7rem; margin-top: 8px;">Parsing exports, imports, forwarders, resources, disassembling .text...</div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="stats-panel" id="statsPanel"></div>
+            <div class="search-box" id="searchBox" style="display: none;">
+                <input type="text" class="search-input" id="searchInput" placeholder="🔎 Search in tables...">
+            </div>
+            <div class="btn-group" id="btnGroup" style="display: none;">
+                <button class="btn btn-secondary" id="expandAllBtn">📂 Expand All</button>
+                <button class="btn btn-secondary" id="collapseAllBtn">📁 Collapse All</button>
+                <button class="btn btn-secondary" id="exportJsonBtn">📋 Export JSON</button>
+            </div>
+            <div id="tablesContainer"></div>
+        </div>
+
+        <div class="footer">
+            <span>⚡ RSDEFD v1.0 | Built for RSMNFDB</span><br>
+            <span style="font-size: 0.65rem;">Disassembler • Exports • Forwarders • Imports • Delayed Imports • Bound Imports • TLS • Exceptions • Relocations • PDB • Security Cookie • CFG</span>
+        </div>
+    </div>
+
+    <script src="RSDllEveryFormatDecompiler.js"></script>
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const loader = document.getElementById('loader');
+        const resultsDiv = document.getElementById('results');
+        const tablesContainer = document.getElementById('tablesContainer');
+        const statsPanel = document.getElementById('statsPanel');
+        const searchBox = document.getElementById('searchBox');
+        const btnGroup = document.getElementById('btnGroup');
+        const searchInput = document.getElementById('searchInput');
+
+        let currentResult = null;
+
+        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) processFile(e.target.files[0]);
+        });
+
+        async function processFile(file) {
+            if (!file) return;
+
+            dropzone.style.display = 'none';
+            loader.style.display = 'block';
+            resultsDiv.style.display = 'none';
+            tablesContainer.innerHTML = '';
+
+            try {
+                const buffer = await file.arrayBuffer();
+                const scanner = new RSDEFD(buffer, { verbose: false, extractResources: true });
+                
+                const result = await scanner.scan();
+
+                if (!result.success) {
+                    const errorContext = {
+                        message: result.error || 'Unknown error',
+                        lastIp: this.ip ? `0x${this.ip.toString(16)}` : 'N/A',
+                        currentMnem: this.currentInst ? this.currentInst.mnem : 'unknown'
+                    };
+
+                    const fullMsg = `[JSCPU TRACE] ${errorContext.message} at IP: ${errorContext.lastIp} (${errorContext.currentMnem})`;
+
+                    const err = new Error(fullMsg);
+                    console.error(fullMsg, result.stack || ""); 
+                    throw err;
+                }
+
+                result.tables.forEach(table => {
+                    if (table.icon === 'code' && typeof table.cppCode === 'string') {
+                        table.cppCode = table.cppCode.split('\n');
+                    }
+                });
+
+                currentResult = result;
+                renderResults(result, file.name);
+            } catch (error) {
+                console.error('Scan error:', error);
+                alert(`Scan failed: ${error.message}`);
+                resetUI();
+            }
+        }
+
+        function renderResults(result, fileName) {
+            if (result.tables.length > 0 && result.tables[0].rows.length > 0) {
+                result.tables[0].rows[0][1] = fileName;
+            }
+        
+            console.log("=== TABLES RECEIVED ===");
+            for (let i = 0; i < result.tables.length; i++) {
+                console.log(`Table ${i}: title="${result.tables[i].title}", icon="${result.tables[i].icon}", rows=${result.tables[i].rows.length}`);
+            }
+        
+            renderStats(result.summary);
+            tablesContainer.innerHTML = '';
+
+            const sortedTables = [...result.tables];
+            const textIndex = sortedTables.findIndex(t => t.icon === 'code');
+            console.log("Text table index:", textIndex, "found:", textIndex !== -1);
+
+            if (textIndex > 0) {
+                const textTable = sortedTables.splice(textIndex, 1)[0];
+                sortedTables.unshift(textTable);
+                console.log("Moved text table to front");
+            }
+
+            for (const table of sortedTables) {
+                console.log("Rendering table:", table.title, "icon:", table.icon);
+                tablesContainer.innerHTML += renderTable(table);
+            }
+
+            loader.style.display = 'none';
+            resultsDiv.style.display = 'block';
+            searchBox.style.display = 'block';
+            btnGroup.style.display = 'flex';
+            dropzone.style.display = 'block';
+            setupSearch();
+        }
+
+        function renderStats(summary) {
+            statsPanel.innerHTML = `
+                <div class="stat-card"><div class="stat-value">${summary.exports || 0}</div><div class="stat-label">Exports</div></div>
+                <div class="stat-card"><div class="stat-value">${summary.forwarders || 0}</div><div class="stat-label">Forwarders</div></div>
+                <div class="stat-card"><div class="stat-value">${summary.imports || 0}</div><div class="stat-label">Imported DLLs</div></div>
+                <div class="stat-card"><div class="stat-value">${summary.sections || 0}</div><div class="stat-label">Sections</div></div>
+                <div class="stat-card"><div class="stat-value">${summary.hasPDB ? '✓' : '✗'}</div><div class="stat-label">PDB Info</div></div>
+                <div class="stat-card"><div class="stat-value">${summary.hasExceptions ? '✓' : '✗'}</div><div class="stat-label">Exceptions</div></div>
+            `;
+        }
+
+        async function copyToClipboard(text, button) {
+            try {
+                await navigator.clipboard.writeText(text);
+                button.textContent = '✓ Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.textContent = '📋 Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                console.error('Copy failed:', err);
+                button.textContent = '❌ Failed';
+                setTimeout(() => {
+                    button.textContent = '📋 Copy';
+                }, 2000);
+            }
+        }
+
+        function renderTable(table) {
+            const icons = { 
+                'file':'📄','shield':'🔒','export':'📤','forward':'↪️','code':'💻',
+                'import':'📥','delay':'⏱️','bound':'🔗','sections':'📁',
+                'info':'ℹ️','tls':'🧵','exception':'⚠️','reloc':'🔄','debug':'🐛', 'database':'📊'
+            };
+            const icon = icons[table.icon] || '📋';
+            
+            let switchHtml = '';
+            if (table.icon === 'code' && table.cppCode) {
+                switchHtml = `
+                    <div class="code-switch">
+                        <button class="code-switch-btn active" data-mode="asm">ASM</button>
+                        <button class="code-switch-btn" data-mode="cpp">C++</button>
+                    </div>
+                `;
+            }
+
+            let rowsHtml = '';
+
+            const asmRows = table.rows;
+            let cppRows = [];
+            if (table.cppCode) {
+                const lines = typeof table.cppCode === 'string' ? table.cppCode.split('\n') : table.cppCode;
+                cppRows = lines.map(line => ['', '', line]);
+            }
+
+            function renderRows(mode) {
+                const rows = mode === 'asm' ? asmRows : cppRows;
+                let html = '';
+                for (const row of rows) {
+                    html += '<table>';
+                    for (let i = 0; i < row.length; i++) {
+                        let cell = String(row[i]);
+                        let cellClass = '';
+
+                        if (table.icon === 'forward') {
+                            if (i === 0) cellClass = 'forward-dll';
+                            else if (i === 1) cellClass = 'forward-func';
+                            else if (cell.includes('->')) cellClass = 'forward-arrow';
+                            else if (i === 2 || i === 3) cellClass = 'forward-target';
+                        } else if (table.icon === 'code') {
+                            if (i === 0 && mode === 'asm') cellClass = 'code-rva';
+                            else if (i === 1 && mode === 'asm') cellClass = 'code-bytes';
+                            else if (i === 2) cellClass = mode === 'asm' ? 'code-instr' : 'cpp-code';
+                        }
+
+                        if (cell.startsWith('0x') && cell.length > 4 && table.icon !== 'code') cellClass = 'ordinal';
+                        if (cell.includes('Function')) cellClass = 'function-name';
+
+                        html += `<td class="${cellClass}">${escapeHtml(cell)}</td>`;
+                    }
+                    html += '</table>';
+                }
+                return html;
+            }
+
+            return `
+                <div class="table-card" data-table-title="${escapeHtml(table.title)}" data-mode="asm">
+                    <div class="table-header">
+                        <span class="table-icon">${icon}</span>
+                        <h3>${escapeHtml(table.title)}</h3>
+                        ${switchHtml}
+                        <span class="badge">${table.rows.length} entries</span>
+                    </div>
+                    <div class="table-content">
+                        <div class="asm-view">${renderRows('asm')}</div>
+                        <div class="cpp-view" style="display: none;">${renderRows('cpp')}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setupSearch() {
+            const handler = () => {
+                const query = searchInput.value.toLowerCase();
+                document.querySelectorAll('.table-card').forEach(card => {
+                    const match = card.dataset.tableTitle?.toLowerCase().includes(query) || card.innerText.toLowerCase().includes(query);
+                    card.style.display = match ? '' : 'none';
+                });
+            };
+            searchInput.removeEventListener('input', handler);
+            searchInput.addEventListener('input', handler);
+        }
+
+        function resetUI() {
+            loader.style.display = 'none';
+            resultsDiv.style.display = 'none';
+            dropzone.style.display = 'block';
+            searchBox.style.display = 'none';
+            btnGroup.style.display = 'none';
+            tablesContainer.innerHTML = '';
+            statsPanel.innerHTML = '';
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'expandAllBtn') document.querySelectorAll('.table-content').forEach(el => el.style.display = '');
+            if (e.target.id === 'collapseAllBtn') document.querySelectorAll('.table-content').forEach(el => el.style.display = 'none');
+            if (e.target.id === 'exportJsonBtn' && currentResult) {
+                const dataStr = JSON.stringify(currentResult.raw, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `RSDEFD_${currentResult.raw.fileInfo.name || 'scan'}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+            const header = e.target.closest('.table-header');
+            if (header) {
+                const content = header.parentElement.querySelector('.table-content');
+                if (content) content.style.display = content.style.display === 'none' ? '' : 'none';
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.code-switch-btn');
+            if (!btn) return;
+
+            const switchDiv = btn.closest('.code-switch');
+            const card = switchDiv.closest('.table-card');
+            const asmView = card.querySelector('.asm-view');
+            const cppView = card.querySelector('.cpp-view');
+            const buttons = switchDiv.querySelectorAll('.code-switch-btn');
+
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (btn.dataset.mode === 'asm') {
+                asmView.style.display = '';
+                cppView.style.display = 'none';
+                card.dataset.mode = 'asm';
+            } else {
+                asmView.style.display = 'none';
+                cppView.style.display = '';
+                card.dataset.mode = 'cpp';
+            }
+        });
+
+        function setInitialTableState() {
+            const allTables = document.querySelectorAll('.table-card');
+            allTables.forEach((table, index) => {
+                const content = table.querySelector('.table-content');
+                const title = table.querySelector('h3')?.innerText || '';
+
+                const isExpanded = title.includes('.text') || title.includes('File Information');
+
+                if (content) {
+                    content.style.display = isExpanded ? '' : 'none';
+                }
+            });
+        }
+
+        function setupDoubleClickToggle() {
+            const headers = document.querySelectorAll('.table-header');
+            headers.forEach(header => {
+                header.removeEventListener('dblclick', toggleTable);
+                header.addEventListener('dblclick', toggleTable);
+            });
+        }
+
+        function toggleTable(event) {
+            const header = event.currentTarget;
+            const card = header.closest('.table-card');
+            const content = card.querySelector('.table-content');
+            if (content) {
+                content.style.display = content.style.display === 'none' ? '' : 'none';
+            }
+        }
+        
+        const originalRenderResults = renderResults;
+        window.renderResults = function(result, fileName) {
+            originalRenderResults(result, fileName);
+            setTimeout(() => {
+                setupDoubleClickToggle();
+                setInitialTableState();
+            }, 50);
+        };
+
+        renderResults = window.renderResults;
+
+        console.log('RSDEFD UI Ready');
+    </script>
+</body>
+</html>
