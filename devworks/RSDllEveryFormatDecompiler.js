@@ -2257,6 +2257,7 @@ class CppDecompiler {
         console.log(`${'='.repeat(60)}`);
         
         const core = new PCPU_Core(this.buffer);
+        core.reset();
         
         if (!func.insts || func.insts.length === 0) {
             console.warn(`    Function ${func.name} has no instructions, skipping`);
@@ -2566,6 +2567,23 @@ class PCPU_Core {
         }
         
         return `[${m.rmName}]`;
+    }
+
+    reset() {
+        this.ip = 0;
+        this.statements = [];
+        this.regs = {
+            rax: {v: 0, l: "rax"}, rbx: {v: 0, l: "rbx"}, 
+            rcx: {v: 0, l: "rcx"}, rdx: {v: 0, l: "rdx"},
+            rsi: {v: 0, l: "rsi"}, rdi: {v: 0, l: "rdi"},
+            rbp: {v: 0xFF00, l: "rbp"}, rsp: {v: 0xFF00, l: "rsp"}
+        };
+        this.stack.clear();
+        this.flags = { zf: false, sf: false, lastComp: "" };
+        this.savedRegs = [];
+        this.stackSize = 0;
+        this.hasRBPStackFrame = false;
+        this.foundReturns = 0;
     }
 
     execute(inst) {
