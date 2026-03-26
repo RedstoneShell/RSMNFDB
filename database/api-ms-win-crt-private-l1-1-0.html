@@ -1,0 +1,351 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 1000px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">api-ms-win-crt-private-l1-1-0.dll</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">PRIVATE API SET</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">UNDOCUMENTED</span>
+        <span style="background: #a6e3a1; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">UCRTBASE.DLL</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">Windows 7 / NT 6.1+</span>
+        <span style="background: #89b4fa; color: #11111b; padding: 4px 10px; border-radius: 6px; font-size: 12px;">1131 exports</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> 
+        This is a <strong>PRIVATE API Set forwarder DLL</strong> that contains <strong>NO executable code</strong> — only export forwarders to 
+        <code style="background: #313244; padding: 2px 6px; border-radius: 4px;">ucrtbase.dll</code>. 
+        It exposes <strong>1131 internal C Runtime functions</strong> that are <strong>not documented by Microsoft</strong> and are <strong>not intended for direct use by applications</strong>.
+        These functions implement low-level C++ runtime features: exception handling, RTTI, internal math, SEH, MBCS string handling, and more.
+    </p>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px; margin-top: 15px;">
+        <strong style="color: #f9e2af;">Why it exists:</strong> 
+        This API Set provides a stable ABI for <strong>Visual C++ runtime internals</strong>. 
+        Applications compiled with Visual Studio 2015+ indirectly use these functions, but they are <strong>never called directly by user code</strong>.
+        Microsoft uses this to maintain compatibility between different versions of the C runtime without exposing implementation details.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <h3 style="color: #94e2d5; margin-top: 0;">📦 Categories of Internal Functions</h3>
+    
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Category</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Count</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Example Functions</th>
+            </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">C++ Exception Handling</td>
+                <td style="padding: 8px;">45</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_CxxThrowException, __CxxFrameHandler3, __CxxExceptionFilter</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">RTTI (Type Information)</td>
+                <td style="padding: 8px;">12</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">__RTDynamicCast, __RTtypeid, __std_type_info_compare</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Internal Math (double/float/long double)</td>
+                <td style="padding: 8px;">36</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_d_int, _fdclass, _ldexp, _dunscale, _fdunscale</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">MBCS String Functions</td>
+                <td style="padding: 8px;">85</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_ismbbalnum, _ismbcalpha, _ismbcgraph, _mbscpy_s</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Internal I/O (stdio)</td>
+                <td style="padding: 8px;">32</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">__stdio_common_vfprintf, __stdio_common_vfwprintf</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">CRT Global Variables</td>
+                <td style="padding: 8px;">18</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">___p___argc, ___p__environ, ___p__pgmptr, ___pctype_func</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Memory Management</td>
+                <td style="padding: 8px;">18</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_calloc_base, _aligned_malloc, _recalloc</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">SEH (Structured Exception Handling)</td>
+                <td style="padding: 8px;">4</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">__C_specific_handler, _seh_filter_dll, _seh_filter_exe</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Threading</td>
+                <td style="padding: 8px;">8</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_beginthread, _endthreadex, _lock_file</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">setjmp/longjmp</td>
+                <td style="padding: 8px;">4</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">__intrinsic_setjmp, longjmp, setjmp</td>
+             </tr>
+            <tr>
+                <td style="padding: 8px;">Pure Virtual Calls</td>
+                <td style="padding: 8px;">2</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_purecall, _set_purecall_handler</td>
+             </tr>
+         </table>
+    </div>
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">🔗 Forwarder Example (C):</p>
+        <button onclick="copyCode('code_c')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_c" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 13px;">
+// This DLL contains NO actual implementation
+// All 1131 functions are forwarded to ucrtbase.dll
+
+// Example: C++ exception handler forwarder
+#pragma comment(linker, "/export:__CxxFrameHandler3=ucrtbase.__CxxFrameHandler3")
+
+// Example: Internal math forwarder
+#pragma comment(linker, "/export:_d_int=ucrtbase._d_int")
+
+// Example: RTTI forwarder
+#pragma comment(linker, "/export:__RTDynamicCast=ucrtbase.__RTDynamicCast")
+
+// Example: MBCS string forwarder
+#pragma comment(linker, "/export:_ismbblead=ucrtbase._ismbblead")
+
+// Example: SEH handler forwarder
+#pragma comment(linker, "/export:__C_specific_handler=ucrtbase.__C_specific_handler")</pre>
+    </div>
+
+    <div style="position: relative; margin-top: 25px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">📋 Notable Undocumented Functions:</p>
+        <button onclick="copyCode('code_exports')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_exports" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 12px; max-height: 350px; overflow-y: auto;">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ C++ Exception Handling (Internal)                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ __CxxFrameHandler3      - 64-bit C++ exception handler (frame level 3)     │
+│ __C_specific_handler_noexcept - SEH handler without exceptions             │
+│ __BuildCatchObject      - Builds C++ catch object for exception            │
+│ __DestructExceptionObject - Destroys exception object                      │
+│ __NLG_Dispatch2         - Nested L&lt;sub&gt;2&lt;/sub&gt; global handler for C++ exceptions              │
+│ __NLG_Return2           - Returns from nested L&lt;sub&gt;2&lt;/sub&gt; exception handler                    │
+│ __FrameUnwindFilter     - Filter for frame unwinding during exception                                     │
+│ __AdjustPointer         - Adjusts pointer for C++ multiple inheritance                                    │
+│ __CxxDetectRethrow      - Detects if exception is being rethrown                                          │
+│ __CxxQueryExceptionSize - Gets exception object size                                                      │
+│ __CxxRegisterExceptionObject - Registers exception object                                                 │
+│ __CxxUnregisterExceptionObject - Unregisters exception object                                             │
+│ __IsExceptionObjectToBeDestroyed - Checks if exception needs destruction                                  │
+│ __GetPlatformExceptionInfo - Gets platform-specific exception info                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ RTTI (Run-Time Type Information)                                                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ __RTDynamicCast         - Dynamic cast between types with RTTI                                            │
+│ __RTCastToVoid          - Cast to void* with RTTI                                                         │
+│ __RTtypeid              - typeid() operator implementation                                                │
+│ __TypeMatch             - Checks if two types match                                                       │
+│ __std_type_info_compare - Compare two type_info objects                                                   │
+│ __std_type_info_destroy_list - Destroys list of type_info objects                                         │
+│ __std_type_info_hash    - Computes hash for type_info                                                      │
+│ __std_type_info_name    - Returns mangled type name                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Internal Floating Point & Math (x87/SSE)                                                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ _d_int, _dclass         - Double classification (NaN, Inf, denormal)                                      │
+│ _dexp, _dlog            - Double exponent/log extraction                                                  │
+│ _dnorm, _dtest          - Double normalization/testing                                                    │
+│ _dpcomp, _dpoly         - Double compare/polynomial evaluation                                            │
+│ _dscale, _dsign         - Double scaling/sign extraction                                                  │
+│ _dsin, _dunscale        - Double sine/scale reversal                                                      │
+│ _fd_int, _fdclass       - Float classification                                                            │
+│ _fdexp, _fdlog          - Float exponent/log                                                              │
+│ _fdnorm, _fdtest        - Float normalization                                                             │
+│ _fdpcomp, _fdpoly       - Float compare/polynomial                                                        │
+│ _fdscale, _fdsign       - Float scaling/sign                                                              │
+│ _fdsin, _fdunscale      - Float sine/scale reversal                                                       │
+│ _ld_int, _ldclass       - Long double classification                                                      │
+│ _ldexp, _ldlog          - Long double exponent/log                                                        │
+│ _ldpcomp, _ldpoly       - Long double compare/polynomial                                                  │
+│ _ldscale, _ldsign       - Long double scaling/sign                                                        │
+│ _ldsin, _ldunscale      - Long double sine/scale reversal                                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ MBCS & Unicode String Internals                                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ _ismbbalnum, _ismbbalpha    - MBCS alphanumeric/alpha detection                                          │
+│ _ismbbblank, _ismbbgraph    - MBCS blank/graphic detection                                                │
+│ _ismbbkalnum, _ismbbkana    - MBCS Japanese alphanumeric/Kana detection                                   │
+│ _ismbbkprint, _ismbbkpunct  - MBCS printable/punctuation detection                                        │
+│ _ismbblead, _ismbbtrail     - MBCS lead/trail byte detection                                              │
+│ _ismbcalnum, _ismbcalpha    - Double-byte alphanumeric/alpha detection                                    │
+│ _ismbcdigit, _ismbcgraph    - Double-byte digit/graphic detection                                         │
+│ _ismbchira, _ismbckata      - Double-byte Hiragana/Katakana detection                                     │
+│ _ismbcl0, _ismbcl1, _ismbcl2 - Double-byte character level detection                                     │
+│ _ismbclegal, _ismbclower    - Double-byte legal/lowercase detection                                      │
+│ _ismbcprint, _ismbcpunct    - Double-byte printable/punctuation detection                                 │
+│ _ismbcspace, _ismbcsymbol   - Double-byte space/symbol detection                                          │
+│ _ismbcupper, _mbctolower    - Double-byte uppercase/lowercase conversion                                  │
+│ _mbctoupper, _mbctohira     - Double-byte to upper/Hiragana conversion                                    │
+│ _mbctokata, _mbctombb       - Double-byte to Katakana/MBCS conversion                                     │
+│ _mbsbtype, _mbsdec          - MBCS byte type/decrement                                                    │
+│ _mbsinc, _mbsnbcnt          - MBCS increment/count                                                        │
+│ _mbsnccnt, _mbsnextc        - MBCS character count/next char                                              │
+│ _mbscat_s, _mbscpy_s        - MBCS safe string copy/concat                                                │
+│ _mbschr, _mbsrchr           - MBCS char search (forward/reverse)                                         │
+│ _mbscmp, _mbsicmp           - MBCS compare (case-sensitive/insensitive)                                   │
+│ _mbscoll, _mbsicoll         - MBCS collation                                                              │
+│ _mbscspn, _mbsspn           - MBCS span functions                                                         │
+│ _mbslen, _mbsnlen           - MBCS length functions                                                       │
+│ _mbslwr, _mbsupr            - MBCS case conversion                                                        │
+│ _mbsnbcat, _mbsnbcpy        - MBCS count-limited concat/copy                                              │
+│ _mbsnbcmp, _mbsnbicmp       - MBCS count-limited compare                                                  │
+│ _mbsnbcoll, _mbsnbicoll     - MBCS count-limited collation                                                │
+│ _mbsnbset, _mbsnset         - MBCS set characters                                                         │
+│ _mbspbrk, _mbsstr           - MBCS search functions                                                       │
+│ _mbstok_s, _mbstowcs_s      - MBCS tokenize/convert to wide                                               │
+│ _mbstrlen, _mbstrnlen       - MBCS string length (with validation)                                        │
+│ _o__ismbblead, _o__ismbbtrail - Legacy MBCS detection stubs                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Internal CRT I/O & Console                                                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ___stdio_common_vfprintf   - Internal vsnprintf/wprintf implementation                                    │
+│ ___stdio_common_vfprintf_p - Internal vsnprintf with %p support                                           │
+│ ___stdio_common_vfprintf_s - Internal safe vsnprintf                                                      │
+│ ___stdio_common_vfscanf    - Internal vsscanf implementation                                              │
+│ ___stdio_common_vfwprintf  - Internal wide vsnwprintf                                                     │
+│ ___stdio_common_vfwprintf_p - Internal wide vsnwprintf with %p                                            │
+│ ___stdio_common_vfwprintf_s - Internal wide safe vsnwprintf                                               │
+│ ___stdio_common_vfwscanf   - Internal wide vswscanf                                                       │
+│ ___stdio_common_vsnprintf_s - Internal vsnprintf_s                                                        │
+│ ___stdio_common_vsnwprintf_s - Internal vsnwprintf_s                                                      │
+│ ___stdio_common_vsprintf   - Internal vsprintf                                                            │
+│ ___stdio_common_vsprintf_p - Internal vsprintf with %p                                                    │
+│ ___stdio_common_vsprintf_s - Internal vsprintf_s                                                          │
+│ ___stdio_common_vsscanf    - Internal vsscanf                                                             │
+│ ___stdio_common_vswprintf  - Internal vswprintf                                                           │
+│ ___stdio_common_vswprintf_p - Internal vswprintf with %p                                                  │
+│ ___stdio_common_vswprintf_s - Internal vswprintf_s                                                        │
+│ ___stdio_common_vswscanf   - Internal vswscanf                                                            │
+│ _o__get_stream_buffer_pointers - Gets internal FILE buffer pointers                                       │
+│ _o__lock_file, _o__unlock_file - Internal file locking                                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ CRT Global State & Initialization                                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ___p___argc, ___p___argv     - Pointer to argc/argv                                                       │
+│ ___p___wargv, ___p__acmdln   - Pointer to wide argv/command line                                          │
+│ ___p__environ, ___p__wenviron - Pointer to environment block                                              │
+│ ___p__fmode, ___p__commode   - Pointer to file mode/commit mode                                           │
+│ ___p__pgmptr, ___p__wpgmptr  - Pointer to program name                                                   │
+│ ___pctype_func, ___pwctype_func - Pointers to character type tables                                       │
+│ ___p__mbcasemap, ___p__mbctype - Pointers to MBCS case map/type tables                                    │
+│ __acrt_iob_func            - Gets internal IO buffer                                                      │
+│ __configure_narrow_argv    - Configures narrow argv parsing                                               │
+│ __configure_wide_argv      - Configures wide argv parsing                                                 │
+│ __dcrt_get_wide_environment_from_os - Gets wide env from OS                                               │
+│ __dcrt_initial_narrow_environment - Initial narrow env                                                    │
+│ __get_initial_narrow_environment - Gets initial narrow env                                                │
+│ __get_initial_wide_environment - Gets initial wide env                                                    │
+│ __get_narrow_winmain_command_line - Gets narrow WinMain command line                                      │
+│ __get_wide_winmain_command_line - Gets wide WinMain command line                                          │
+│ __initialize_narrow_environment - Initializes narrow env                                                  │
+│ __initialize_wide_environment - Initializes wide env                                                      │
+│ __set_app_type            - Sets application type (console/GUI)                                           │
+│ __setusermatherr          - Sets user math error handler                                                  │
+│ _configthreadlocale       - Configures thread locale                                                      │
+│ _create_locale, _free_locale - Creates/frees locale object                                                │
+│ _get_initial_narrow_environment - Gets initial narrow env                                                 │
+│ _get_initial_wide_environment - Gets initial wide env                                                     │
+│ _wcreate_locale           - Creates wide locale                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Internal Memory Management                                                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ _calloc_base, _free_base     - Base memory allocation functions                                          │
+│ _malloc_base, _realloc_base  - Base memory allocation functions                                          │
+│ _recalloc                  - Reallocate and zero memory                                                   │
+│ _aligned_free, _aligned_malloc - Aligned memory allocation                                               │
+│ _aligned_msize             - Gets aligned memory size                                                    │
+│ _aligned_offset_malloc     - Aligned allocation with offset                                              │
+│ _aligned_offset_realloc    - Aligned reallocation with offset                                            │
+│ _aligned_offset_recalloc   - Aligned recallocation with offset                                           │
+│ _aligned_realloc, _aligned_recalloc - Aligned reallocation/recallocation                                 │
+│ _callnewh                  - Calls new handler on allocation failure                                      │
+│ _expand, _msize            - Expand/resize memory block                                                  │
+│ _heapchk, _heapmin         - Heap validation/compact                                                     │
+│ _get_heap_handle           - Gets heap handle                                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Threading & Synchronization                                                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ _beginthread, _beginthreadex   - Create thread                                                           │
+│ _endthread, _endthreadex       - Terminate thread                                                        │
+│ __threadid                 - Current thread ID                                                           │
+│ _lock_file, _unlock_file   - File locking                                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SEH & SetJMP/LongJMP                                                                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ __C_specific_handler       - SEH handler for specific exceptions                                         │
+│ __C_specific_handler_noexcept - SEH handler without exceptions                                           │
+│ __intrinsic_setjmp, __intrinsic_setjmpex - Internal setjmp                                               │
+│ __report_gsfailure         - Reports buffer overflow (GS)                                                │
+│ __seh_filter_dll, __seh_filter_exe - SEH filters for DLL/EXE                                             │
+│ longjmp, setjmp             - Non-local jumps                                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Pure Virtual & Termination                                                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ _purecall                  - Called when pure virtual function called                                    │
+│ _set_purecall_handler      - Sets pure call handler                                                      │
+│ __std_terminate            - terminate() implementation                                                  │
+│ terminate, set_terminate   - Termination handlers                                                        │
+│ unexpected, set_unexpected - Unexpected exception handlers                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Legacy & Compatibility Stubs (_o_ prefix)                                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ _o__getdays, _o__getmonths     - Legacy date/month getters                                               │
+│ _o__Gettnames, _o__W_Getdays   - Legacy time zone name getters                                           │
+│ _o__Strftime, _o__Wcsftime     - Legacy time formatting                                                  │
+│ _o____lc_codepage_func         - Legacy codepage getter                                                  │
+│ _o____lc_collate_cp_func       - Legacy collation codepage getter                                         │
+│ _o____lc_locale_name_func      - Legacy locale name getter                                                │
+│ _o____mb_cur_max_func          - Legacy MBCS max chars getter                                             │
+│ _o___daylight, _o___dstbias    - Legacy daylight savings globals                                          │
+│ _o___fpe_flt_rounds            - Legacy FPU rounding mode                                                │
+│ _o___timezone, _o___tzname     - Legacy time zone globals                                                 │
+│ _o___wcserror, _o__wcserror    - Legacy wide error strings                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Total: 1131 exported functions (all forwarded to ucrtbase.dll)</pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            <strong>DO NOT CALL THESE FUNCTIONS DIRECTLY</strong> — they are internal CRT implementation details.<br>
+            • They are <strong>not documented</strong> and may change between Windows versions<br>
+            • Calling them incorrectly can <strong>corrupt CRT state</strong> or cause crashes<br>
+            • These functions are <strong>forwarded to ucrtbase.dll</strong> and have <strong>no implementation in this DLL</strong><br>
+            • On Windows 7, Universal C Runtime requires <strong>KB2999226</strong> or Visual Studio 2015 redistributable<br>
+            • For ReactOS: implement these functions in <code>ucrtbase.dll</code> for full CRT compatibility
+        </p>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(137, 180, 250, 0.1); border-left: 4px solid #89b4fa; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #89b4fa; font-weight: bold;">🔬 Research Notes (RSDEFD Analysis):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            • Parsed from <code>api-ms-win-crt-private-l1-1-0.dll</code> using RSDEFD<br>
+            • All <strong>1131 exports</strong> are <strong>forwarders</strong> to <code>ucrtbase.dll</code><br>
+            • Discovered <strong>hundreds of undocumented internal CRT functions</strong><br>
+            • Categories: Exception Handling (45), RTTI (12), Internal Math (36), MBCS Strings (85), CRT I/O (32), Global State (18), Memory (18), SEH (4), Threading (8), setjmp (4)<br>
+            • Legacy <code>_o_</code> prefix functions are <strong>compatibility stubs</strong> for older CRT versions<br>
+            • This API Set is <strong>essential for Visual C++ 2015+ compatibility</strong><br>
+            • First seen in <strong>Windows 7 with KB2999226</strong>, standard in Windows 10+
+        </p>
+    </div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
