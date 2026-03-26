@@ -258,34 +258,6 @@
         </div>
     </div>
 
-    <div id="phoneLog" style="position:fixed; bottom:0; left:0; right:0; background:#000; color:#0f0; font-size:10px; max-height:150px; overflow:auto; z-index:9999; font-family:monospace; padding:5px;"></div>
-
-<script>
-function phoneLog(msg) {
-    const logDiv = document.getElementById('phoneLog');
-    if (logDiv) {
-        const time = new Date().toLocaleTimeString();
-        logDiv.innerHTML += `<div>[${time}] ${msg}</div>`;
-        logDiv.scrollTop = logDiv.scrollHeight;
-    }
-    console.log(msg);
-}
-
-// Перехоплюємо всі консольні логи
-const originalLog = console.log;
-console.log = function(...args) {
-    phoneLog(args.join(' '));
-    originalLog.apply(console, args);
-};
-
-console.error = function(...args) {
-    phoneLog('❌ ' + args.join(' '));
-    originalLog.apply(console, args);
-};
-
-phoneLog('✅ Лог-панель активована!');
-</script>
-
     <script src="RSDllEveryFormatDecompiler.js"></script>
     <script>
         const dropzone = document.getElementById('dropzone');
