@@ -1,0 +1,246 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 1000px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">api-ms-win-crt-multibyte-l1-1-0.dll</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">API SET</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">FORWARDER</span>
+        <span style="background: #a6e3a1; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">UCRTBASE.DLL</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">Windows 7 / NT 6.1+</span>
+        <span style="background: #89b4fa; color: #11111b; padding: 4px 10px; border-radius: 6px; font-size: 12px;">199 exports</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> 
+        This is an <strong>API Set forwarder DLL</strong> for <strong>multibyte character set (MBCS) handling</strong> in the Universal C Runtime.
+        It contains <strong>NO executable code</strong> — only export forwarders to 
+        <code style="background: #313244; padding: 2px 6px; border-radius: 4px;">ucrtbase.dll</code>.
+        These functions provide support for <strong>double-byte character sets</strong> (DBCS) used in Asian languages (Japanese, Chinese, Korean) 
+        and <strong>MBCS string manipulation</strong> functions.
+    </p>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px; margin-top: 15px;">
+        <strong style="color: #f9e2af;">Why it exists:</strong> 
+        This API Set provides the complete <strong>MBCS string library</strong> from the C Runtime.
+        It includes functions for character classification, conversion between single-byte and double-byte characters,
+        Japanese-specific conversions (Hiragana/Katakana, JIS/Shift-JIS), and safe string manipulation functions.
+        Essential for applications that need to support Asian language environments.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <h3 style="color: #94e2d5; margin-top: 0;">📦 Categories of MBCS Functions</h3>
+    
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Category</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Count</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Example Functions</th>
+            </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">MBCS Character Classification (_ismbb*)</td>
+                <td style="padding: 8px;">26</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_ismbbalnum, _ismbbalpha, _ismbbblank, _ismbbgraph, _ismbblead, _ismbbtrail</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Double-Byte Character Classification (_ismbc*)</td>
+                <td style="padding: 8px;">38</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_ismbcalnum, _ismbcalpha, _ismbcdigit, _ismbcgraph, _ismbchira, _ismbckata</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Double-Byte Character Conversion</td>
+                <td style="padding: 8px;">14</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_mbctolower, _mbctoupper, _mbctohira, _mbctokata, _mbctombb, _mbbtombc</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Japanese Encoding Conversion</td>
+                <td style="padding: 8px;">4</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_mbcjistojms, _mbcjmstojis (JIS ↔ Shift-JIS)</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">MBCS String Functions (_mbs*)</td>
+                <td style="padding: 8px;">96</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_mbschr, _mbscmp, _mbscpy_s, _mbslen, _mbsstr, _mbstok_s</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">MBCS Count-Limited Functions (_mbsn*)</td>
+                <td style="padding: 8px;">42</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_mbsnbcmp, _mbsnbcpy, _mbsnbcat, _mbsnset, _mbsnlen</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">MBCS Case Conversion</td>
+                <td style="padding: 8px;">12</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_mbslwr, _mbsupr, _mbsicmp, _mbsnicmp</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">MBCS Safe String Functions (_s suffix)</td>
+                <td style="padding: 8px;">24</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_mbscat_s, _mbscpy_s, _mbsncat_s, _mbsncpy_s, _mbstok_s</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">MBCS/Wide Conversion</td>
+                <td style="padding: 8px;">8</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_mbstowcs_l, _mbstowcs_s_l, _mbtowc_l, _wctomb_l</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">MBCS Length/Position Functions</td>
+                <td style="padding: 8px;">16</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">_mbclen, _mbslen, _mbsnlen, _mbstrlen, _mbsinc, _mbsdec</td>
+             </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">MBCS Global State</td>
+                <td style="padding: 8px;">2</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">__p__mbcasemap, __p__mbctype</td>
+             </tr>
+        </table>
+    </div>
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">🔗 Forwarder Example (C):</p>
+        <button onclick="copyCode('code_c')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_c" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 13px;">
+// This DLL contains NO actual implementation
+// All MBCS functions are forwarded to ucrtbase.dll
+
+// Character classification forwarders
+#pragma comment(linker, "/export:_ismbbalnum=ucrtbase._ismbbalnum")
+#pragma comment(linker, "/export:_ismbcalnum=ucrtbase._ismbcalnum")
+#pragma comment(linker, "/export:_ismbblead=ucrtbase._ismbblead")
+
+// Japanese conversion forwarders
+#pragma comment(linker, "/export:_mbctohira=ucrtbase._mbctohira")
+#pragma comment(linker, "/export:_mbctokata=ucrtbase._mbctokata")
+#pragma comment(linker, "/export:_mbcjistojms=ucrtbase._mbcjistojms")
+
+// String functions forwarders
+#pragma comment(linker, "/export:_mbschr=ucrtbase._mbschr")
+#pragma comment(linker, "/export:_mbscpy_s=ucrtbase._mbscpy_s")
+#pragma comment(linker, "/export:_mbsstr=ucrtbase._mbsstr")</pre>
+    </div>
+
+    <div style="position: relative; margin-top: 25px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">📋 Notable Undocumented Functions:</p>
+        <button onclick="copyCode('code_exports')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_exports" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 12px; max-height: 400px; overflow-y: auto;">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ MBCS Character Classification                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ _ismbbalnum, _ismbbalpha      - MBCS alphanumeric/alpha detection          │
+│ _ismbbblank, _ismbbgraph      - MBCS blank/graphic detection               │
+│ _ismbbkalnum, _ismbbkana      - Japanese alphanumeric/Kana detection       │
+│ _ismbbkprint, _ismbbkpunct    - Japanese printable/punctuation detection   │
+│ _ismbblead, _ismbbtrail       - Lead/trail byte detection                  │
+│ _ismbbprint, _ismbbpunct      - Printable/punctuation detection            │
+│ _ismbcalnum, _ismbcalpha      - Double-byte alphanumeric/alpha             │
+│ _ismbcblank, _ismbcdigit      - Double-byte blank/digit                    │
+│ _ismbcgraph, _ismbchira       - Double-byte graphic/Hiragana               │
+│ _ismbckata, _ismbcl0/1/2      - Double-byte Katakana/level detection      │
+│ _ismbclegal, _ismbclower      - Double-byte legal/lowercase                │
+│ _ismbcprint, _ismbcpunct      - Double-byte printable/punctuation          │
+│ _ismbcspace, _ismbcsymbol     - Double-byte space/symbol                   │
+│ _ismbcupper, _ismbslead       - Double-byte uppercase/lead detection       │
+│ _ismbstrail                   - Double-byte trail detection                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ MBCS Character Conversion                                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ _mbbtombc, _mbbtombc_l        - Single-byte to double-byte conversion      │
+│ _mbctolower, _mbctolower_l    - Double-byte to lowercase                   │
+│ _mbctoupper, _mbctoupper_l    - Double-byte to uppercase                   │
+│ _mbctohira, _mbctohira_l      - Double-byte to Hiragana                    │
+│ _mbctokata, _mbctokata_l      - Double-byte to Katakana                    │
+│ _mbctombb, _mbctombb_l        - Double-byte to single-byte                 │
+│ _mbcjistojms, _mbcjistojms_l  - JIS to Shift-JIS conversion                │
+│ _mbcjmstojis, _mbcjmstojis_l  - Shift-JIS to JIS conversion                │
+│ _mbccpy, _mbccpy_s            - Copy double-byte character                 │
+│ _mbbtype, _mbbtype_l          - Get MBCS byte type                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ MBCS String Functions                                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ _mbschr, _mbsrchr             - Find character (forward/reverse)           │
+│ _mbscmp, _mbsicmp             - Compare strings (case-sensitive/insensitive)│
+│ _mbscoll, _mbsicoll           - Collate strings (case-sensitive/insensitive)│
+│ _mbscspn, _mbsspn             - Span functions                             │
+│ _mbsdec, _mbsinc              - Decrement/increment pointer through string  │
+│ _mbslen, _mbsnlen             - Get string length (count bytes/characters) │
+│ _mbstrlen, _mbstrnlen         - Validate and get length                    │
+│ _mbslwr, _mbsupr              - Convert to lower/upper case                │
+│ _mbslwr_s, _mbsupr_s          - Safe case conversion                       │
+│ _mbsnbcat, _mbsnbcpy          - Count-limited concat/copy (bytes)          │
+│ _mbsnbcmp, _mbsnbicmp         - Count-limited compare (bytes)              │
+│ _mbsnbcoll, _mbsnbicoll       - Count-limited collation (bytes)            │
+│ _mbsnbcnt, _mbsnccnt          - Count bytes/characters up to n             │
+│ _mbsncat, _mbsncpy            - Count-limited concat/copy (characters)     │
+│ _mbsncmp, _mbsnicmp           - Count-limited compare (characters)         │
+│ _mbsncoll, _mbsnicoll         - Count-limited collation (characters)       │
+│ _mbsnextc, _mbsninc           - Get next character/increment pointer       │
+│ _mbsnset, _mbsnset_s          - Set characters (count-limited)             │
+│ _mbspbrk, _mbsstr             - Find string in string                      │
+│ _mbsrev                       - Reverse string                             │
+│ _mbsset, _mbsset_s            - Set characters in string                   │
+│ _mbsspnp                      - Find character in string                   │
+│ _mbstok, _mbstok_s            - Tokenize string                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ MBCS Safe String Functions (_s suffix)                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ _mbscat_s, _mbscat_s_l        - Safe string concatenation                  │
+│ _mbscpy_s, _mbscpy_s_l        - Safe string copy                           │
+│ _mbsncat_s, _mbsncat_s_l      - Safe count-limited concatenation           │
+│ _mbsncpy_s, _mbsncpy_s_l      - Safe count-limited copy                    │
+│ _mbsnbset_s, _mbsnbset_s_l    - Safe byte-limited set                      │
+│ _mbsnset_s, _mbsnset_s_l      - Safe count-limited set                     │
+│ _mbsset_s, _mbsset_s_l        - Safe set characters                        │
+│ _mbstok_s, _mbstok_s_l        - Safe tokenization                          │
+│ _mbstowcs_s_l                 - Safe MBCS to wide conversion               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ MBCS Global State & Locale                                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ __p__mbcasemap               - Pointer to MBCS case mapping table          │
+│ __p__mbctype                 - Pointer to MBCS character type table        │
+│ _mbcasemap                   - MBCS case mapping table                     │
+│ _mbclen, _mbclen_l           - Get length of MBCS character                │
+│ _mblen_l                     - Get length of multibyte character           │
+│ _mbtowc_l, _wctomb_l         - MBCS/wide character conversion with locale  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Total: 199 exported functions (all forwarded to ucrtbase.dll)</pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            <strong>MBCS functions are locale-dependent!</strong><br>
+            • These functions behave differently based on the <strong>current locale</strong> (Japanese, Chinese, Korean, etc.)<br>
+            • The <strong>lead byte tables</strong> (<code>__p__mbctype</code>) define which bytes are valid lead bytes in DBCS<br>
+            • Japanese-specific conversions (<code>_mbctohira</code>, <code>_mbcjistojms</code>) only work in Japanese locale<br>
+            • Many of these functions are <strong>deprecated</strong> in favor of Unicode/Wide character equivalents<br>
+            • For modern applications, use <strong>Unicode (UTF-16) or UTF-8</strong> instead of MBCS<br>
+            • On Windows 7, Universal C Runtime requires <strong>KB2999226</strong> or Visual Studio 2015 redistributable<br>
+            • For ReactOS: implement MBCS tables for Asian locales to support legacy applications
+        </p>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(137, 180, 250, 0.1); border-left: 4px solid #89b4fa; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #89b4fa; font-weight: bold;">🔬 Research Notes (RSDEFD Analysis):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            • Parsed from <code>api-ms-win-crt-multibyte-l1-1-0.dll</code> using RSDEFD<br>
+            • All <strong>199 exports</strong> are <strong>forwarders</strong> to <code>ucrtbase.dll</code><br>
+            • This is the <strong>complete MBCS library</strong> from the C Runtime<br>
+            • Includes <strong>Japanese-specific conversions</strong> (Hiragana/Katakana, JIS/Shift-JIS)<br>
+            • Provides <strong>both byte-count and character-count versions</strong> of string functions<br>
+            • Safe string versions (<code>_s</code> suffix) for buffer overflow protection<br>
+            • Essential for <strong>legacy applications</strong> and <strong>Asian language support</strong><br>
+            • First seen in <strong>Windows 7 with KB2999226</strong>, standard in Windows 10+<br>
+            • For ReactOS: MBCS support is critical for <strong>Asian language compatibility</strong>
+        </p>
+    </div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
