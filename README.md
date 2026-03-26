@@ -83,6 +83,33 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
     </a>
 </div>
 
+<a href="https://redstoneshell.github.io/devworks/RSDEFD_Page.html" target="_blank" style="
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #313244;
+        color: #cdd6f4;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-family: 'Segoe UI', sans-serif;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: 1px solid #45475a;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    " onmouseover="this.style.background='#45475a'; this.style.transform='translateY(-2px)';" 
+       onmouseout="this.style.background='#313244'; this.style.transform='translateY(0)';"
+       onclick="gtag('event', 'click_rsdefd', {'event_category': 'Tool'});">
+        
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="#89b4fa" stroke-width="1.5" fill="none"/>
+            <path d="M8 12L11 15L16 9" stroke="#89b4fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="9" stroke="#89b4fa" stroke-width="1.5" fill="none"/>
+        </svg>
+        
+        Analyze with own RSDEFD decompiler
+    </a>
+
 ## !!API!!
 Now you can use **https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=** for universal search of NTStatus codes, raw from owm softwares!
 
