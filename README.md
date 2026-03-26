@@ -55,7 +55,7 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
 </div>
 
 ## But why?
-<div style="text-align: center; margin-top: 40px; padding-bottom: 20px;">
+<div style="text-align: center; margin-top: 40px; padding-bottom: 20px; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
     <a href="https://uk.wikipedia.org/wiki/RSMNFDB" target="_blank" style="
         display: inline-flex;
         align-items: center;
@@ -81,9 +81,8 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
         
         Read at Wikipedia
     </a>
-</div>
-
-<a href="https://redstoneshell.github.io/devworks/RSDEFD_Page.html" target="_blank" style="
+    
+    <a href="https://redstoneshell.github.io/devworks/RSDEFD_Page.html" target="_blank" style="
         display: inline-flex;
         align-items: center;
         gap: 10px;
@@ -102,21 +101,40 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
        onclick="gtag('event', 'click_rsdefd', {'event_category': 'Tool'});">
         
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="#89b4fa" stroke-width="1.5" fill="none"/>
-            <path d="M8 12L11 15L16 9" stroke="#89b4fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="12" cy="12" r="9" stroke="#89b4fa" stroke-width="1.5" fill="none"/>
+            <rect x="2" y="2" width="20" height="20" rx="3" stroke="#89b4fa" stroke-width="1.5" fill="none"/>
+            <path d="M8 8L16 16M16 8L8 16" stroke="#89b4fa" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="12" cy="12" r="3" stroke="#89b4fa" stroke-width="1.5" fill="none"/>
         </svg>
         
-        Analyze with own RSDEFD decompiler
+        Decompile with own RSDEFD decompiler
     </a>
-
+    
+    <button onclick="window.open('database/NTStatusFAQ.html', '_blank')" style="
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #313244;
+        color: #cdd6f4;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-family: 'Segoe UI', sans-serif;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: 1px solid #45475a;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        cursor: pointer;
+    " onmouseover="this.style.background='#45475a'; this.style.transform='translateY(-2px)';" 
+       onmouseout="this.style.background='#313244'; this.style.transform='translateY(0)';">
+        <span>📋</span>
+        <span>NTStatus Lookup</span>
+    </button>
+    
+</div>
 ## !!API!!
 Now you can use **https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.html?code=** for universal search of NTStatus codes, raw from owm softwares!
 
 ## Can you find something?
-<button onclick="window.open('database/NTStatusFAQ.html', '_blank')" class="nt-btn">
-    NTStatus Lookup
-</button>
 <input type="text" id="searchInput" placeholder="Enter something..." style="width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #333; background: #1e1e2e; color: #fff;">
 <div id="results" style="margin-top: 20px;">
   <p>Type in search something...</p>
