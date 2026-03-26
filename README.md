@@ -96,7 +96,7 @@ Now you can use **https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.h
 </div>
 
 <script>
-  const fileList = ["RtlGetVersion", "NtCreateThreadEx", "LdrLoadDll", "BeepDeviceControl", "CheckSnapshotPresence", "CreateVolumeSnapshot", "ReleaseVolumeSnapshot", "SendSAS", "DCIOpenProvider", "DCICloseProvider", "DCICreatePrimary", "DCICreateOffscreen", "DCICreateOverlay", "DCIDestroy", "DCIDraw", "DCIBeginAccess", "DCIEndAccess", "DCIEnum", "DCISetClipList", "DCISetDestination", "DCISetSrcDestClip", "WinWatchOpen", "WinWatchClose", "WinWatchGetClipList", "WinWatchDidStatusChange", "WinWatchNotify"]; 
+  const fileList = ["RtlGetVersion", "NtCreateThreadEx", "LdrLoadDll", "BeepDeviceControl", "CheckSnapshotPresence", "CreateVolumeSnapshot", "ReleaseVolumeSnapshot", "SendSAS", "DCIOpenProvider", "DCICloseProvider", "DCICreatePrimary", "DCICreateOffscreen", "DCICreateOverlay", "DCIDestroy", "DCIDraw", "DCIBeginAccess", "DCIEndAccess", "DCIEnum", "DCISetClipList", "DCISetDestination", "DCISetSrcDestClip", "WinWatchOpen", "WinWatchClose", "WinWatchGetClipList", "WinWatchDidStatusChange", "WinWatchNotify", "api-ms-win-crt-multibyte-l1-1-0", "api-ms-win-crt-math-l1-1-0", "api-ms-win-crt-private-l1-1-0"]; 
   const searchInput = document.getElementById('searchInput');
   const resultsDiv = document.getElementById('results');
 
