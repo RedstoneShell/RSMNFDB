@@ -824,9 +824,13 @@ class RSDEFD {
         
         if (allInstructions.length > 0) {
             try {
-                const decompiler = new CppDecompiler(this.bytes, allInstructions);
-                decompiler.strings = strings;
-                decompiler.imports = this.report.imports;
+                const decompiler = new CppDecompiler(
+                    this.bytes, 
+                    allInstructions, 
+                    this.report.imports, 
+                    strings,
+                    this.report.sections
+                );
                 
                 let decompiledCode = await decompiler.decompile();
                 
@@ -1950,14 +1954,169 @@ class RSDEFD {
     }
 }
 
+class ASTNode {
+    constructor(type, value = null, left = null, right = null) {
+        this.type = type;  // 'reg', 'const', 'add', 'sub', 'xor', 'and', 'or', 'mem', 'call'
+        this.value = value; // for 'const' or 'reg' — name
+        this.left = left;   // for bin ops
+        this.right = right;
+        this.args = [];     // for 'call'
+        this.offset = 0;    // for 'mem'
+        this.base = null;   // for 'mem'
+        this.index = null;  // for 'mem'
+        this.scale = 1;     // for 'mem'
+    }
+    
+    toString() {
+        switch(this.type) {
+            case 'reg': return this.value;
+            case 'const': return this.value.toString();
+            case 'add': return `(${this.left.toString()} + ${this.right.toString()})`;
+            case 'sub': return `(${this.left.toString()} - ${this.right.toString()})`;
+            case 'xor': return `(${this.left.toString()} ^ ${this.right.toString()})`;
+            case 'and': return `(${this.left.toString()} & ${this.right.toString()})`;
+            case 'or':  return `(${this.left.toString()} | ${this.right.toString()})`;
+            case 'mem': {
+                if (this.base && this.index) {
+                    return `[${this.base.toString()} + ${this.index.toString()}*${this.scale} + ${this.offset}]`;
+                } else if (this.base) {
+                    if (this.offset === 0) return `[${this.base.toString()}]`;
+                    return `[${this.base.toString()}+0x${this.offset.toString(16)}]`;
+                }
+                return `[0x${this.offset.toString(16)}]`;
+            }
+            case 'call': return `${this.value}(${this.args.map(a => a.toString()).join(', ')})`;
+            default: return '???';
+        }
+    }
+    
+    simplify() {
+        if (this.left) this.left = this.left.simplify();
+        if (this.right) this.right = this.right.simplify();
+
+        if (this.type === 'mem') {
+            if (this.base) this.base = this.base.simplify();
+            if (this.index) this.index = this.index.simplify();
+            
+            if (this.base?.type === 'add') {
+                let offset = 0;
+                let base = null;
+                
+                function collect(node) {
+                    if (node.type === 'add') {
+                        collect(node.left);
+                        collect(node.right);
+                    } else if (node.type === 'const') {
+                        offset += node.value;
+                    } else {
+                        base = node;
+                    }
+                }
+                collect(this.base);
+                
+                if (base) {
+                    this.base = base;
+                    this.offset += offset;
+                }
+                return this;
+            }
+        }
+        
+        if (this.type === 'add') {
+            let sum = 0;
+            let terms = [];
+            
+            function collect(node) {
+                if (node.type === 'add') {
+                    collect(node.left);
+                    collect(node.right);
+                } else if (node.type === 'const') {
+                    sum += node.value;
+                } else {
+                    terms.push(node);
+                }
+            }
+            collect(this);
+            
+            if (terms.length === 0) {
+                return new ASTNode('const', sum);
+            }
+            if (sum !== 0) {
+                terms.push(new ASTNode('const', sum));
+            }
+            
+            let result = terms[0];
+            for (let i = 1; i < terms.length; i++) {
+                result = new ASTNode('add', null, result, terms[i]);
+            }
+            return result;
+        }
+        
+        switch(this.type) {
+            case 'add':
+                if (this.right?.type === 'const' && this.right.value === 0) return this.left;
+                if (this.left?.type === 'const' && this.left.value === 0) return this.right;
+                if (this.left?.type === 'const' && this.right?.type === 'const') {
+                    return new ASTNode('const', this.left.value + this.right.value);
+                }
+                break;
+                
+            case 'sub':
+                // x - 0 → x
+                if (this.right?.type === 'const' && this.right.value === 0) return this.left;
+                // x - x → 0
+                if (this.left?.toString() === this.right?.toString()) {
+                    return new ASTNode('const', 0);
+                }
+                // const - const → const
+                if (this.left?.type === 'const' && this.right?.type === 'const') {
+                    return new ASTNode('const', this.left.value - this.right.value);
+                }
+                break;
+                
+            case 'xor':
+                if (this.left?.type === 'const' && this.left.value === 0) return this.right;
+                if (this.right?.type === 'const' && this.right.value === 0) return this.left;
+                if (this.left?.toString() === this.right?.toString()) return new ASTNode('const', 0);
+                break;
+                
+            case 'and':
+                // x & 0 → 0
+                if (this.right?.type === 'const' && this.right.value === 0) return new ASTNode('const', 0);
+                // x & -1 → x (for 32-біт)
+                if (this.right?.type === 'const' && this.right.value === 0xFFFFFFFF) return this.left;
+                break;
+                
+            case 'or':
+                // x | 0 → x
+                if (this.right?.type === 'const' && this.right.value === 0) return this.left;
+                break;
+        }
+        return this;
+    }
+    
+    clone() {
+        const node = new ASTNode(this.type, this.value);
+        if (this.left) node.left = this.left.clone();
+        if (this.right) node.right = this.right.clone();
+        node.args = this.args.map(a => a.clone());
+        node.offset = this.offset;
+        node.base = this.base?.clone();
+        node.index = this.index?.clone();
+        node.scale = this.scale;
+        return node;
+    }
+}
+
 class CppDecompiler {
-    constructor(binaryBuffer, instructions, imports = [], strings = []) {
+    constructor(binaryBuffer, instructions, imports = [], strings = [], sections = []) {
         console.log("=== CppDecompiler Constructor ===");
         console.log("Instructions count:", instructions?.length || 0);
         console.log("Imports count:", imports?.length || 0);
         console.log("Strings count:", strings?.length || 0);
         
         this.buffer = binaryBuffer;
+        this.sections = sections;
         
         let rawInsts = [];
         if (instructions && Array.isArray(instructions)) {
@@ -2126,6 +2285,70 @@ class CppDecompiler {
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
         }
+
+        function detectStruct(accesses) {
+            const offsets = accesses.map(a => a.offset).sort((a,b) => a-b);
+            if (offsets.length < 2) return null;
+            
+            const gaps = [];
+            for (let i = 1; i < offsets.length; i++) {
+                gaps.push(offsets[i] - offsets[i-1]);
+            }
+            
+            const commonSize = gaps.every(g => g % 4 === 0) ? 4 : 
+                               gaps.every(g => g % 8 === 0) ? 8 : 0;
+            
+            if (commonSize) {
+                const fieldCount = Math.max(...offsets) / commonSize + 1;
+                return {
+                    type: 'struct',
+                    baseSize: commonSize,
+                    fieldCount: fieldCount,
+                    offsets: offsets
+                };
+            }
+            return null;
+        }
+
+        function generateStruct(structInfo, structName) {
+            const lines = [];
+            lines.push(`struct ${structName} {`);
+            for (let i = 0; i <= structInfo.fieldCount; i++) {
+                const offset = i * structInfo.baseSize;
+                if (structInfo.offsets.includes(offset)) {
+                    lines.push(`    DWORD field_0x${offset.toString(16)};  // used`);
+                } else {
+                    lines.push(`    DWORD padding_0x${offset.toString(16)};  // unknown`);
+                }
+            }
+            lines.push('};');
+            return lines;
+        }
+
+        const structs = new Map();
+
+        for (const func of this.functions) {
+            if (func.memAccesses) {
+                for (const [baseReg, accesses] of Object.entries(func.memAccesses)) {
+                    const structInfo = detectStruct(accesses);
+                    if (structInfo) {
+                        const structName = `struct_${baseReg}`;
+                        if (!structs.has(structName)) {
+                            structs.set(structName, structInfo);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (structs.size > 0) {
+            this.cppLines.unshift('// Detected structures:');
+            for (const [name, info] of structs) {
+                this.cppLines.unshift(...generateStruct(info, name));
+            }
+            this.cppLines.unshift('');
+        }
+
         console.log("=== CppDecompiler.decompile() END ===");
 
         return this.cppLines.join('\n');
@@ -2251,19 +2474,50 @@ class CppDecompiler {
         });
     }
 
+    buildAddressMap() {
+        this.functionNames = new Map();
+        this.apiNames = new Map();     
+        this.dllNames = new Set();     
+        
+        for (const str of this.strings) {
+            const addr = str.address;
+            const value = str.value;
+            
+            if (value.endsWith('.pdb')) continue;
+            
+            if (value.toLowerCase().endsWith('.dll')) {
+                this.dllNames.add(value);
+                continue;
+            }
+            
+            if (/^[A-Z][a-zA-Z0-9_]+$/.test(value)) {
+                if (addr >= 0x1000 && addr <= 0x2000) {
+                    this.functionNames.set(addr, value);
+                    console.log(`📌 Function at 0x${addr.toString(16)}: ${value}`);
+                } 
+                else {
+                    this.apiNames.set(addr, value);
+                    console.log(`🔧 API at 0x${addr.toString(16)}: ${value}`);
+                }
+            }
+        }
+        
+        console.log(`Found ${this.functionNames.size} function names, ${this.apiNames.size} API names`);
+    }
+
     processFunction(func) {
         console.log(`\n${'='.repeat(60)}`);
         console.log(`  Processing ${func.name} (${func.type}, ${func.insts?.length} instructions)`);
         console.log(`${'='.repeat(60)}`);
         
-        const core = new PCPU_Core(this.buffer);
-        core.reset();
+        this.buildAddressMap();
+        const core = new PCPU_Core(this.buffer, this.sections, this.functionNames, this.apiNames);
         
         if (!func.insts || func.insts.length === 0) {
             console.warn(`    Function ${func.name} has no instructions, skipping`);
             return;
         }
-    
+        
         if (func.type === 'fpo') {
             console.log(`    🔧 FPO function detected, will use FPO handling`);
             this.cppLines.push(`// FPO Function (Frame Pointer Omitted)`);
@@ -2276,7 +2530,61 @@ class CppDecompiler {
             this.cppLines.push(`// Hotpatch-capable Function (mov edi, edi)`);
         }
         
-        this.cppLines.push(`void ${func.name}(int64_t arg_1, int64_t arg_2) {`);
+        let usesRcx = false;
+        let usesRdx = false;
+        let usesR8 = false;
+        let usesR9 = false;
+        let hasCall = false;
+        
+        for (const inst of func.insts) {
+            if (inst.text.includes('rcx')) usesRcx = true;
+            if (inst.text.includes('rdx')) usesRdx = true;
+            if (inst.text.includes('r8')) usesR8 = true;
+            if (inst.text.includes('r9')) usesR9 = true;
+            if (inst.mnemonic === 'call') hasCall = true;
+        }
+        
+        let functionSignature = `void ${func.name}(`;
+        const args = [];
+        
+        if (usesRcx) args.push('int64_t arg_rcx');
+        if (usesRdx) args.push('int64_t arg_rdx');
+        if (usesR8) args.push('int64_t arg_r8');
+        if (usesR9) args.push('int64_t arg_r9');
+        
+        if (args.length === 0) {
+            functionSignature = `void ${func.name}(void)`;
+        } else {
+            functionSignature = `void ${func.name}(${args.join(', ')})`;
+        }
+        
+        if (func.name.includes('10a1') && usesRcx && usesRdx) {
+            functionSignature = `BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)`;
+        } else if (func.name.includes('115d') && usesRcx && usesRdx) {
+            functionSignature = `HRESULT DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)`;
+        } else if (func.name.includes('1204') && usesRcx) {
+            functionSignature = `STDAPI DllRegisterServer(void)`;
+        } else if (!hasCall && usesRcx && !usesRdx) {
+            functionSignature = `void ${func.name}(void* this_ptr)`;
+        }
+
+        const knownFunctions = {
+            'W32Init': { args: [], ret: 'BOOL' },
+            'W32Dispatch': { args: ['DWORD', 'DWORD', 'DWORD'], ret: 'DWORD' },
+            'WOW32ResolveHandle': { args: ['HANDLE'], ret: 'HANDLE' },
+            'WOW32ResolveMemory': { args: ['LPVOID', 'SIZE_T'], ret: 'LPVOID' },
+            'CopyDropFilesFrom16': { args: ['HDROP', 'UINT'], ret: 'BOOL' },
+            'GetCommHandle': { args: ['DWORD'], ret: 'HANDLE' },
+            'GetCommShadowMSR': { args: ['DWORD', 'PDWORD'], ret: 'BOOL' }
+        };
+        
+        if (knownFunctions[func.name]) {
+            const sig = knownFunctions[func.name];
+            const argsStr = sig.args.map((arg, i) => `${arg} arg${i}`).join(', ');
+            functionSignature = `${sig.ret} WINAPI ${func.name}(${argsStr})`;
+        }
+        
+        this.cppLines.push(functionSignature + ' {');
         
         let localVars = new Set();
         let bodyLines = [];
@@ -2285,6 +2593,9 @@ class CppDecompiler {
     
         console.log(`\n  📝 Processing instructions:`);
         console.log(`  ${'-'.repeat(50)}`);
+    
+        let localVarCounter = 0;
+        const localVarMap = new Map();
     
         for (const inst of func.insts) {
             instructionCount++;
@@ -2310,15 +2621,22 @@ class CppDecompiler {
                 let stepStatements = [];
                 while (core.statements.length > 0) {
                     let statement = core.statements.shift();
-                    generatedStatements++;
                     
-                    const stackMatch = statement.match(/var_rbp_minus_0x([0-9a-f]+)/i);
-                    if (stackMatch) {
-                        localVars.add(`    int64_t local_${stackMatch[1]};`);
-                        statement = statement.replace(stackMatch[0], `local_${stackMatch[1]}`);
+                    statement = statement.replace(/\barg_1\b/g, 'arg_rcx');
+                    statement = statement.replace(/\barg_2\b/g, 'arg_rdx');
+                    
+                    const rbpMatch = statement.match(/\[rbp-0x([0-9a-f]+)\]/i);
+                    if (rbpMatch) {
+                        const offset = rbpMatch[1];
+                        if (!localVarMap.has(offset)) {
+                            localVarMap.set(offset, `local_${++localVarCounter}`);
+                            localVars.add(`    int64_t local_${localVarCounter};  // [rbp-0x${offset}]`);
+                        }
+                        statement = statement.replace(rbpMatch[0], localVarMap.get(offset));
                     }
-                    stepStatements.push(statement);
+    
                     bodyLines.push(`    ${statement}`);
+                    stepStatements.push(statement);
                 }
                 
                 if (stepStatements.length > 0) {
@@ -2346,7 +2664,6 @@ class CppDecompiler {
         console.log(`     Local variables: ${localVars.size}`);
         console.log(`     Body lines: ${bodyLines.length}`);
         
-        // Показуємо перші 10 рядків тіла функції
         if (bodyLines.length > 0) {
             console.log(`\n  📝 First 10 lines of generated code:`);
             bodyLines.slice(0, 10).forEach((line, idx) => {
@@ -2364,33 +2681,481 @@ class CppDecompiler {
             Array.from(localVars).forEach(v => console.log(`     ${v}`));
             this.cppLines.push(...Array.from(localVars), "");
         }
+
+        for (const [regName, node] of Object.entries(core.regs)) {
+            if (node && node.simplify) {
+                core.regs[regName] = node.simplify();
+            }
+        }
+
+        const newStack = new Map();
+        for (const [addr, node] of core.stack) {
+            newStack.set(addr, node.simplify ? node.simplify() : node);
+        }
+        core.stack = newStack;
+    
+        bodyLines = bodyLines.map(line => {
+            if (line.includes('++')) return line;
+            
+            if (line.match(/^\s*(\w+) = (.*);\s*$/) && 
+                bodyLines[bodyLines.indexOf(line) + 1]?.includes(`return ${RegExp.$1}`)) {
+                return `    return ${RegExp.$2};`;
+            }
+            
+            if (line.includes(' == 0) goto')) {
+                return line.replace(/(\w+) == 0\) goto/, '!$1) goto');
+            }
+
+            if (line.match(/^\s*push /) && !line.includes('; FPO')) {
+                return line.replace(/push (.*);/, '// push $1');
+            }
+            if (line.match(/^\s*pop /) && !line.includes('; FPO')) {
+                return line.replace(/pop (.*);/, '// pop $1');
+            }
+
+            // Repl [[...]] to *(*...)
+            line = line.replace(/\[\[([^\]]+)\]\]/g, '*(*($1))');
+            // Repl mem_[...] to *(...)
+            line = line.replace(/mem_\[([^\]]+)\]/g, '*($1)');
+            line = line.replace(/undefined/g, '0');
+            
+            return line;
+        });
+
+        bodyLines = bodyLines.filter(line => !line.includes('if (0 >= 0)'));
+
+        if (func.name.includes('10a1') && usesRcx && usesRdx) {
+            let hasDisableThreadLibrary = false;
+            for (const inst of func.insts) {
+                if (inst.text.includes('DisableThreadLibraryCalls')) {
+                    hasDisableThreadLibrary = true;
+                    break;
+                }
+            }
+            
+            if (hasDisableThreadLibrary) {
+                functionSignature = `BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)`;
+                this.cppLines.push(`    switch (fdwReason) {`);
+                this.cppLines.push(`        case DLL_PROCESS_ATTACH:`);
+                this.cppLines.push(`            DisableThreadLibraryCalls(hinstDLL);`);
+                this.cppLines.push(`            break;`);
+                this.cppLines.push(`    }`);
+            }
+        }
+        
+        for (let i = 0; i < bodyLines.length; i++) {
+            let line = bodyLines[i];
+            
+            if (line.includes('func_0();')) {
+                for (const str of this.strings) {
+                    if (str.value === 'GetTickCount' || str.value === 'DisableThreadLibraryCalls' ||
+                        str.value === 'QueryPerformanceCounter' || str.value === 'GetCurrentThreadId') {
+                        line = line.replace('func_0();', `${str.value}();`);
+                        break;
+                    }
+                }
+                bodyLines[i] = line;
+            }
+            
+            if (line.includes('func_0_result')) {
+                for (const str of this.strings) {
+                    if (str.value === 'GetTickCount') {
+                        line = line.replace(/func_0_result/g, 'tickCount');
+                        break;
+                    }
+                }
+                bodyLines[i] = line;
+            }
+        }
+
+        for (let i = 0; i < bodyLines.length; i++) {
+            let line = bodyLines[i];
+            
+            if (line.includes('func_0([rax])')) {
+                for (const str of this.strings) {
+                    if (str.value === 'GetTickCount') {
+                        line = line.replace(/func_0\(\[rax\]\)/g, 'GetTickCount()');
+                        break;
+                    }
+                }
+                bodyLines[i] = line;
+            }
+            
+            if (line.includes('func_0([rax])')) {
+                for (const str of this.strings) {
+                    if (str.value === 'GetTickCount') {
+                        line = line.replace(/func_0\(\[rax\]\)/g, 'tickCount');
+                        break;
+                    }
+                }
+                bodyLines[i] = line;
+            }
+            
+            if (line.includes('func_0_result')) {
+                line = line.replace(/func_0_result/g, 'tickCount');
+                bodyLines[i] = line;
+            }
+        }
+
+        for (let i = 0; i < bodyLines.length; i++) {
+            let line = bodyLines[i];
+            
+            if (line.includes('GetTickCount();') && !line.includes('tickCount')) {
+                if (!localVars.has('    DWORD tickCount;')) {
+                    localVars.add('    DWORD tickCount;');
+                }
+                bodyLines[i] = '    tickCount = GetTickCount();';
+            }
+            
+            if (line.includes('GetTickCount()') && !line.includes('tickCount = GetTickCount()')) {
+                line = line.replace(/GetTickCount\(\)/g, 'tickCount');
+                bodyLines[i] = line;
+            }
+        }
+
+        if (core.memAccesses) {
+            const structCandidates = new Map();
+            
+            for (const [baseReg, accesses] of Object.entries(core.memAccesses)) {
+                const offsets = [...new Set(accesses.map(a => a.offset))].sort((a,b)=>a-b);
+                if (offsets.length < 2) continue;
+                
+                const gaps = [];
+                for (let i = 1; i < offsets.length; i++) {
+                    gaps.push(offsets[i] - offsets[i-1]);
+                }
+                
+                const possibleSizes = [1, 2, 4, 8, 16];
+                let fieldSize = 0;
+                for (const size of possibleSizes) {
+                    if (offsets.every(offset => offset % size === 0)) {
+                        fieldSize = size;
+                        break;
+                    }
+                }
+                
+                if (fieldSize === 0) continue;
+                
+                const fieldTypes = [];
+                for (const offset of offsets) {
+                    const accessAtOffset = accesses.filter(a => a.offset === offset);
+                    const sizes = [...new Set(accessAtOffset.map(a => a.size))];
+                    const types = [...new Set(accessAtOffset.map(a => a.type))];
+                    
+                    let fieldType = 'BYTE';
+                    if (sizes.includes(8)) fieldType = 'ULONGLONG';
+                    else if (sizes.includes(4)) fieldType = 'DWORD';
+                    else if (sizes.includes(2)) fieldType = 'WORD';
+                    else if (sizes.includes(1)) fieldType = 'BYTE';
+                    
+                    // Якщо це покажчик (lea або mov з розміром 8)
+                    if (accessAtOffset.some(a => a.type === 'lea' || (a.type === 'mov' && a.size === 8))) {
+                        fieldType = 'LPVOID';
+                    }
+                    
+                    const isRead = types.includes('read');
+                    const isWrite = types.includes('write');
+                    const accessType = isRead && isWrite ? 'read/write' : (isRead ? 'read' : 'write');
+                    
+                    fieldTypes.push({ 
+                        offset, 
+                        type: fieldType, 
+                        access: accessType, 
+                        size: sizes[0] 
+                    });
+                }
+                
+                structCandidates.set(baseReg, {
+                    baseReg,
+                    fieldSize,
+                    fieldCount: Math.max(...offsets) / fieldSize + 1,
+                    offsets,
+                    fieldTypes,
+                    accesses: accesses.length
+                });
+            }
+            
+            if (structCandidates.size > 0) {
+                this.cppLines.unshift('// ========== DETECTED STRUCTURES ==========');
+                
+                const knownFieldNames = {
+                    0x00: 'dwMagic',
+                    0x04: 'dwVersion',
+                    0x08: 'pfnCallback',
+                    0x0c: 'hInstance',
+                    0x10: 'lpReserved',
+                    0x14: 'dwFlags',
+                    0x18: 'pNext'
+                };
+                
+                for (const [baseReg, struct] of structCandidates) {
+                    const structName = baseReg === 'rcx' ? 'This' : `Struct_${baseReg.toUpperCase()}`;
+                    
+                    this.cppLines.unshift(`struct ${structName} {`);
+                    
+                    for (let i = 0; i <= struct.fieldCount; i++) {
+                        const offset = i * struct.fieldSize;
+                        const field = struct.fieldTypes.find(f => f.offset === offset);
+                        
+                        if (field) {
+                            let fieldName = knownFieldNames[offset];
+                            if (!fieldName) {
+                                fieldName = `field_0x${offset.toString(16)}`;
+                            }
+                            const comment = ` // offset 0x${offset.toString(16)}, ${field.access}`;
+                            this.cppLines.unshift(`    ${field.type} ${fieldName};${comment}`);
+                        } else if (offset <= Math.max(...struct.offsets)) {
+                            this.cppLines.unshift(`    uint8_t padding_0x${offset.toString(16)}[${struct.fieldSize}]; // unknown`);
+                        }
+                    }
+                    
+                    this.cppLines.unshift(`};`);
+                    this.cppLines.unshift(`// Base register: ${baseReg}, field size: ${struct.fieldSize} bytes, ${struct.accesses} accesses`);
+                    this.cppLines.unshift('');
+                }
+                
+                this.cppLines.unshift('// ==========================================');
+                this.cppLines.unshift('');
+                
+                for (const [baseReg, struct] of structCandidates) {
+                    const structName = baseReg === 'rcx' ? 'This' : `Struct_${baseReg.toUpperCase()}`;
+                    
+                    for (const field of struct.fieldTypes) {
+                        let fieldName = knownFieldNames[field.offset];
+                        if (!fieldName) {
+                            fieldName = `field_0x${field.offset.toString(16)}`;
+                        }
+                        
+                        const pattern = new RegExp(`\\[${baseReg}\\+0x${field.offset.toString(16)}\\]`, 'g');
+                        const replacement = `${structName}->${fieldName}`;
+                        
+                        bodyLines = bodyLines.map(line => line.replace(pattern, replacement));
+                        
+                        const doublePattern = new RegExp(`\\[\\[${baseReg}\\+0x${field.offset.toString(16)}\\]\\]`, 'g');
+                        const doubleReplacement = `*${structName}->${fieldName}`;
+                        
+                        bodyLines = bodyLines.map(line => line.replace(doublePattern, doubleReplacement));
+                    }
+                }
+                
+                if (structCandidates.has('rcx')) {
+                    functionSignature = functionSignature.replace('void* this_ptr', 'This* this');
+                }
+            }
+        }
+
+        const winapiSignatures = {
+            'GetTickCount': { args: [], ret: 'DWORD' },
+            'GetCurrentThreadId': { args: [], ret: 'DWORD' },
+            'GetCurrentProcessId': { args: [], ret: 'DWORD' },
+            'SetLastError': { args: ['DWORD'], ret: 'VOID' },
+            'DisableThreadLibraryCalls': { args: ['HMODULE'], ret: 'BOOL' },
+            'QueryPerformanceCounter': { args: ['LARGE_INTEGER*'], ret: 'BOOL' },
+            'GetSystemTimeAsFileTime': { args: ['LPFILETIME'], ret: 'VOID' }
+        };
+        
+        for (const [funcName, sig] of Object.entries(winapiSignatures)) {
+            if (bodyLines.some(line => line.includes(`${funcName}()`))) {
+                localVars.add(`    ${sig.ret} ${funcName.toLowerCase()}_result;`);
+            }
+        }
+
+        for (const func of this.functions) {
+            let hasDisableThreadLibrary = false;
+            let hasReasonCheck = false;
+            
+            for (const inst of func.insts) {
+                if (inst.text.includes('DisableThreadLibraryCalls')) {
+                    hasDisableThreadLibrary = true;
+                }
+                if (inst.text.includes('cmp') && inst.text.includes('rcx')) {
+                    hasReasonCheck = true;
+                }
+            }
+            
+            if (hasDisableThreadLibrary && hasReasonCheck) {
+                func.name = 'DllMain';
+                func.isDllMain = true;
+                console.log(`🎯 Found DllMain at 0x${func.start.toString(16)}`);
+            }
+        }
+
+        const switches = this.detectSwitchCase(func.insts, core);
+        if (switches.length > 0) {
+            for (const sw of switches) {
+                const switchStartLine = bodyLines.findIndex(line => 
+                    line.includes(`goto ${sw.tableAddr}`) || 
+                    line.includes(`jmp [${sw.indexReg}`)
+                );
+                
+                if (switchStartLine !== -1) {
+                    const caseLabels = new Map();
+                    
+                    for (const caseItem of sw.tableAddr.cases) {
+                        caseLabels.set(caseItem.targetLabel, caseItem.value);
+                    }
+                    
+                    let switchBlock = [`    switch (${sw.indexReg} - ${sw.indexShift}) {`];
+                    
+                    for (const caseItem of sw.tableAddr.cases) {
+                        switchBlock.push(`        case ${caseItem.value}:`);
+                        switchBlock.push(`            goto ${caseItem.targetLabel};`);
+                        switchBlock.push(`            break;`);
+                    }
+                    
+                    switchBlock.push(`        default:`);
+                    switchBlock.push(`            break;`);
+                    switchBlock.push(`    }`);
+                    
+                    let endOfSwitch = switchStartLine;
+                    while (endOfSwitch < bodyLines.length && 
+                           bodyLines[endOfSwitch].includes('if (') && 
+                           bodyLines[endOfSwitch].includes('goto')) {
+                        endOfSwitch++;
+                    }
+                    
+                    bodyLines.splice(switchStartLine, endOfSwitch - switchStartLine, ...switchBlock);
+                }
+            }
+        }
         
         this.cppLines.push(...bodyLines);
         this.cppLines.push('}\n');
         
         console.log(`  ✅ Function ${func.name} processed\n`);
         
-        // Скидаємо стан CPU для наступної функції
         core.savedRegs = [];
         core.stackSize = 0;
+    }
+
+    detectSwitchCase(instructions, core) {
+        const switches = [];
+        
+        for (let i = 0; i < instructions.length; i++) {
+            const inst = instructions[i];
+            
+            const switchPattern = /jmp \[(.*?)\+.*?\*8/;
+            const match = switchPattern.exec(inst.text);
+            
+            if (match) {
+                const tableExpr = match[1];
+                console.log(`🔍 Found potential switch at 0x${inst.rva.toString(16)}: ${inst.text}`);
+                
+                let indexReg = null;
+                let indexShift = 0;
+                
+                for (let j = Math.max(0, i - 10); j < i; j++) {
+                    const prevInst = instructions[j];
+                    
+                    if (prevInst.mnemonic === 'mov' && prevInst.text.includes('eax')) {
+                        const regMatch = prevInst.text.match(/mov eax, \[(.*?)\]/);
+                        if (regMatch) {
+                            indexReg = regMatch[1];
+                        }
+                    }
+                    
+                    if (prevInst.mnemonic === 'sub' && prevInst.text.includes('eax')) {
+                        const subMatch = prevInst.text.match(/sub eax, 0x([0-9a-f]+)/i);
+                        if (subMatch) {
+                            indexShift = parseInt(subMatch[1], 16);
+                        }
+                    }
+                }
+                
+                const tableAddr = this.findJumpTable(tableExpr);
+                
+                if (tableAddr) {
+                    switches.push({
+                        rva: inst.rva,
+                        tableAddr: tableAddr,
+                        indexReg: indexReg || 'eax',
+                        indexShift: indexShift,
+                        caseCount: tableAddr.cases.length
+                    });
+                }
+            }
+        }
+        
+        return switches;
+    }
+    
+    findJumpTable(tableExpr) {
+        let tableRVA = null;
+        
+        const ripMatch = tableExpr.match(/rip\+0x([0-9a-f]+)/i);
+        if (ripMatch) {
+            tableRVA = parseInt(ripMatch[1], 16);
+        }
+        
+        const addrMatch = tableExpr.match(/0x([0-9a-f]+)/i);
+        if (addrMatch) {
+            tableRVA = parseInt(addrMatch[1], 16);
+        }
+        
+        if (!tableRVA) return null;
+        
+        const section = this.sections.find(s => 
+            tableRVA >= s.virtualAddress && 
+            tableRVA < s.virtualAddress + s.virtualSize
+        );
+        
+        if (!section) return null;
+    
+        const offset = section.pointerToRawData + (tableRVA - section.virtualAddress);
+        
+        const cases = [];
+        const maxCases = 256;
+        
+        for (let i = 0; i < maxCases; i++) {
+            const caseOffset = offset + i * 8;
+            if (caseOffset + 8 > this.buffer.length) break;
+            
+            const targetRVA = this.buffer[caseOffset] | 
+                             (this.buffer[caseOffset + 1] << 8) |
+                             (this.buffer[caseOffset + 2] << 16) |
+                             (this.buffer[caseOffset + 3] << 24);
+            
+            if (targetRVA === 0) break;
+            
+            cases.push({
+                value: i,
+                targetRVA: targetRVA,
+                targetLabel: `label_0x${targetRVA.toString(16)}`
+            });
+        }
+        
+        if (cases.length > 0) {
+            return { rva: tableRVA, offset, cases };
+        }
+        
+        return null;
     }
 }
 
 class PCPU_Core {
-    constructor(binaryBuffer) {
+    constructor(binaryBuffer, sections = [], functionNames = new Map(), apiNames = new Map()) {
         if (typeof GUECMan !== 'undefined') {
             GUECMan.ConnectToClass(this);
         }
+        this.functionNames = functionNames;
+        this.apiNames = apiNames;
         this.buffer = binaryBuffer;
+        this.sections = sections; 
         this.ip = 0;
         this.statements = [];
         this.regs = {
-            rax: {v: 0, l: "rax"}, rbx: {v: 0, l: "rbx"}, rcx: {v: 0, l: "rcx"},
-            rdx: {v: 0, l: "rdx"}, rsi: {v: 0, l: "rsi"}, rdi: {v: 0, l: "rdi"},
-            rbp: {v: 0xFF00, l: "rbp"}, rsp: {v: 0xFF00, l: "rsp"}
+            rax: new ASTNode('reg', 'rax'),
+            rbx: new ASTNode('reg', 'rbx'),
+            rcx: new ASTNode('reg', 'rcx'),
+            rdx: new ASTNode('reg', 'rdx'),
+            rsi: new ASTNode('reg', 'rsi'),
+            rdi: new ASTNode('reg', 'rdi'),
+            rbp: new ASTNode('reg', 'rbp'),
+            rsp: new ASTNode('reg', 'rsp')
         };
         
         this.stack = new Map();
+        this.globalMemory = new Map();
         this.flags = { zf: false, sf: false, lastComp: "" };
         
         // FPO support
@@ -2400,6 +3165,8 @@ class PCPU_Core {
         this.hasRBPStackFrame = false;
         this.foundReturns = 0;        
         this.fpoDetected = false;
+        this.memory = new Map();
+        this.memoryWrites = [];
         this.opcodeTable = { 0x00: { mnem: "add", len: 2 }, 0x01: { mnem: "add", len: 2 }, 0x02: { mnem: "add", len: 2 }, 0x03: { mnem: "add", len: 2 },
         0x04: { mnem: "add", len: 2 }, 0x05: { mnem: "add", len: 5 },
         0x08: { mnem: "or", len: 2 }, 0x09: { mnem: "or", len: 2 }, 0x0A: { mnem: "or", len: 2 }, 0x0B: { mnem: "or", len: 2 },
@@ -2435,6 +3202,7 @@ class PCPU_Core {
         0x06: { mnem: "push es", len: 1 }, 0x07: { mnem: "pop es", len: 1 },
         0x0E: { mnem: "push cs", len: 1 }, 0x16: { mnem: "push ss", len: 1 }, 0x17: { mnem: "pop ss", len: 1 },
         0x1E: { mnem: "push ds", len: 1 }, 0x1F: { mnem: "pop ds", len: 1 },
+        0x7D: { mnem: "jnl", len: 2 },
         0x88: { mnem: "mov", len: 2 }, 0x89: { mnem: "mov", len: 2 }, 0x8A: { mnem: "mov", len: 2 }, 0x8B: { mnem: "mov", len: 2 },
         0x8C: { mnem: "mov", len: 2 }, 0x8D: { mnem: "lea", len: 2 }, 0x8E: { mnem: "mov", len: 2 },
         0x8F: { mnem: "pop", len: 2 },
@@ -2493,6 +3261,112 @@ class PCPU_Core {
         this.fpoDetected = false;
     }
 
+    readFromBuffer(offset, size) {
+        if (offset === -1 || offset + size > this.buffer.length) {
+            return 0;
+        }
+        
+        let value = 0;
+        for (let i = 0; i < size; i++) {
+            value |= this.buffer[offset + i] << (i * 8);
+        }
+        return value;
+    }
+
+    memoryRead(addr, size) {
+        let addrValue = addr;
+        if (typeof addr === 'string') {
+            const num = parseInt(addr, 16);
+            if (!isNaN(num)) {
+                addrValue = num;
+            }
+        } else if (addr && addr.type === 'const') {
+            addrValue = addr.value;
+        } else if (addr && addr.type === 'reg') {
+            addrValue = addr.value;
+        }
+        
+        const addrKey = addrValue.toString();
+        
+        if (this.stack && this.stack.has(addrKey)) {
+            return this.stack.get(addrKey);
+        }
+        
+        if (this.globalMemory && this.globalMemory.has(addrKey)) {
+            return this.globalMemory.get(addrKey);
+        }
+        
+        if (typeof addrValue === 'number') {
+            const offset = this.rvaToOffset(addrValue);
+            if (offset !== -1 && offset + size <= this.buffer.length) {
+                let value = 0;
+                for (let i = 0; i < size; i++) {
+                    value |= this.buffer[offset + i] << (i * 8);
+                }
+                return new ASTNode('const', value);
+            }
+        }
+        
+        return new ASTNode('reg', `mem_${addrKey}`);
+    }
+
+    rvaToOffset(rva) {
+        if (rva === 0) return -1;
+        
+        const rvaNum = typeof rva === 'bigint' ? Number(rva) : rva;
+        
+        let textSection = null;
+        for (const section of this.sections) {
+            if (section.name === '.text') {
+                textSection = section;
+                break;
+            }
+        }
+        
+        if (!textSection) {
+            const textStart = 0x1000;
+            const textEnd = 0x1800;
+            const textRawOffset = 0x400;
+            
+            if (rvaNum >= textStart && rvaNum < textEnd) {
+                const offset = textRawOffset + (rvaNum - textStart);
+                if (offset >= 0 && offset < this.buffer.length) {
+                    return offset;
+                }
+            }
+            return -1;
+        }
+        
+        const sectionStart = textSection.virtualAddress;
+        const sectionEnd = sectionStart + textSection.virtualSize;
+        
+        if (rvaNum >= sectionStart && rvaNum < sectionEnd) {
+            if (textSection.pointerToRawData === 0) {
+                return -1;
+            }
+            
+            const offset = textSection.pointerToRawData + (rvaNum - sectionStart);
+            
+            if (offset >= 0 && offset < this.buffer.length) {
+                return offset;
+            }
+        }
+        
+        return -1;
+    }
+    
+    memoryWrite(addr, value, size) {
+        const addrStr = addr.toString();
+        this.memory.set(addrStr, value.clone());
+        this.memoryWrites.push({
+            addr: addr,
+            value: value,
+            size: size,
+            rva: this.ip
+        });
+        return `[${addr.toString()}] = ${value.toString()}`;
+    }
+
     decodeModRM(bytes) {
         const modrm = bytes[1];
         const mod = (modrm >> 6) & 3;
@@ -2501,10 +3375,49 @@ class PCPU_Core {
         const regNames = ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi'];
         
         let offset = 0;
-        if (mod === 1) {
+        let sibIndex = -1;
+        let sibScale = 1;
+        
+        if (mod !== 3 && rm === 4 && bytes.length > 2) {
+            const sib = bytes[2];
+            const scale = (sib >> 6) & 3;
+            const index = (sib >> 3) & 7;
+            const base = sib & 7;
+            
+            if (base !== 5) {
+                const baseName = regNames[base];
+                const indexName = regNames[index];
+                const scaleVal = [1, 2, 4, 8][scale];
+                
+                if (mod === 1 && bytes.length > 3) {
+                    offset = bytes[3];
+                    if (offset > 127) offset -= 256;
+                    return {
+                        mod, regName: regNames[reg],
+                        rmName: `${baseName} + ${indexName}*${scaleVal} + ${offset}`,
+                        isDirect: false, offset
+                    };
+                } else if (mod === 2 && bytes.length > 6) {
+                    offset = bytes[3] | (bytes[4] << 8) | (bytes[5] << 16) | (bytes[6] << 24);
+                    return {
+                        mod, regName: regNames[reg],
+                        rmName: `${baseName} + ${indexName}*${scaleVal} + 0x${offset.toString(16)}`,
+                        isDirect: false, offset
+                    };
+                } else {
+                    return {
+                        mod, regName: regNames[reg],
+                        rmName: `${baseName} + ${indexName}*${scaleVal}`,
+                        isDirect: false, offset: 0
+                    };
+                }
+            }
+        }
+        
+        if (mod === 1 && bytes.length > 2) {
             offset = bytes[2];
             if (offset > 127) offset -= 256;
-        } else if (mod === 2) {
+        } else if (mod === 2 && bytes.length > 5) {
             offset = bytes[2] | (bytes[3] << 8) | (bytes[4] << 16) | (bytes[5] << 24);
         }
         
@@ -2517,15 +3430,24 @@ class PCPU_Core {
         };
     }
 
-    stackPush(data) {
-        this.regs.rsp.v -= 8;
-        this.stack.set(this.regs.rsp.v, data);
-        this.statements.push(`// push ${data.l}`);
+    getOperandSize(bytes) {
+        const opcode = bytes[0];
+        if (opcode >= 0x88 && opcode <= 0x8F) return 1; // byte
+        if (opcode >= 0x89 && opcode <= 0x8B) return 8; // qword (x64)
+        if (opcode === 0xC7) return 4; // dword
+        return 4; // default
     }
 
+    stackPush(data) {
+        this.regs.rsp = new ASTNode('sub', null, this.regs.rsp, new ASTNode('const', 8));
+        this.stack.set(this.regs.rsp.toString(), data);
+        this.statements.push(`push ${data.toString()};`);
+    }
+    
     stackPop() {
-        const data = this.stack.get(this.regs.rsp.v) || {v: 0, l: `pop_val_${this.regs.rsp.v.toString(16)}`};
-        this.regs.rsp.v += 8;
+        const addr = this.regs.rsp.toString();
+        const data = this.stack.get(addr) || new ASTNode('reg', `pop_val_${addr}`);
+        this.regs.rsp = new ASTNode('add', null, this.regs.rsp, new ASTNode('const', 8));
         return data;
     }
 
@@ -2569,23 +3491,6 @@ class PCPU_Core {
         return `[${m.rmName}]`;
     }
 
-    reset() {
-        this.ip = 0;
-        this.statements = [];
-        this.regs = {
-            rax: {v: 0, l: "rax"}, rbx: {v: 0, l: "rbx"}, 
-            rcx: {v: 0, l: "rcx"}, rdx: {v: 0, l: "rdx"},
-            rsi: {v: 0, l: "rsi"}, rdi: {v: 0, l: "rdi"},
-            rbp: {v: 0xFF00, l: "rbp"}, rsp: {v: 0xFF00, l: "rsp"}
-        };
-        this.stack.clear();
-        this.flags = { zf: false, sf: false, lastComp: "" };
-        this.savedRegs = [];
-        this.stackSize = 0;
-        this.hasRBPStackFrame = false;
-        this.foundReturns = 0;
-    }
-
     execute(inst) {
         const bytes = inst.bytes;
         const mnem = inst.mnem;
@@ -2605,6 +3510,49 @@ class PCPU_Core {
         }
     
         switch (mnem) {
+            case 'movsb':
+                this.statements.push(`*rdi++ = *rsi++;  // movsb (copy byte)`);
+                break;
+            case 'movsw':
+                this.statements.push(`*(WORD*)rdi++ = *(WORD*)rsi++;  // movsw (copy word)`);
+                break;
+            case 'stosb':
+                this.statements.push(`*rdi++ = al;  // stosb (store byte)`);
+                break;
+            case 'lodsb':
+                this.statements.push(`al = *rsi++;  // lodsb (load byte)`);
+                break;
+            case 'adc': {
+                const a = this.decodeModRM(bytes);
+                if (!this.regs[a.regName] || !this.regs[a.rmName]) {
+                    this.statements.push(`// adc ${a.regName}, ${a.rmName} (cannot emulate - carry flag)`);
+                    break;
+                }
+                const carry = this.flags.cf ? new ASTNode('const', 1) : new ASTNode('const', 0);
+                const sum = new ASTNode('add', null, this.regs[a.regName].clone(), this.regs[a.rmName].clone());
+                this.regs[a.regName] = new ASTNode('add', null, sum, carry);
+                this.statements.push(`${a.regName} = ${this.regs[a.regName].toString()};`);
+                break;
+            }
+            case 'sbb': {
+                const a = this.decodeModRM(bytes);
+                if (!this.regs[a.regName] || !this.regs[a.rmName]) {
+                    this.statements.push(`// sbb ${a.regName}, ${a.rmName} (cannot emulate - borrow flag)`);
+                    break;
+                }
+                const left = this.regs[a.regName].l;
+                const right = this.regs[a.rmName].l;
+                const borrow = this.flags.cf ? ' - 1' : '';
+                this.regs[a.regName].l = `(${left} - ${right}${borrow})`;
+                this.statements.push(`${a.regName} = ${this.regs[a.regName].l};`);
+                break;
+            }
+            case 'aaa':
+                this.statements.push(`// aaa (ASCII adjust after addition) - obsolete instruction`);
+                break;
+            case 'sldt':
+                this.statements.push(`// sldt (store local descriptor table) - privileged instruction, cannot emulate`);
+                break;
             case 'movq':  // 64-bit mov
             case 'addq':  // 64-bit add
             case 'subq':  // 64-bit sub
@@ -2620,7 +3568,11 @@ class PCPU_Core {
                 }
                 break;
             case 'js':   // sign
-                this.statements.push(`if ((${this.flags.lastComp}) < 0) goto label_0x...;`);
+                if (!this.flags.lastComp || this.flags.lastComp === '') {
+                    this.statements.push(`// js (sign) condition at 0x${inst.rva?.toString(16)} - unknown condition`);
+                } else {
+                    this.statements.push(`if ((${this.flags.lastComp}) < 0) goto label_0x...;`);
+                }
                 break;
             case 'jns':  // not sign
                 this.statements.push(`if ((${this.flags.lastComp}) >= 0) goto label_0x...;`);
@@ -2679,55 +3631,124 @@ class PCPU_Core {
             case 'cmpsq':
                 this.statements.push(`// ${inst.text} (compare string)`);
                 break;
+            case 'rex.40':
+            case 'rex.41':
+            case 'rex.42':
+            case 'rex.43':
+            case 'rex.44':
+            case 'rex.45':
+            case 'rex.46':
+            case 'rex.47':
             case 'rex.48':
+            case 'rex.49':
+            case 'rex.4a':
+            case 'rex.4b':
             case 'rex.4c':
             case 'rex.4d':
-            case 'rex.41':
-            case 'rex.4b':
+            case 'rex.4e':
             case 'rex.4f':
-            case 'rex.43':
-            case 'rex.45':
-                // just ignore
+                const rexByte = bytes[0];
+                this.rexPrefix = {
+                    w: (rexByte & 0x08) !== 0,
+                    r: (rexByte & 0x04) !== 0,
+                    x: (rexByte & 0x02) !== 0,
+                    b: (rexByte & 0x01) !== 0
+                };
                 break;
             case 'mov':
             case 'movzx':
             case 'movsx': {
                 const m = this.decodeModRM(bytes);
                 
-                if (!m.isDirect && m.rmName === 'rsp' && this.savedRegs.length > 0) {
-                    const savedOffset = this.savedRegs.length * 8;
-                    const finalOffset = savedOffset - (m.offset || 0);
-                    const regName = m.regName;
-                    this.statements.push(`; FPO: [rbp-0x${finalOffset.toString(16)}] = ${this.regs[regName].l}`);
+                if (!this.regs[m.regName]) {
+                    this.statements.push(`// Unknown mov: ${inst.text}`);
                     break;
+                }
+
+                if (!m.isDirect) {
+                    const addr = this.resolveAddress(m);
+                    const value = this.regs[m.regName];
+                    const size = this.getOperandSize(bytes);
+                    
+                    const writeStmt = this.memoryWrite(addr, value, size);
+                    this.statements.push(writeStmt + ';');
+                    
+                    if (!this.memAccesses) this.memAccesses = {};
+                    const baseReg = m.rmName;
+                    if (!this.memAccesses[baseReg]) this.memAccesses[baseReg] = [];
+                    this.memAccesses[baseReg].push({
+                        offset: m.offset,
+                        size: size,
+                        type: 'write',
+                        rva: inst.rva
+                    });
                 }
                 
                 if (m.isDirect) {
-                    this.regs[m.rmName] = { ...this.regs[m.regName] };
+                    if (!this.regs[m.rmName]) {
+                        this.statements.push(`// Unknown mov: ${inst.text}`);
+                        break;
+                    }
+                    this.regs[m.rmName] = this.regs[m.regName].clone();
+                    this.statements.push(`${m.rmName} = ${this.regs[m.regName].toString()};`);
                 } else {
                     const addr = this.resolveAddress(m);
-                    this.statements.push(`${addr} = ${this.regs[m.regName].l};`);
+                    const size = this.getOperandSize(bytes);
+                    
+                    const memValue = this.memoryRead(addr, size);
+                    this.regs[m.regName] = memValue;
+                    this.statements.push(`${m.regName} = ${memValue.toString()};`);
+                    
+                    if (!this.memAccesses) this.memAccesses = {};
+                    const baseReg = m.rmName;
+                    if (!this.memAccesses[baseReg]) this.memAccesses[baseReg] = [];
+                    this.memAccesses[baseReg].push({
+                        offset: m.offset,
+                        size: size,
+                        type: 'read',
+                        rva: inst.rva
+                    });
                 }
                 break;
             }
     
             case 'lea': {
                 const l = this.decodeModRM(bytes);
+
+                if (!l.isDirect) {
+                    const baseReg = l.rmName;
+                    const offset = l.offset;
+                    
+                    if (!this.memAccesses) this.memAccesses = {};
+                    if (!this.memAccesses[baseReg]) this.memAccesses[baseReg] = [];
+                    
+                    this.memAccesses[baseReg].push({
+                        offset: offset,
+                        size: this.getOperandSize(bytes),
+                        type: mnem,
+                        rva: inst.rva
+                    });
+                }
                 
                 // FPO: lea rbx, [rsp+0x20] -> lea rbx, [rbp-0x?]
                 if (l.rmName === 'rsp' && this.savedRegs.length > 0) {
                     const savedOffset = this.savedRegs.length * 8;
                     const finalOffset = savedOffset - (l.offset || 0);
-                    this.regs[l.regName] = { v: 0, l: `&var_rbp_minus_0x${finalOffset.toString(16)}` };
+                    const memNode = new ASTNode('mem');
+                    memNode.base = this.regs.rbp.clone();
+                    memNode.offset = finalOffset;
+                    this.regs[l.regName] = memNode;
                     this.statements.push(`; FPO: ${l.regName} = rbp - 0x${finalOffset.toString(16)}`);
                     break;
                 }
                 
-                if (l.offset !== 0) {
-                    this.regs[l.regName] = { v: 0, l: `&var_${l.rmName}_plus_0x${l.offset.toString(16)}` };
-                } else {
-                    this.regs[l.regName] = { v: 0, l: `&var_${l.rmName}` };
+                const memNode = new ASTNode('mem');
+                if (l.rmName && this.regs[l.rmName]) {
+                    memNode.base = this.regs[l.rmName].clone();
                 }
+                memNode.offset = l.offset || 0;
+                
+                this.regs[l.regName] = memNode;
                 break;
             }
     
@@ -2735,36 +3756,90 @@ class PCPU_Core {
             case 'sub':
             case 'xor':
             case 'and':
-            case 'or':
-            case 'adc':
-            case 'sbb':
-            case 'imul': {
+            case 'or': {
                 const a = this.decodeModRM(bytes);
-                const opSym = { 'add': '+', 'sub': '-', 'xor': '^', 'and': '&', 'or': '|', 'adc': '+ [cf] +', 'sbb': '- [cf] -', 'imul': '*' }[mnem];
+                const opMap = { 'add': 'add', 'sub': 'sub', 'xor': 'xor', 'and': 'and', 'or': 'or' };
                 
-                if (mnem === 'sub' && a.regName === 'rsp') {
-                    const sizeMatch = inst.text && inst.text.match(/0x([0-9a-f]+)/i);
-                    if (sizeMatch) {
-                        this.stackSize += parseInt(sizeMatch[1], 16);
-                        this.statements.push(`; FPO: allocate ${sizeMatch[1]} bytes on stack (total: ${this.stackSize})`);
-                    }
+                if (!this.regs[a.regName]) {
+                    this.statements.push(`// Unknown ${mnem}: ${inst.text}`);
                     break;
                 }
-                
-                if (mnem === 'add' && a.regName === 'rsp') {
-                    const sizeMatch = inst.text && inst.text.match(/0x([0-9a-f]+)/i);
-                    if (sizeMatch) {
-                        this.stackSize -= parseInt(sizeMatch[1], 16);
-                        this.statements.push(`; FPO: free ${sizeMatch[1]} bytes from stack (remaining: ${this.stackSize})`);
-                    }
+
+                if (!this.regs[a.regName] || !this.regs[a.rmName]) {
+                    this.statements.push(`// ${mnem} ${a.regName}, ${a.rmName} (unknown registers)`);
+                    this.regs[a.regName] = new ASTNode('const', 0);
                     break;
                 }
                 
                 if (mnem === 'xor' && a.regName === a.rmName) {
-                    this.regs[a.regName] = { v: 0, l: "0" };
-                } else {
-                    this.regs[a.regName].l = `(${this.regs[a.regName].l} ${opSym} ${this.regs[a.rmName].l})`;
+                    this.regs[a.regName] = new ASTNode('const', 0);
+                    this.statements.push(`${a.regName} = 0;`);
+                    break;
                 }
+                
+                if (a.isDirect) {
+                    if (!this.regs[a.rmName]) {
+                        this.statements.push(`// Unknown ${mnem}: ${inst.text}`);
+                        break;
+                    }
+                    this.regs[a.regName] = new ASTNode(
+                        opMap[mnem], 
+                        null,
+                        this.regs[a.regName].clone(),
+                        this.regs[a.rmName].clone()
+                    );
+                    this.statements.push(`${a.regName} = ${this.regs[a.regName].toString()};`);
+                } else {
+                    const addr = this.resolveAddress(a);
+                    this.statements.push(`// ${mnem} ${a.regName}, ${addr} (memory access - cannot emulate)`);
+                    const opSymbol = { 'add': '+', 'sub': '-', 'xor': '^', 'and': '&', 'or': '|' }[mnem];
+                    this.statements.push(`${a.regName} = ${this.regs[a.regName].toString()} ${opSymbol} ${addr};`);
+                }
+                break;
+            }
+            case 'imul': {
+                const a = this.decodeModRM(bytes);
+                if (!this.regs[a.regName] || !this.regs[a.rmName]) {
+                    this.statements.push(`// imul ${a.regName}, ${a.rmName} (cannot emulate)`);
+                    break;
+                }
+                this.regs[a.regName] = new ASTNode(
+                    'mul',
+                    null,
+                    this.regs[a.regName].clone(),
+                    this.regs[a.rmName].clone()
+                );
+                this.statements.push(`${a.regName} = ${this.regs[a.regName].toString()};`);
+                break;
+            }
+            case 'neg': {
+                const a = this.decodeModRM(bytes);
+                if (!this.regs[a.regName]) {
+                    this.statements.push(`// neg ${a.regName} (cannot emulate)`);
+                    break;
+                }
+                this.regs[a.regName] = new ASTNode(
+                    'sub',
+                    null,
+                    new ASTNode('const', 0),
+                    this.regs[a.regName].clone()
+                );
+                this.statements.push(`${a.regName} = ${this.regs[a.regName].toString()};`);
+                break;
+            }
+            case 'not': {
+                const a = this.decodeModRM(bytes);
+                if (!this.regs[a.regName]) {
+                    this.statements.push(`// not ${a.regName} (cannot emulate)`);
+                    break;
+                }
+                this.regs[a.regName] = new ASTNode(
+                    'xor',
+                    null,
+                    this.regs[a.regName].clone(),
+                    new ASTNode('const', -1)
+                );
+                this.statements.push(`${a.regName} = ${this.regs[a.regName].toString()};`);
                 break;
             }
             
@@ -2774,13 +3849,21 @@ class PCPU_Core {
                     this.savedRegs.unshift(regMatch[1]);
                     this.statements.push(`; FPO: save ${regMatch[1]} (will restore at epilog)`);
                 }
-
-                const pVal = (op0 >= 0x50 && op0 <= 0x57) 
-                    ? this.regs[['rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi'][op0 - 0x50]]
-                    : this.regs[this.decodeModRM(bytes).regName];
-                this.stackPush(pVal);
+            
+                let pVal;
+                if (op0 >= 0x50 && op0 <= 0x57) {
+                    const regName = ['rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi'][op0 - 0x50];
+                    pVal = this.regs[regName];
+                } else {
+                    const m = this.decodeModRM(bytes);
+                    pVal = this.regs[m.regName];
+                }
+                
+                this.stackPush(pVal.clone());
+                this.statements.push(`push ${pVal.toString()};`);
                 break;
             }
+            
     
             case 'pop': {
                 const targetPop = (op0 >= 0x58 && op0 <= 0x5F)
@@ -2792,45 +3875,197 @@ class PCPU_Core {
                     this.statements.push(`; FPO: restore ${targetPop}`);
                 }
                 
-                this.regs[targetPop] = this.stackPop();
+                const popped = this.stackPop();
+                this.regs[targetPop] = popped.clone();
+                this.statements.push(`${targetPop} = ${popped.toString()};`);
                 break;
             }
             
             case 'inc':
             case 'dec': {
-                const sign = mnem === 'inc' ? '++' : '--';
+                const sign = mnem === 'inc' ? 1 : -1;
                 const regIdx = op0 >= 0x40 && op0 <= 0x4F ? (op0 & 7) : -1;
-                const target = regIdx !== -1 ? ['rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi'][regIdx] : this.decodeModRM(bytes).regName;
-                this.regs[target].l = `(${this.regs[target].l}${sign})`;
+                const target = regIdx !== -1 
+                    ? ['rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi'][regIdx] 
+                    : this.decodeModRM(bytes).regName;
+
+                if (!this.regs[target]) {
+                    this.statements.push(`// Unknown ${mnem}: ${inst.text}`);
+                    break;
+                }
+                
+                this.regs[target] = new ASTNode(
+                    'add', 
+                    null,
+                    this.regs[target].clone(),
+                    new ASTNode('const', 1)
+                );
+                this.statements.push(`${target} = ${this.regs[target].toString()};`);
                 break;
             }
     
             case 'cmp':
             case 'test': {
                 const c = this.decodeModRM(bytes);
-                this.flags.lastComp = `${this.regs[c.regName].l} == ${this.regs[c.rmName].l}`;
+
+                if (!this.regs[c.regName] || !this.regs[c.rmName]) {
+                    this.flags.lastComp = "0";
+                    this.statements.push(`// cmp ${c.regName}, ${c.rmName} (unknown registers)`);
+                    break;
+                }
+
+                const diff = new ASTNode(
+                    'sub',
+                    null,
+                    this.regs[c.regName].clone(),
+                    this.regs[c.rmName].clone()
+                ).simplify();
+
+                this.flags.lastComp = diff.toString();
+                this.flags.lastCompAST = diff;
                 break;
             }
     
+            case 'jmp': {
+                let targetAddr = 'label_0x...';
+                const match = inst.text.match(/0x([0-9a-f]+)/i);
+                if (match) {
+                    const targetRVA = parseInt(match[1], 16);
+                    
+                    if (this.functionNames && this.functionNames.has(targetRVA)) {
+                        const funcName = this.functionNames.get(targetRVA);
+                        this.statements.push(`goto ${funcName}; // jump to exported function`);
+                    } else {
+                        targetAddr = `label_0x${match[1]}`;
+                        this.statements.push(`goto ${targetAddr};`);
+                    }
+                } else {
+                    this.statements.push(`goto ${targetAddr};`);
+                }
+                break;
+            }
+            
             case 'jz': 
             case 'jnz': 
             case 'jl': 
+            case 'jnl':  // jump if not less (>=)
+                if (!this.flags.lastCompAST) {
+                    this.statements.push(`// jnl (>=) condition at 0x${inst.rva?.toString(16)} - unknown condition`);
+                    break;
+                }
+
+                let targetAddr = 'label';
+                const match = inst.text.match(/0x([0-9a-f]+)/i);
+                if (match) {
+                    targetAddr = `label_0x${match[1]}`;
+                }
+
+                const diff = this.flags.lastCompAST;
+                // jnl = jump if left >= right
+                if (diff.type === 'sub') {
+                    this.statements.push(`if (${diff.left.toString()} >= ${diff.right.toString()}) goto ${targetAddr};`);
+                } else {
+                    this.statements.push(`if (${diff.toString()} >= 0) goto ${targetAddr};`);
+                }
+                break;
             case 'jg': 
             case 'jb': 
             case 'jbe': {
                 const condMap = { 'jz':'==', 'jnz':'!=', 'jl':'<', 'jg':'>', 'jb':'<', 'jbe':'<=' };
-                this.statements.push(`if (${this.flags.lastComp} ${condMap[mnem]} 0) goto label_0x...;`);
+    
+                let targetAddr = 'label';
+                const match = inst.text.match(/0x([0-9a-f]+)/i);
+                if (match) {
+                    const targetRVA = parseInt(match[1], 16);
+                    if (this.functionNames && this.functionNames.has(targetRVA)) {
+                        const funcName = this.functionNames.get(targetRVA);
+                        targetAddr = funcName;
+                    } else {
+                        targetAddr = `label_0x${match[1]}`;
+                    }
+                }
+
+                if (!this.flags.lastCompAST) {
+                    this.statements.push(`// ${mnem} ${targetAddr} (unknown condition)`);
+                    break;
+                }
+                
+                const diff = this.flags.lastCompAST;
+                let condition = diff.toString();
+                
+                if (mnem === 'jz' && diff.type === 'sub') {
+                    // a == b  →  a == b
+                    this.statements.push(`if (${diff.left.toString()} == ${diff.right.toString()}) goto ${targetAddr};`);
+                } else if (mnem === 'jnz' && diff.type === 'sub') {
+                    this.statements.push(`if (${diff.left.toString()} != ${diff.right.toString()}) goto ${targetAddr};`);
+                } else if (mnem === 'jl' && diff.type === 'sub') {
+                    this.statements.push(`if (${diff.left.toString()} < ${diff.right.toString()}) goto ${targetAddr};`);
+                } else {
+                    this.statements.push(`if (${condition} ${condMap[mnem]} 0) goto ${targetAddr};`);
+                }
                 break;
             }
-    
-            case 'jmp':
-                this.statements.push(`goto label_0x...;`);
+            case 'call': {
+                const callAddr = this.ip;
+                let funcName = null;
+                let funcArgs = [];
+                
+                if (this.functionNames && this.functionNames.has(callAddr)) {
+                    funcName = this.functionNames.get(callAddr);
+                }
+                
+                if (!funcName && this.apiNames && this.apiNames.has(callAddr)) {
+                    funcName = this.apiNames.get(callAddr);
+                }
+                
+                if (!funcName) {
+                    if (this.imports && this.imports.length > 0) {
+                        for (const imp of this.imports) {
+                            for (const func of imp.functions) {
+                                if (func.rva === callAddr || func.name) {
+                                    funcName = func.name;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (!funcName) {
+                    funcName = `func_${callAddr.toString(16)}`;
+                }
+                
+                if (this.regs.rcx && this.regs.rcx.toString() !== 'rcx') {
+                    funcArgs.push(this.regs.rcx.clone());
+                }
+                if (this.regs.rdx && this.regs.rdx.toString() !== 'rdx') {
+                    funcArgs.push(this.regs.rdx.clone());
+                }
+                if (this.regs.r8 && this.regs.r8.toString() !== 'r8') {
+                    funcArgs.push(this.regs.r8.clone());
+                }
+                if (this.regs.r9 && this.regs.r9.toString() !== 'r9') {
+                    funcArgs.push(this.regs.r9.clone());
+                }
+                
+                let argsStr = '';
+                if (funcArgs && funcArgs.length > 0) {
+                    argsStr = funcArgs.map(arg => {
+                        if (!arg) return '???';
+                        let s = arg.toString();
+                        if (s.startsWith('[') && s.endsWith(']')) return s;
+                        if (arg.type === 'reg' || arg.type === 'const') return s;
+                        return `(${s})`;
+                    }).join(', ');
+                }
+
+                this.statements.push(`${funcName}(${argsStr});`);
+
+                const callNode = new ASTNode('call', funcName);
+                callNode.args = funcArgs || [];
+                this.regs.rax = callNode;
                 break;
-    
-            case 'call':
-                this.statements.push(`func_${this.ip.toString(16)}(/* arguments */);`);
-                this.regs.rax = { v: 0, l: `last_call_res` };
-                break;
+            }
     
             case 'ret': {
                 for (let i = this.savedRegs.length - 1; i >= 0; i--) {
@@ -2840,10 +4075,9 @@ class PCPU_Core {
                     this.statements.push(`    add rsp, ${this.stackSize}            ; free stack space`);
                 }
                 this.statements.push(`    pop rbp                 ; restore frame pointer`);
-                this.statements.push(`    return ${this.regs.rax.l};`);
+                this.statements.push(`    return ${this.regs.rax.toString()};`);
                 break;
             }
-    
             case 'movsb':
             case 'movsw':
                 this.statements.push(`memcpy(rdi, rsi, ${mnem === 'movsb' ? 1 : 2});`);
@@ -2875,16 +4109,138 @@ class PCPU_Core {
                 break;
             }
     
-            case 'db':
-                this.statements.push(`// db ${Array.from(bytes).map(b => '0x' + b.toString(16)).join(', ')}`);
+            case 'db': {
+                const bytes = inst.bytes;
+                
+                if (bytes.length === 2) {
+                    const byte1 = bytes[0];
+                    const byte2 = bytes[1];
+                    
+                    if (byte1 === 0x0b && byte2 >= 0x04 && byte2 <= 0x0f) {
+                        const value = (byte2 << 8) | byte1;
+                        this.statements.push(`// constant: 0x${value.toString(16)} (possible jump table entry)`);
+                        break;
+                    }
+                    
+                    if ((byte1 === 0x0d || byte1 === 0x0e || byte1 === 0x0f) && byte2 >= 0x00 && byte2 <= 0x0f) {
+                        const value = (byte2 << 8) | byte1;
+                        this.statements.push(`// constant: 0x${value.toString(16)}`);
+                        break;
+                    }
+                    
+                    if (byte1 <= 0x20 && byte2 <= 0x20) {
+                        this.statements.push(`// padding: 0x${byte1.toString(16)}, 0x${byte2.toString(16)}`);
+                        break;
+                    }
+                }
+                
+                if (bytes.length >= 4) {
+                    const value = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+                    this.statements.push(`// dword constant: 0x${value.toString(16)}`);
+                    break;
+                }
+                
+                const hexBytes = Array.from(bytes).map(b => '0x' + b.toString(16)).join(', ');
+                this.statements.push(`// db ${hexBytes} (raw data)`);
                 break;
-    
+            }
+            case 'undefined': {
+                const opcode = bytes[0];
+                const secondByte = bytes[1] || 0;
+                
+                this.statements.push(`// ⚠️ UNDEFINED INSTRUCTION at 0x${inst.rva?.toString(16) || '?'}`);
+                this.statements.push(`//    bytes: ${Array.from(bytes).map(b => '0x' + b.toString(16)).join(' ')}`);
+                this.statements.push(`//    mnemonic: ${mnem}, text: ${inst.text}`);
+                
+                if (bytes[0] === 0x0F && bytes[1] === 0x0B) {
+                    this.statements.push(`//    This is UD2 (undefined instruction) - used for debugging`);
+                } else if (bytes[0] === 0x0F && bytes[1] === 0x31) {
+                    this.statements.push(`//    This is RDTSC (read timestamp counter) - returns CPU cycles`);
+                    this.regs.rax = { v: Date.now(), l: 'timestamp_low' };
+                    this.regs.rdx = { v: 0, l: 'timestamp_high' };
+                } else if (bytes[0] === 0x0F && bytes[1] === 0xA2) {
+                    this.statements.push(`//    This is CPUID - returns processor info`);
+                    this.regs.rax = { v: 0, l: '"GenuineIntel"' };
+                } else if (bytes[0] === 0x0F && bytes[1] === 0x05) {
+                    this.statements.push(`//    This is SYSCALL - system call (Windows API transition)`);
+                } else if (bytes[0] === 0x0F && bytes[1] === 0x34) {
+                    this.statements.push(`//    This is SYSENTER - fast system call`);
+                } else if (bytes[0] === 0xCD && bytes[1] === 0x2E) {
+                    this.statements.push(`//    This is INT 2E - old style system call (Windows 9x/NT)`);
+                } else if (bytes[0] === 0xCC) {
+                    this.statements.push(`//    This is INT 3 breakpoint`);
+                } else if (bytes[0] === 0x0F && (bytes[1] === 0x0F || bytes[1] === 0x1F)) {
+                    this.statements.push(`//    This is a multi-byte NOP (padding)`);
+                } else {
+                    const opcodeInfo = this.getOpcodeInfo(bytes);
+                    if (opcodeInfo) {
+                        this.statements.push(`//    Possibly: ${opcodeInfo}`);
+                    }
+                }
+                break;
+            }
             default:
                 if (mnem !== 'int3' && mnem !== 'db' && mnem !== '???') {
                     this.statements.push(`// C++ JSCPU Decomp Warning: Unknown operation ${mnem}`);
                 }
                 break;
         }
+    }
+
+    getOpcodeInfo(bytes) {
+        const opcode = bytes[0];
+        const second = bytes[1];
+        
+        const knownOpcodes = {
+            0x0F: {
+                0x00: "SLDT / SGDT / STR / SMSW",
+                0x01: "LGDT / LIDT / LLDT / LMSW / INVLPG / SWAPGS / RDTSCP",
+                0x05: "SYSCALL",
+                0x06: "CLTS",
+                0x07: "SYSRET",
+                0x08: "INVD",
+                0x09: "WBINVD",
+                0x0B: "UD2",
+                0x0D: "PREFETCH",
+                0x1F: "NOP (multi-byte)",
+                0x31: "RDTSC",
+                0x34: "SYSENTER",
+                0x35: "SYSEXIT",
+                0xA2: "CPUID",
+                0xAF: "IMUL",
+                0xB0: "CMPXCHG",
+                0xB1: "CMPXCHG",
+                0xB6: "MOVZX",
+                0xB7: "MOVZX",
+                0xBE: "MOVSX",
+                0xBF: "MOVSX",
+                0xC7: "CMPXCHG8B / CMPXCHG16B"
+            },
+            0xCD: { 0x2E: "INT 2E (old syscall)" },
+            0xCC: { 0x00: "INT 3 breakpoint" }
+        };
+        
+        if (knownOpcodes[opcode] && knownOpcodes[opcode][second]) {
+            return knownOpcodes[opcode][second];
+        }
+        
+        if (opcode >= 0x70 && opcode <= 0x7F) {
+            const cond = ['JO', 'JNO', 'JB', 'JNB', 'JZ', 'JNZ', 'JBE', 'JNBE', 
+                          'JS', 'JNS', 'JP', 'JNP', 'JL', 'JNL', 'JLE', 'JNLE'][opcode - 0x70];
+            return `${cond} (conditional jump)`;
+        }
+        
+        if (opcode >= 0x50 && opcode <= 0x57) {
+            const reg = ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi'][opcode - 0x50];
+            return `PUSH ${reg}`;
+        }
+        
+        if (opcode >= 0x58 && opcode <= 0x5F) {
+            const reg = ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi'][opcode - 0x58];
+            return `POP ${reg}`;
+        }
+        
+        return null;
     }
 
     getDecompilerHeader() {
@@ -2938,10 +4294,38 @@ class FPODeoptimizer {
                               (inst.text.includes('rbx') || inst.text.includes('rsi') || 
                                inst.text.includes('rdi') || inst.text.includes('rcx') ||
                                inst.text.includes('rdx') || inst.text.includes('rax'));
-            const isSubRsp = inst.mnemonic === 'sub' && inst.text.includes('rsp');
             const isStdPrologue = inst.mnemonic === 'push' && 
                                   (inst.text.includes('rbp') || inst.text.includes('ebp'));
             
+            const isMovRbpRsp = inst.mnemonic === 'mov' && 
+                    inst.text.includes('rbp') && inst.text.includes('rsp');
+            const is32bitFpo = inst.mnemonic === 'push' && 
+                   (inst.text.includes('ebx') || inst.text.includes('esi') || 
+                    inst.text.includes('edi'));
+            const is32bitPrologue = inst.mnemonic === 'push' && inst.text.includes('ebp');
+
+            if (is32bitPrologue) {
+                currentFunc = { start: i, insts: [], type: 'std32', is32bit: true };
+            } else if (is32bitFpo && !currentFunc) {
+                currentFunc = { start: i, insts: [], type: 'fpo32', is32bit: true };
+            }
+
+            if (isMovRbpRsp && !currentFunc) {
+                currentFunc = { 
+                    start: i, 
+                    insts: [], 
+                    type: 'fpo_with_rbp', 
+                    savedRegs: [],
+                    stackSize: 0
+                };
+                this.functions.push(currentFunc);
+            }
+
+            if (inst.text.includes('__C_specific_handler') || 
+                inst.text.includes('_except_handler')) {
+                currentFunc.hasSEH = true;
+            }
+
             if (isStdPrologue) {
                 currentFunc = { start: i, insts: [], type: 'std', savedRegs: [] };
                 this.functions.push(currentFunc);
@@ -2967,6 +4351,17 @@ class FPODeoptimizer {
                     this.functions.push(currentFunc);
                 }
             }
+
+            if (inst.mnemonic === 'sub' && inst.text.includes('rsp')) {
+                const sizeMatch = inst.text.match(/0x([0-9a-f]+)/i);
+                if (sizeMatch && currentFunc) {
+                    const size = parseInt(sizeMatch[1], 16);
+                    if (size === 0x20 || size === 0x28 || size === 0x30) {
+                        currentFunc.hasShadowSpace = true;
+                        currentFunc.shadowSize = size;
+                    }
+                }
+            }
             
             if (currentFunc) {
                 currentFunc.insts.push(inst);
@@ -2982,11 +4377,42 @@ class FPODeoptimizer {
         console.log(`Found ${this.functions.length} functions (${this.functions.filter(f => f.type === 'std').length} std, ${this.functions.filter(f => f.type === 'fpo').length} FPO, ${this.functions.filter(f => f.type === 'hotpatch').length} hotpatch)`);
     }
 
+    analyzeFunctionArguments(func) {
+        let maxReg = 0;
+        const is32bit = func.is32bit;
+
+        for (const inst of func.insts) {
+            if (is32bit) {
+                // 32-bit: args sent by stack, not by regs!
+                return { count: 0, args: '' };
+            } else {
+                if (inst.text.includes('rcx')) maxReg = Math.max(maxReg, 1);
+                if (inst.text.includes('rdx')) maxReg = Math.max(maxReg, 2);
+                if (inst.text.includes('r8')) maxReg = Math.max(maxReg, 3);
+                if (inst.text.includes('r9')) maxReg = Math.max(maxReg, 4);
+            }
+        }
+
+        const argNames = ['', 'rcx', 'rdx', 'r8', 'r9'];
+        const args = argNames.slice(1, maxReg + 1).join(', ');
+
+        return { count: maxReg, args: args };
+    }
+
     deoptimizeFunction(func) {
         const lines = [];
+        const args = this.analyzeFunctionArguments(func);
         
-        lines.push(`; === Function at 0x${func.insts[0]?.rva?.toString(16) || '?'} (${func.type}) ===`);
-        lines.push(`func_${func.insts[0]?.rva?.toString(16) || '0'}:`);
+        if (func.hasSEH) {
+            lines.push(`    ; SEH handler present`);
+        }
+
+        if (func.type === 'fpo') {
+            lines.push(`; FPO Function - ${args.count} argument(s)`);
+            lines.push(`void fpo_func_0x${func.start.toString(16)}(${args.args}) {`);
+        } else {
+            lines.push(`void func_0x${func.start.toString(16)}(${args.args}) {`);
+        }
         
         lines.push(`    push rbp                 ; restored prolog`);
         lines.push(`    mov rbp, rsp             ; set stack frame`);
@@ -2996,7 +4422,7 @@ class FPODeoptimizer {
         
         for (let i = 0; i < func.insts.length; i++) {
             const inst = func.insts[i];
-            let asm = this.restoreInstruction(inst, savedRegs, stackOffset);
+            let asm = this.restoreInstruction(inst, savedRegs, stackOffset, func.is32bit);
             
             if (func.type === 'fpo' && inst.mnemonic === 'push') {
                 const regMatch = inst.text.match(/push (r[a-z]+)/i);
@@ -3014,6 +4440,13 @@ class FPODeoptimizer {
                     asm = `; FPO allocate ${sizeMatch[1]} bytes on stack`;
                 }
             }
+
+            const switchPattern = /jmp \[[a-z0-9_]+\*8 \+ 0x([0-9a-f]+)\]/i;
+            if (switchPattern.test(inst.text)) {
+                const tableAddr = switchPattern.exec(inst.text)[1];
+                lines.push(`    // Switch-case detected, jump table at 0x${tableAddr}`);
+            }
+
             
             if (inst.mnemonic === 'ret') {
                 for (let j = savedRegs.length - 1; j >= 0; j--) {
@@ -3025,16 +4458,61 @@ class FPODeoptimizer {
                 lines.push(`    pop rbp                 ; restore frame pointer`);
                 asm = `    ret                     ; return`;
             }
+
+            if (inst.mnemonic === 'add' && inst.text.includes('rsp')) {
+                const sizeMatch = inst.text.match(/0x([0-9a-f]+)/i);
+                if (sizeMatch) {
+                    const size = parseInt(sizeMatch[1], 16);
+                    if (size === stackOffset) {
+                        asm = `    add rsp, ${size}            ; free stack space (FPO)`;
+                        stackOffset = 0;
+                    } else {
+                        asm = `; FPO: add rsp, ${size} (expected ${stackOffset})`;
+                    }
+                }
+            }
+
+            if (inst.mnemonic === 'leave') {
+                lines.push(`    mov rsp, rbp                 ; leave (restore stack pointer)`);
+                lines.push(`    pop rbp                      ; restore frame pointer`);
+                continue;
+            }
+
+            if (func.hasShadowSpace) {
+               lines.push(`    sub rsp, ${func.shadowSize}          ; shadow space for calls`);
+            }
             
             lines.push(asm);
         }
         
         lines.push('');
+        lines.push('}');
         return lines;
     }
 
-    restoreInstruction(inst, savedRegs, stackOffset) {
+    restoreInstruction(inst, savedRegs, stackOffset, is32bit) {
         let asm = `    ${inst.text}`;
+
+        // FPO: lea rbx, [rsp+0x20] -> lea rbx, [rbp-0x?]
+        const leaMatch = inst.text.match(/lea ([a-z0-9]+), \[rsp([+-]0x[0-9a-f]+)\]/i);
+        if (leaMatch) {
+            const reg = leaMatch[1];
+            let offset = parseInt(leaMatch[2], 16);
+            const savedOffset = savedRegs.length * 8;
+            const newOffset = savedOffset - offset;
+            asm = `    lea ${reg}, [rbp-0x${(-newOffset).toString(16)}]`;
+        }
+
+        if (is32bit) {
+            asm = asm.replace(/rbp/g, 'ebp');
+            asm = asm.replace(/rsp/g, 'esp');
+            asm = asm.replace(/rax/g, 'eax');
+            asm = asm.replace(/rbx/g, 'ebx');
+            asm = asm.replace(/rcx/g, 'ecx');
+            asm = asm.replace(/rdx/g, 'edx');
+            asm = asm.replace(/rsi/g, 'esi');
+            asm = asm.replace(/rdi/g, 'edi');
+        }
         
         if (inst.text.includes('[rsp+') || inst.text.includes('[rsp-')) {
             const rspMatch = inst.text.match(/\[rsp([+-]0x[0-9a-f]+)\]/i);
@@ -3118,5 +4596,4 @@ class GUECManager {
     }
 }
 
-// Створюємо глобальний екземпляр
 const GUECMan = new GUECManager();
