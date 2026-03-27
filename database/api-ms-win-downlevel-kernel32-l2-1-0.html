@@ -1,0 +1,127 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 1000px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">api-ms-win-downlevel-kernel32-l2-1-0.dll</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">DOWNLEVEL API SET</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">LEGACY & FIBERS</span>
+        <span style="background: #a6e3a1; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">KERNEL32.DLL</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">Windows 7+ (with KB2999226)</span>
+        <span style="background: #89b4fa; color: #11111b; padding: 4px 10px; border-radius: 6px; font-size: 12px;">122 exports</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> 
+        This is a <strong>DOWNLEVEL API Set forwarder DLL</strong> for legacy Windows APIs, fibers, atoms, INI files, and global/local memory management.
+        It contains <strong>NO executable code</strong> — only export forwarders to 
+        <code style="background: #313244; padding: 2px 6px; border-radius: 4px;">kernel32.dll</code>.
+        These functions represent <strong>Windows API history</strong> — from 16-bit era (GlobalAlloc, LocalAlloc) 
+        to modern features (Fibers, Atoms, TxF transactions).
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <h3 style="color: #94e2d5; margin-top: 0;">📦 Function Categories (122 total)</h3>
+    
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Category</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Count</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Example Functions</th>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Atoms</td>
+                <td style="padding: 8px;">~12</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">AddAtomW, FindAtomW, GetAtomNameW, GlobalAddAtomW, DeleteAtom</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Fibers</td>
+                <td style="padding: 8px;">~6</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">CreateFiber, ConvertThreadToFiber, SwitchToFiber, DeleteFiber</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Global/Local Memory (16-bit era)</td>
+                <td style="padding: 8px;">~18</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GlobalAlloc, GlobalFree, GlobalLock, LocalAlloc, LocalFree, GlobalMemoryStatus</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">INI Files (Private Profiles)</td>
+                <td style="padding: 8px;">~14</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetPrivateProfileStringW, WritePrivateProfileStringW, GetProfileIntW, GetProfileSectionW</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Legacy File I/O</td>
+                <td style="padding: 8px;">~12</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">OpenFile, CopyFileW, MoveFileW, BackupRead, BackupWrite, CreateFileTransactedW</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">String Functions (lstr*)</td>
+                <td style="padding: 8px;">~12</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">lstrcmpW, lstrcpyW, lstrlenW, lstrcatW, lstrcmpiW</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Process/Thread Affinity</td>
+                <td style="padding: 8px;">~8</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetProcessAffinityMask, SetProcessAffinityMask, SetThreadAffinityMask, GetActiveProcessorCount</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">System Information</td>
+                <td style="padding: 8px;">~8</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetSystemWow64DirectoryW, GetConsoleWindow, GetSystemPowerStatus, GetComputerNameW</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Resource Management</td>
+                <td style="padding: 8px;">~6</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">FindResourceW, LoadResource, SizeofResource, LockResource</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Wait & Synchronization</td>
+                <td style="padding: 8px;">~5</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">WaitForMultipleObjects, PulseEvent, RegisterWaitForSingleObject, UnregisterWait</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Mailslots & Pipes</td>
+                <td style="padding: 8px;">~4</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">CreateMailslotA, SetMailslotInfo, CreateNamedPipeA</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Tape Backup</td>
+                <td style="padding: 8px;">~2</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetTapeParameters, SetTapeParameters</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Firmware (UEFI/BIOS)</td>
+                <td style="padding: 8px;">~2</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetFirmwareEnvironmentVariableW, SetFirmwareEnvironmentVariableW</td>
+            
+         </table>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            <strong>Legacy APIs — use with caution!</strong><br>
+            • <strong>GlobalAlloc/LocalAlloc</strong> are from 16-bit Windows era — use <code>HeapAlloc</code> for modern code<br>
+            • <strong>INI file functions</strong> are deprecated — use registry or XML instead<br>
+            • <strong>Fibers</strong> are user-mode scheduling units — complex to use correctly<br>
+            • <strong>Atoms</strong> are global string identifiers — limited to 255 characters<br>
+            • <strong>CreateFileTransactedW</strong> (TxF) requires Windows Vista+ and is partially deprecated<br>
+            • These functions exist for <strong>legacy application compatibility</strong>
+        </p>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(137, 180, 250, 0.1); border-left: 4px solid #89b4fa; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #89b4fa; font-weight: bold;">🔬 Research Notes (RSDEFD Analysis):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            • Parsed from <code>api-ms-win-downlevel-kernel32-l2-1-0.dll</code> using RSDEFD<br>
+            • All <strong>122 exports</strong> are <strong>forwarders</strong> to <code>kernel32.dll</code><br>
+            • Level 2 (<strong>l2-1-0</strong>) indicates legacy/system-level APIs<br>
+            • Includes <strong>Windows 95-era APIs</strong> (Global/Local memory, INI files, Atoms)<br>
+            • <strong>Fibers</strong> were introduced in Windows NT 4.0 for user-mode scheduling<br>
+            • <strong>TxF (Transaction File System)</strong> functions require specific OS support<br>
+            • <strong>Firmware variables</strong> (UEFI) are modern additions backported to Windows 7<br>
+            • PDB found: <code>api-ms-win-downlevel-kernel32-l2-1-0.pdb</code>
+        </p>
+    </div>
+</div>
