@@ -1,0 +1,224 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 1000px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">api-ms-win-core-heap-l1-1-0.dll</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">API SET</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">FORWARDER</span>
+        <span style="background: #a6e3a1; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">KERNEL32.DLL</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">Windows 7+ (with KB2999226)</span>
+        <span style="background: #89b4fa; color: #11111b; padding: 4px 10px; border-radius: 6px; font-size: 12px;">16 exports</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> 
+        This is an <strong>API Set forwarder DLL</strong> for <strong>heap memory management</strong> in Windows.
+        It contains <strong>NO executable code</strong> — only export forwarders to 
+        <code style="background: #313244; padding: 2px 6px; border-radius: 4px;">kernel32.dll</code>.
+        These functions provide the foundation for <strong>dynamic memory allocation</strong> used by every Windows application — 
+        from <code>malloc</code>/<code>free</code> in C to <code>new</code>/<code>delete</code> in C++.
+    </p>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px; margin-top: 15px;">
+        <strong style="color: #f9e2af;">Why it exists:</strong> 
+        This API Set represents the <strong>core heap infrastructure</strong> of Windows. 
+        The <strong>default process heap</strong> (via <code>GetProcessHeap</code>) is where all CRT allocations go.
+        Applications can also create <strong>private heaps</strong> (<code>HeapCreate</code>) for better performance or isolation.
+        Advanced features like <strong>Low-Fragmentation Heap (LFH)</strong> (<code>HeapSetInformation</code>) and 
+        <strong>heap validation</strong> (<code>HeapValidate</code>, <code>HeapWalk</code>) are critical for debugging.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <h3 style="color: #94e2d5; margin-top: 0;">📋 Complete Function List (16 exports)</h3>
+    
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Function</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Description</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Key Feature</th>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">GetProcessHeap</td>
+                <td style="padding: 8px;">Gets the default heap handle for the current process</td>
+                <td style="padding: 8px;">Used by CRT <code>malloc</code>/<code>free</code></td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">GetProcessHeaps</td>
+                <td style="padding: 8px;">Gets all heap handles for the current process</td>
+                <td style="padding: 8px;">Debugging multiple heaps</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapAlloc</td>
+                <td style="padding: 8px;">Allocates memory from a heap</td>
+                <td style="padding: 8px;"><code>HEAP_ZERO_MEMORY</code> flag</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapCompact</td>
+                <td style="padding: 8px;">Defragments a heap (coalesces free blocks)</td>
+                <td style="padding: 8px;">Reduces fragmentation</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapCreate</td>
+                <td style="padding: 8px;">Creates a private heap</td>
+                <td style="padding: 8px;"><code>HEAP_NO_SERIALIZE</code> for performance</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapDestroy</td>
+                <td style="padding: 8px;">Destroys a private heap</td>
+                <td style="padding: 8px;">Frees all memory in the heap</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapFree</td>
+                <td style="padding: 8px;">Frees allocated memory</td>
+                <td style="padding: 8px;">Returns memory to the heap</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapLock</td>
+                <td style="padding: 8px;">Locks a heap for exclusive access</td>
+                <td style="padding: 8px;">Manual synchronization</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapQueryInformation</td>
+                <td style="padding: 8px;">Queries heap properties</td>
+                <td style="padding: 8px;">Gets LFH status, fragmentation info</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapReAlloc</td>
+                <td style="padding: 8px;">Resizes an allocated memory block</td>
+                <td style="padding: 8px;">Similar to <code>realloc</code></td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapSetInformation</td>
+                <td style="padding: 8px;">Sets heap properties</td>
+                <td style="padding: 8px;"><strong style="color: #a6e3a1;">Enables Low-Fragmentation Heap (LFH)</strong></td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapSize</td>
+                <td style="padding: 8px;">Gets the size of an allocated block</td>
+                <td style="padding: 8px;">Useful for debugging</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapSummary</td>
+                <td style="padding: 8px;">Gets summary statistics for a heap</td>
+                <td style="padding: 8px;">Fragmentation analysis</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapUnlock</td>
+                <td style="padding: 8px;">Unlocks a heap</td>
+                <td style="padding: 8px;">Release manual lock</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapValidate</td>
+                <td style="padding: 8px;">Validates heap integrity</td>
+                <td style="padding: 8px;">Detects heap corruption</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">HeapWalk</td>
+                <td style="padding: 8px;">Iterates through heap entries</td>
+                <td style="padding: 8px;">Debugging heap structures</td>
+            
+         </table>
+    </div>
+
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <h4 style="color: #94e2d5; margin-top: 0; margin-bottom: 12px;">📊 Heap Information Classes (HeapSetInformation/HeapQueryInformation):</h4>
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 6px; color: #89b4fa;">Class</th>
+                <th style="text-align: left; padding: 6px; color: #89b4fa;">Value</th>
+                <th style="text-align: left; padding: 6px; color: #89b4fa;">Description</th>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 6px; font-family: monospace;">HeapCompatibilityInformation</td>
+                <td style="padding: 6px;">0</td>
+                <td style="padding: 6px;">Gets/sets LFH (Low-Fragmentation Heap) mode — <strong>critical for performance</strong></td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 6px; font-family: monospace;">HeapEnableTerminationOnCorruption</td>
+                <td style="padding: 6px;">1</td>
+                <td style="padding: 6px;">Terminate process on heap corruption (Windows 8+)</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 6px; font-family: monospace;">HeapOptimizeResources</td>
+                <td style="padding: 6px;">3</td>
+                <td style="padding: 6px;">Optimize heap for resource usage (Windows 8+)</td>
+            
+            </table>
+    </div>
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">🔗 Forwarder Example (C):</p>
+        <button onclick="copyCode('code_c')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_c" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 13px;">
+// This DLL contains NO actual implementation
+// All heap functions are forwarded to kernel32.dll
+
+// Core allocation functions
+#pragma comment(linker, "/export:GetProcessHeap=kernel32.GetProcessHeap")
+#pragma comment(linker, "/export:HeapAlloc=kernel32.HeapAlloc")
+#pragma comment(linker, "/export:HeapFree=kernel32.HeapFree")
+#pragma comment(linker, "/export:HeapReAlloc=kernel32.HeapReAlloc")
+
+// Private heap management
+#pragma comment(linker, "/export:HeapCreate=kernel32.HeapCreate")
+#pragma comment(linker, "/export:HeapDestroy=kernel32.HeapDestroy")
+
+// LFH enable (critical for performance)
+#pragma comment(linker, "/export:HeapSetInformation=kernel32.HeapSetInformation")
+
+// Debugging functions
+#pragma comment(linker, "/export:HeapValidate=kernel32.HeapValidate")
+#pragma comment(linker, "/export:HeapWalk=kernel32.HeapWalk")
+#pragma comment(linker, "/export:HeapSummary=kernel32.HeapSummary")</pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            <strong>Heap corruption is the #1 cause of crashes in C/C++ applications!</strong><br>
+            • <code>HeapSetInformation</code> with <code>HeapEnableTerminationOnCorruption</code> (Windows 8+) terminates the process immediately — <strong>no crash dump by default</strong><br>
+            • <code>HEAP_NO_SERIALIZE</code> flag in <code>HeapCreate</code> disables synchronization — <strong>NOT thread-safe</strong><br>
+            • <code>HeapValidate</code> and <code>HeapWalk</code> are <strong>expensive</strong> — use only for debugging<br>
+            • <strong>Low-Fragmentation Heap (LFH)</strong> is automatically enabled for allocations under 16KB on Windows 8+<br>
+            • Heap debugging can be enabled via <strong>gflags.exe</strong> (<code>+htc</code> + <code>+hfc</code>)<br>
+            • <code>HeapSummary</code> is <strong>undocumented</strong> — use at your own risk<br>
+            • For ReactOS: implement <strong>LFH</strong> and <strong>heap validation</strong> for proper memory management
+        </p>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(137, 180, 250, 0.1); border-left: 4px solid #89b4fa; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #89b4fa; font-weight: bold;">🔬 Research Notes (RSDEFD Analysis):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            • Parsed from <code>api-ms-win-core-heap-l1-1-0.dll</code> using RSDEFD<br>
+            • All <strong>16 exports</strong> are <strong>forwarders</strong> to <code>kernel32.dll</code><br>
+            • This is the <strong>complete heap API set</strong> — from allocation to debugging<br>
+            • <strong>Low-Fragmentation Heap (LFH)</strong> is enabled via <code>HeapSetInformation</code> — critical for server performance<br>
+            • <code>HeapSummary</code> is <strong>undocumented</strong> — internal debugging function<br>
+            • <code>GetProcessHeaps</code> allows enumeration of all heaps — useful for leak detection<br>
+            • Heap functions are <strong>thread-safe</strong> by default unless created with <code>HEAP_NO_SERIALIZE</code><br>
+            • For ReactOS: implement <strong>LFH</strong>, <strong>heap walking</strong>, and <strong>corruption detection</strong>
+        </p>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(250, 179, 135, 0.1); border-left: 4px solid #fab387; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #fab387; font-weight: bold;">💡 Performance Tips:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            • <strong>Enable LFH</strong> for heaps that allocate many small blocks — improves performance by 10-30%<br>
+            • Use <strong>private heaps</strong> for thread-local allocations to reduce contention<br>
+            • <strong>HeapCompact</strong> can reduce memory usage but causes <strong>performance spikes</strong><br>
+            • <strong>HEAP_ZERO_MEMORY</strong> flag is slower than manual memset — use only when needed<br>
+            • For large allocations (>1MB), use <strong>VirtualAlloc</strong> instead of heap functions
+        </p>
+    </div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
