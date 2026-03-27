@@ -1,0 +1,96 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 1000px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">api-ms-win-downlevel-advapi32-l1-1-1.dll</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">DOWNLEVEL API SET</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">SECURITY & REGISTRY</span>
+        <span style="background: #a6e3a1; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">ADVAPI32.DLL</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">Windows 7+ (with KB2999226)</span>
+        <span style="background: #89b4fa; color: #11111b; padding: 4px 10px; border-radius: 6px; font-size: 12px;">160 exports</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> 
+        This is a <strong>DOWNLEVEL API Set forwarder DLL</strong> for security, registry, and event tracing functions.
+        It contains <strong>NO executable code</strong> — only export forwarders to 
+        <code style="background: #313244; padding: 2px 6px; border-radius: 4px;">advapi32.dll</code>.
+        These functions provide comprehensive <strong>Windows security infrastructure</strong>: access control (ACL), 
+        privilege management, SID manipulation, registry operations, and Event Tracing for Windows (ETW).
+    </p>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px; margin-top: 15px;">
+        <strong style="color: #f9e2af;">Why it exists:</strong> 
+        This API Set provides backward compatibility for security-related APIs introduced in Windows 8/10.
+        Modern applications that use advanced security features (like mandatory integrity control, 
+        fine-grained access checks, or ETW) can run on Windows 7 through this forwarder layer.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <h3 style="color: #94e2d5; margin-top: 0;">📦 Function Categories (160 total)</h3>
+    
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Category</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Count</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Example Functions</th>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Access Control (ACL) & Security Descriptor</td>
+                <td style="padding: 8px;">~45</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">AccessCheck, SetSecurityDescriptorDacl, GetSecurityDescriptorOwner, AddAccessAllowedAceEx</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">SID Management</td>
+                <td style="padding: 8px;">~20</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">AllocateAndInitializeSid, EqualSid, CopySid, IsWellKnownSid, GetLengthSid</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Token Management</td>
+                <td style="padding: 8px;">~15</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">OpenProcessToken, AdjustTokenPrivileges, DuplicateTokenEx, ImpersonateLoggedOnUser</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Registry Operations</td>
+                <td style="padding: 8px;">~45</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">RegCreateKeyExW, RegQueryValueExW, RegDeleteTreeW, RegCopyTreeW, RegLoadAppKeyW</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Event Tracing (ETW)</td>
+                <td style="padding: 8px;">~15</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">EventRegister, EventWrite, EventEnabled, TraceEvent, RegisterTraceGuidsW</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Private Object Security</td>
+                <td style="padding: 8px;">~10</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">CreatePrivateObjectSecurity, SetPrivateObjectSecurity, DestroyPrivateObjectSecurity</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Privilege Management</td>
+                <td style="padding: 8px;">~5</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">PrivilegeCheck, PrivilegedServiceAuditAlarmW, MapGenericMask</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Audit & Alarm</td>
+                <td style="padding: 8px;">~5</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">ObjectOpenAuditAlarmW, ObjectCloseAuditAlarmW, AccessCheckAndAuditAlarmW</td>
+            
+         </table>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(137, 180, 250, 0.1); border-left: 4px solid #89b4fa; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #89b4fa; font-weight: bold;">🔬 Research Notes (RSDEFD Analysis):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            • Parsed from <code>api-ms-win-downlevel-advapi32-l1-1-1.dll</code> using RSDEFD<br>
+            • All <strong>160 exports</strong> are <strong>forwarders</strong> to <code>advapi32.dll</code><br>
+            • Includes <strong>Windows 8+ security features</strong> backported to Windows 7<br>
+            • <strong>ETW (Event Tracing for Windows)</strong> functions allow modern diagnostics on older Windows<br>
+            • Registry functions include <strong>transacted operations</strong> (RegCopyTree, RegDeleteTree, RegLoadAppKey)<br>
+            • SID functions support <strong>Well-Known SIDs</strong> (WinWorldSid, WinLocalSid, etc.)<br>
+            • PDB found: <code>api-ms-win-downlevel-advapi32-l1-1-1.pdb</code>
+        </p>
+    </div>
+
+</div>
