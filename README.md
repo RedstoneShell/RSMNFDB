@@ -79,10 +79,10 @@ Specialy database for driver devs, C# coders and other system researchers. Conta
             <text x="7" y="18" fill="#89b4fa" font-size="12" font-family="serif" font-weight="bold">W</text>
         </svg>
         
-        Read at Wikipedia
+        Read at Wikipedia (Deleted by moderators :(  )
     </a>
     
-    <a href="https://redstoneshell.github.io/devworks/RSDEFD_Page.html" target="_blank" style="
+    <a href="https://redstoneshell.github.io/RSMNFDB/devworks/RSDEFD_Page.html" target="_blank" style="
         display: inline-flex;
         align-items: center;
         gap: 10px;
