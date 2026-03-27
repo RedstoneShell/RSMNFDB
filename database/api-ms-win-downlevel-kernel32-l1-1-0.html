@@ -1,0 +1,303 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 1000px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">api-ms-win-downlevel-kernel32-l1-1-0.dll</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">DOWNLEVEL API SET</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">BACKWARD COMPATIBILITY</span>
+        <span style="background: #a6e3a1; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">KERNEL32.DLL</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">Windows 7+ (with KB2999226)</span>
+        <span style="background: #89b4fa; color: #11111b; padding: 4px 10px; border-radius: 6px; font-size: 12px;">619 exports</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> 
+        This is a <strong>DOWNLEVEL API Set forwarder DLL</strong> — part of Windows backward compatibility infrastructure.
+        It contains <strong>NO executable code</strong> — only export forwarders to 
+        <code style="background: #313244; padding: 2px 6px; border-radius: 4px;">kernel32.dll</code>.
+        This DLL allows <strong>modern applications</strong> (compiled for Windows 8/10/11) to <strong>run on Windows 7</strong>
+        by providing a stable API contract that maps new functions to their older equivalents when available.
+    </p>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px; margin-top: 15px;">
+        <strong style="color: #f9e2af;">Why it exists:</strong> 
+        This API Set represents <strong>almost the entire kernel32.dll API surface</strong> (619 functions!) 
+        that Microsoft deemed critical for application compatibility. When a Windows 10 application calls 
+        <code>CreateFile2</code> on Windows 7, this forwarder intercepts the call and redirects it to 
+        <code>CreateFile</code> (or emulates the new behavior). This is how Microsoft maintains 
+        <strong>10+ years of backward compatibility</strong> without breaking existing applications.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <h3 style="color: #94e2d5; margin-top: 0;">📦 Function Categories (619 total)</h3>
+    
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Category</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Count</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Example Functions</th>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Synchronization (SRW Locks, CS, Mutex, Event, Semaphore)</td>
+                <td style="padding: 8px;">~45</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">AcquireSRWLockExclusive, EnterCriticalSection, CreateMutexExW, CreateEventExW, ReleaseSemaphore</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Threading & Threadpool</td>
+                <td style="padding: 8px;">~35</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">CreateThread, CreateRemoteThreadEx, QueueUserWorkItem, CreateThreadpool, SubmitThreadpoolWork</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Process Management</td>
+                <td style="padding: 8px;">~25</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">CreateProcessW, OpenProcess, TerminateProcess, GetProcessId, SetPriorityClass</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Memory Management (Heap, Virtual, AWE)</td>
+                <td style="padding: 8px;">~35</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">VirtualAlloc, VirtualFree, HeapAlloc, MapViewOfFile, GlobalMemoryStatusEx</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">File System I/O</td>
+                <td style="padding: 8px;">~50</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">CreateFileW, ReadFile, WriteFile, CopyFileExW, MoveFileExW, FindFirstFileW</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Console I/O</td>
+                <td style="padding: 8px;">~30</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">AllocConsole, WriteConsoleW, ReadConsoleW, SetConsoleMode, FillConsoleOutputCharacter</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Localization & NLS</td>
+                <td style="padding: 8px;">~45</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetACP, GetLocaleInfoEx, CompareStringEx, LCMapStringEx, IdnToAscii, FoldStringW</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Error Handling & Debugging</td>
+                <td style="padding: 8px;">~20</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetLastError, SetLastError, RaiseException, IsDebuggerPresent, OutputDebugStringW</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Dynamic Libraries (DLL)</td>
+                <td style="padding: 8px;">~15</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">LoadLibraryExW, FreeLibrary, GetProcAddress, GetModuleHandleExW</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Time & Timers</td>
+                <td style="padding: 8px;">~20</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetSystemTime, GetTickCount64, QueryPerformanceCounter, SetWaitableTimerEx, SleepEx</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">NUMA & Processor Information</td>
+                <td style="padding: 8px;">~15</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetCurrentProcessorNumberEx, GetLogicalProcessorInformationEx, SetThreadGroupAffinity</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Vectored Exception Handling (VEH)</td>
+                <td style="padding: 8px;">~6</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">AddVectoredExceptionHandler, RemoveVectoredContinueHandler</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Condition Variables</td>
+                <td style="padding: 8px;">~6</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">InitializeConditionVariable, SleepConditionVariableCS, WakeConditionVariable</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Fiber Local Storage (FLS) & TLS</td>
+                <td style="padding: 8px;">~12</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">FlsAlloc, FlsFree, TlsAlloc, IsThreadAFiber</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">SList (Interlocked Singly Linked List)</td>
+                <td style="padding: 8px;">~6</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">InitializeSListHead, InterlockedPushEntrySList, InterlockedPopEntrySList</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Private Namespaces & Boundaries</td>
+                <td style="padding: 8px;">~8</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">CreatePrivateNamespaceW, CreateBoundaryDescriptorW, AddSIDToBoundaryDescriptor</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Memory Resource Notification</td>
+                <td style="padding: 8px;">~6</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">CreateMemoryResourceNotification, RegisterBadMemoryNotification</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Wow64 (32-bit on 64-bit)</td>
+                <td style="padding: 8px;">~3</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">Wow64DisableWow64FsRedirection, IsWow64Process</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">MUI (Multilingual User Interface)</td>
+                <td style="padding: 8px;">~12</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetFileMUIInfo, GetSystemPreferredUILanguages, SetThreadPreferredUILanguages</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Volume & Mount Points</td>
+                <td style="padding: 8px;">~12</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetVolumeNameForVolumeMountPointW, GetVolumePathNamesForVolumeNameW, FindFirstVolumeW</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Version Information</td>
+                <td style="padding: 8px;">~8</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetVersionExW, VerifyVersionInfoW, VerSetConditionMask</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">System Information</td>
+                <td style="padding: 8px;">~20</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetSystemInfo, GetNativeSystemInfo, GetLogicalDrives, GetComputerNameExW</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Wait Functions</td>
+                <td style="padding: 8px;">~12</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">WaitForSingleObjectEx, WaitForMultipleObjectsEx, SignalObjectAndWait</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Named Pipes & Communications</td>
+                <td style="padding: 8px;">~20</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">CreateNamedPipeW, ConnectNamedPipe, TransactNamedPipe, SetCommState, PurgeComm</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Atomic Operations (Interlocked)</td>
+                <td style="padding: 8px;">~6</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">InterlockedFlushSList, InterlockedPopEntrySList, QueryDepthSList</td>
+            
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Pointer Encoding (CFG)</td>
+                <td style="padding: 8px;">~4</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">EncodePointer, DecodePointer, EncodeSystemPointer, DecodeSystemPointer</td>
+            
+            </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Threadpool Timer/Wait/IO</td>
+                <td style="padding: 8px;">~20</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">CreateThreadpoolTimer, SetThreadpoolTimer, CreateThreadpoolIo, StartThreadpoolIo</td>
+            
+            </tr>
+         </table>
+    </div>
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">🔗 Forwarder Example (C):</p>
+        <button onclick="copyCode('code_c')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_c" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 13px;">
+// This DLL contains NO actual implementation
+// All 619 functions are forwarded to kernel32.dll
+// This allows Windows 10/11 apps to run on Windows 7
+
+// Threading forwarders
+#pragma comment(linker, "/export:CreateThread=kernel32.CreateThread")
+#pragma comment(linker, "/export:CreateRemoteThreadEx=kernel32.CreateRemoteThreadEx")
+#pragma comment(linker, "/export:QueueUserWorkItem=kernel32.QueueUserWorkItem")
+
+// Memory forwarders
+#pragma comment(linker, "/export:VirtualAlloc=kernel32.VirtualAlloc")
+#pragma comment(linker, "/export:HeapAlloc=kernel32.HeapAlloc")
+
+// Synchronization forwarders
+#pragma comment(linker, "/export:AcquireSRWLockExclusive=kernel32.AcquireSRWLockExclusive")
+#pragma comment(linker, "/export:InitializeCriticalSectionEx=kernel32.InitializeCriticalSectionEx")
+#pragma comment(linker, "/export:CreateEventExW=kernel32.CreateEventExW")
+
+// File I/O forwarders
+#pragma comment(linker, "/export:CreateFileW=kernel32.CreateFileW")
+#pragma comment(linker, "/export:CopyFileExW=kernel32.CopyFileExW")
+
+// Wait functions
+#pragma comment(linker, "/export:WaitForSingleObjectEx=kernel32.WaitForSingleObjectEx")</pre>
+    </div>
+
+    <div style="position: relative; margin-top: 25px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">📋 Windows Version Mapping (Downlevel Strategy):</p>
+        <button onclick="copyCode('code_mapping')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_mapping" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 12px;">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ DOWNLEVEL COMPATIBILITY STRATEGY                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Windows 8+ Functions              │ Windows 7 Fallback                     │
+├───────────────────────────────────┼────────────────────────────────────────┤
+│ CreateFile2                       │ CreateFile + CREATE_ALWAYS flag        │
+│ GetTickCount64                    │ GetTickCount (32-bit wrap)             │
+│ InitializeCriticalSectionEx       │ InitializeCriticalSectionAndSpinCount │
+│ CreateEventExW                    │ CreateEventW                           │
+│ CreateMutexExW                    │ CreateMutexW                           │
+│ CreateSemaphoreExW                │ CreateSemaphoreW                       │
+│ SetWaitableTimerEx                │ SetWaitableTimer                       │
+│ GetSystemTimePreciseAsFileTime    │ GetSystemTimeAsFileTime                │
+│ GetProcessId                      │ ZwQueryInformationProcess              │
+│ GetThreadId                       │ ZwQueryInformationThread               │
+│ IsWow64Process                    │ Check via NtQueryInformationProcess    │
+│ GetLogicalProcessorInformationEx  │ GetLogicalProcessorInformation         │
+│ SetThreadGroupAffinity            │ SetThreadAffinityMask                  │
+│ CreateThreadpool                  │ QueueUserWorkItem (emulation)          │
+│ InitOnceExecuteOnce               │ Custom spinlock implementation         │
+│ FlsAlloc                          │ TlsAlloc (emulation)                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Total: 619 exported functions (all forwarded to kernel32.dll)              │
+│ This is the LARGEST API Set — almost the entire kernel32 API!              │
+└─────────────────────────────────────────────────────────────────────────────┘</pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            <strong>This is a DOWNLEVEL compatibility layer!</strong><br>
+            • This API Set exists to allow <strong>modern applications</strong> to run on <strong>Windows 7</strong><br>
+            • Not all Windows 8/10 features are fully emulated — some may have reduced functionality<br>
+            • Applications compiled with Windows 8+ SDK <strong>will still run on Windows 7</strong> thanks to this DLL<br>
+            • This is why many Windows 10 apps work on Windows 7 without modification<br>
+            • Requires <strong>KB2999226</strong> (Universal C Runtime) on Windows 7<br>
+            • For ReactOS: implementing this API Set is <strong>critical for Windows 8+ app compatibility</strong><br>
+        </p>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(137, 180, 250, 0.1); border-left: 4px solid #89b4fa; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #89b4fa; font-weight: bold;">🔬 Research Notes (RSDEFD Analysis):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            • Parsed from <code>api-ms-win-downlevel-kernel32-l1-1-0.dll</code> using RSDEFD<br>
+            • All <strong>619 exports</strong> are <strong>forwarders</strong> to <code>kernel32.dll</code><br>
+            • This is the <strong>largest API Set discovered yet</strong> — almost the entire kernel32 API!<br>
+            • Contains functions from <strong>Windows 8, 8.1, 10, and 11</strong> backported to Windows 7<br>
+            • Downlevel strategy: <strong>new functions → older equivalents or emulation</strong><br>
+            • Critical for <strong>application compatibility</strong> across Windows versions<br>
+            • Shows Microsoft's commitment to <strong>10+ years of backward compatibility</strong><br>
+            • For ReactOS: this is the <strong>blueprint for Windows 8+ API compatibility</strong><br>
+            • PDB found: <code>api-ms-win-downlevel-kernel32-l1-1-0.pdb</code>
+        </p>
+    </div>
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
