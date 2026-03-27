@@ -1,0 +1,180 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 1000px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">api-ms-win-core-errorhandling-l1-1-0.dll</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">API SET</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">FORWARDER</span>
+        <span style="background: #a6e3a1; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">KERNEL32.DLL</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">Windows 7+ (with KB2999226)</span>
+        <span style="background: #89b4fa; color: #11111b; padding: 4px 10px; border-radius: 6px; font-size: 12px;">7 exports</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> 
+        This is an <strong>API Set forwarder DLL</strong> for <strong>error handling and exception management</strong> in Windows.
+        It contains <strong>NO executable code</strong> — only export forwarders to 
+        <code style="background: #313244; padding: 2px 6px; border-radius: 4px;">kernel32.dll</code>.
+        These functions provide the foundation for Windows error reporting, structured exception handling (SEH), 
+        and last-error management used by virtually every Windows application.
+    </p>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px; margin-top: 15px;">
+        <strong style="color: #f9e2af;">Why it exists:</strong> 
+        This API Set represents the <strong>core error handling infrastructure</strong> of Windows. 
+        <code>GetLastError</code>/<code>SetLastError</code> are called by almost every Win32 application. 
+        <code>RaiseException</code> is the foundation of <strong>Structured Exception Handling (SEH)</strong> — 
+        the mechanism that powers <code>__try/__except</code> and <code>__try/__finally</code> in C/C++. 
+        <code>UnhandledExceptionFilter</code> is what shows the "Program has stopped working" dialog.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <h3 style="color: #94e2d5; margin-top: 0;">📋 Complete Function List (7 exports)</h3>
+    
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Function</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Description</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Key Feature</th>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">GetErrorMode</td>
+                <td style="padding: 8px;">Retrieves the error mode for the current process</td>
+                <td style="padding: 8px;">Controls system error dialog behavior</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">GetLastError</td>
+                <td style="padding: 8px;">Returns the last-error code for the calling thread</td>
+                <td style="padding: 8px;"><strong style="color: #a6e3a1;">Most called Win32 function!</strong></td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">RaiseException</td>
+                <td style="padding: 8px;">Raises an exception in the calling thread (SEH)</td>
+                <td style="padding: 8px;">Foundation of C++ exceptions and structured exceptions</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">SetErrorMode</td>
+                <td style="padding: 8px;">Controls whether the system handles errors or the application</td>
+                <td style="padding: 8px;"><code>SEM_FAILCRITICALERRORS</code>, <code>SEM_NOGPFAULTERRORBOX</code></td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">SetLastError</td>
+                <td style="padding: 8px;">Sets the last-error code for the calling thread</td>
+                <td style="padding: 8px;">Used by APIs to report failure reasons</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">SetUnhandledExceptionFilter</td>
+                <td style="padding: 8px;">Installs a top-level exception handler</td>
+                <td style="padding: 8px;">Custom crash reporting (crashpad, breakpad, etc.)</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">UnhandledExceptionFilter</td>
+                <td style="padding: 8px;">The default unhandled exception filter</td>
+                <td style="padding: 8px;">Shows the "Program has stopped working" dialog</td>
+            
+        </table>
+    </div>
+
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <h4 style="color: #94e2d5; margin-top: 0; margin-bottom: 12px;">📊 Error Mode Flags (SetErrorMode/GetErrorMode):</h4>
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 6px; color: #89b4fa;">Flag</th>
+                <th style="text-align: left; padding: 6px; color: #89b4fa;">Value</th>
+                <th style="text-align: left; padding: 6px; color: #89b4fa;">Description</th>
+            
+            <tr>
+                <td style="padding: 6px; font-family: monospace;">SEM_FAILCRITICALERRORS</td>
+                <td style="padding: 6px;">0x0001</td>
+                <td style="padding: 6px;">System does not display critical-error-handler message box</td>
+            
+            <tr>
+                <td style="padding: 6px; font-family: monospace;">SEM_NOGPFAULTERRORBOX</td>
+                <td style="padding: 6px;">0x0002</td>
+                <td style="padding: 6px;">System does not display the Windows Error Reporting dialog</td>
+            
+            <tr>
+                <td style="padding: 6px; font-family: monospace;">SEM_NOALIGNMENTFAULTEXCEPT</td>
+                <td style="padding: 6px;">0x0004</td>
+                <td style="padding: 6px;">Automatically fixes memory alignment faults (x86 only)</td>
+            
+            <tr>
+                <td style="padding: 6px; font-family: monospace;">SEM_NOOPENFILEERRORBOX</td>
+                <td style="padding: 6px;">0x8000</td>
+                <td style="padding: 6px;">System does not display a message box when failing to find a file</td>
+            
+        </table>
+    </div>
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">🔗 Forwarder Example (C):</p>
+        <button onclick="copyCode('code_c')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_c" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 13px;">
+// This DLL contains NO actual implementation
+// All error handling functions are forwarded to kernel32.dll
+
+// Last-error management
+#pragma comment(linker, "/export:GetLastError=kernel32.GetLastError")
+#pragma comment(linker, "/export:SetLastError=kernel32.SetLastError")
+
+// Exception handling
+#pragma comment(linker, "/export:RaiseException=kernel32.RaiseException")
+#pragma comment(linker, "/export:SetUnhandledExceptionFilter=kernel32.SetUnhandledExceptionFilter")
+#pragma comment(linker, "/export:UnhandledExceptionFilter=kernel32.UnhandledExceptionFilter")
+
+// Error mode control
+#pragma comment(linker, "/export:GetErrorMode=kernel32.GetErrorMode")
+#pragma comment(linker, "/export:SetErrorMode=kernel32.SetErrorMode")</pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            <strong>Error handling affects application behavior!</strong><br>
+            • <code>SetErrorMode(SEM_NOGPFAULTERRORBOX)</code> disables Windows Error Reporting — used by browsers and games<br>
+            • <code>SetUnhandledExceptionFilter</code> is <strong>per-process</strong> — only one filter can be active<br>
+            • <code>RaiseException</code> with <code>EXCEPTION_BREAKPOINT</code> (0x80000003) triggers debugger breakpoints<br>
+            • <code>GetLastError</code> returns thread-local error codes — safe for multi-threading<br>
+            • Error codes from <code>GetLastError</code> are documented in <code>WinError.h</code> (but many are undocumented!)<br>
+            • For ReactOS: implement thread-local storage (TLS) for <code>GetLastError</code> correctness
+        </p>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(137, 180, 250, 0.1); border-left: 4px solid #89b4fa; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #89b4fa; font-weight: bold;">🔬 Research Notes (RSDEFD Analysis):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            • Parsed from <code>api-ms-win-core-errorhandling-l1-1-0.dll</code> using RSDEFD<br>
+            • All <strong>7 exports</strong> are <strong>forwarders</strong> to <code>kernel32.dll</code><br>
+            • This is the <strong>core error handling API set</strong> — minimal but essential<br>
+            • <strong>GetLastError</strong> is arguably the most frequently called Win32 function<br>
+            • <strong>Structured Exception Handling (SEH)</strong> uses <code>RaiseException</code> internally<br>
+            • Crash reporting tools (Breakpad, Crashpad, Windows Error Reporting) use <code>SetUnhandledExceptionFilter</code><br>
+            • The <strong>error mode</strong> flags explain why some apps suppress error dialogs<br>
+            • This API Set exists on Windows 7+ (via KB2999226) and all later versions<br>
+            • For ReactOS: implement <strong>thread-local error codes</strong> and <strong>SEH infrastructure</strong>
+        </p>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(250, 179, 135, 0.1); border-left: 4px solid #fab387; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #fab387; font-weight: bold;">🔍 Common Undocumented Error Codes (from ntstatus.h):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            <code>0xC0000005</code> — STATUS_ACCESS_VIOLATION (access violation)<br>
+            <code>0xC0000008</code> — STATUS_INVALID_HANDLE (invalid handle)<br>
+            <code>0xC0000135</code> — STATUS_DLL_NOT_FOUND (DLL not found)<br>
+            <code>0xC0000142</code> — STATUS_DLL_INIT_FAILED (DLL initialization failed)<br>
+            <code>0xC0000374</code> — STATUS_HEAP_CORRUPTION (heap corruption)<br>
+            <code>0xC0000417</code> — STATUS_INVALID_CRUNTIME_PARAMETER (invalid CRT parameter)
+        </p>
+    </div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
