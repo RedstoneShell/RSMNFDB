@@ -1,0 +1,260 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 1000px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">api-ms-win-core-localization-l1-2-0.dll</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">API SET</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">FORWARDER</span>
+        <span style="background: #a6e3a1; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">KERNEL32.DLL</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">Windows 7+ (with KB2999226)</span>
+        <span style="background: #89b4fa; color: #11111b; padding: 4px 10px; border-radius: 6px; font-size: 12px;">59 exports</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> 
+        This is an <strong>API Set forwarder DLL</strong> for <strong>localization, language, and internationalization</strong> functions in Windows.
+        It contains <strong>NO executable code</strong> — only export forwarders to 
+        <code style="background: #313244; padding: 2px 6px; border-radius: 4px;">kernel32.dll</code>.
+        These functions provide comprehensive support for locales, code pages, UI languages, geographical data, 
+        international domain names (IDN), and National Language Support (NLS).
+    </p>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px; margin-top: 15px;">
+        <strong style="color: #f9e2af;">Why it exists:</strong> 
+        This API Set provides the complete <strong>Windows localization infrastructure</strong>. 
+        It handles everything from determining the user's language and region to converting international domain names 
+        (IDN to Punycode), managing UI languages per thread, and working with code pages. Essential for 
+        multi-lingual applications and proper internationalization support.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <h3 style="color: #94e2d5; margin-top: 0;">📦 Function Categories</h3>
+    
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Category</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Count</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Example Functions</th>
+            
+    
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Locale Management</td>
+                <td style="padding: 8px;">12</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">EnumSystemLocales, GetLocaleInfoEx, LocaleNameToLCID, IsValidLocale</td>
+            
+    
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Code Pages & Character Sets</td>
+                <td style="padding: 8px;">8</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetACP, GetOEMCP, GetCPInfo, IsValidCodePage, IsDBCSLeadByte</td>
+            
+    
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">UI Languages (MUI)</td>
+                <td style="padding: 8px;">10</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetSystemPreferredUILanguages, GetUserPreferredUILanguages, SetThreadPreferredUILanguages</td>
+            
+    
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Geography & GeoID</td>
+                <td style="padding: 8px;">4</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">EnumSystemGeoID, GetGeoInfoW, GetUserGeoID, SetUserGeoID</td>
+            
+    
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">National Language Support (NLS)</td>
+                <td style="padding: 8px;">8</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetNLSVersionEx, IsValidNLSVersion, FindNLSStringEx, LCMapStringEx</td>
+            
+
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">International Domain Names (IDN)</td>
+                <td style="padding: 8px;">2</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">IdnToAscii, IdnToUnicode (Punycode conversion)</td>
+            
+
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Message Formatting</td>
+                <td style="padding: 8px;">2</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">FormatMessageA, FormatMessageW</td>
+            
+
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Calendar Information</td>
+                <td style="padding: 8px;">2</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetCalendarInfoEx, GetCalendarInfoW</td>
+            
+
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">MUI File Support</td>
+                <td style="padding: 8px;">2</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetFileMUIInfo, GetFileMUIPath</td>
+            
+
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Language Name Utilities</td>
+                <td style="padding: 8px;">2</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">VerLanguageNameA, VerLanguageNameW</td>
+            
+
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px;">Default Language IDs</td>
+                <td style="padding: 8px;">7</td>
+                <td style="padding: 8px; font-family: monospace; font-size: 12px;">GetSystemDefaultLCID, GetSystemDefaultLangID, GetUserDefaultLCID, GetUserDefaultLangID</td>
+            
+
+         </table>
+    </div>
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">🔗 Forwarder Example (C):</p>
+        <button onclick="copyCode('code_c')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_c" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 13px;">
+// This DLL contains NO actual implementation
+// All localization functions are forwarded to kernel32.dll
+
+// Locale management forwarders
+#pragma comment(linker, "/export:EnumSystemLocalesW=kernel32.EnumSystemLocalesW")
+#pragma comment(linker, "/export:GetLocaleInfoEx=kernel32.GetLocaleInfoEx")
+#pragma comment(linker, "/export:LocaleNameToLCID=kernel32.LocaleNameToLCID")
+
+// Code page forwarders
+#pragma comment(linker, "/export:GetACP=kernel32.GetACP")
+#pragma comment(linker, "/export:GetOEMCP=kernel32.GetOEMCP")
+
+// IDN forwarders (International Domain Names)
+#pragma comment(linker, "/export:IdnToAscii=kernel32.IdnToAscii")
+#pragma comment(linker, "/export:IdnToUnicode=kernel32.IdnToUnicode")
+
+// UI Languages forwarders
+#pragma comment(linker, "/export:GetSystemPreferredUILanguages=kernel32.GetSystemPreferredUILanguages")
+#pragma comment(linker, "/export:SetThreadPreferredUILanguages=kernel32.SetThreadPreferredUILanguages")</pre>
+    </div>
+
+    <div style="position: relative; margin-top: 25px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">📋 Complete Function List (59 exports):</p>
+        <button onclick="copyCode('code_exports')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_exports" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 12px; max-height: 450px; overflow-y: auto;">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LOCALE MANAGEMENT                                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ConvertDefaultLocale      - Converts default locale identifier              │
+│ EnumSystemLocalesA/W      - Enumerates system locales                       │
+│ GetLocaleInfoA/W/Ex       - Gets locale information                        │
+│ GetSystemDefaultLCID      - Gets system default locale ID                   │
+│ GetSystemDefaultLangID    - Gets system default language ID                 │
+│ GetThreadLocale           - Gets current thread locale                      │
+│ GetUserDefaultLCID        - Gets user default locale ID                     │
+│ GetUserDefaultLangID      - Gets user default language ID                   │
+│ GetUserDefaultLocaleName  - Gets user default locale name                   │
+│ IsValidLocale             - Validates locale identifier                     │
+│ IsValidLocaleName         - Validates locale name                           │
+│ LocaleNameToLCID          - Converts locale name to LCID                    │
+│ ResolveLocaleName         - Resolves locale name alias                      │
+│ SetLocaleInfoW            - Sets locale information                         │
+│ SetThreadLocale           - Sets thread locale                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ CODE PAGES & CHARACTER SETS                                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GetACP                    - Gets ANSI code page                             │
+│ GetCPInfo                 - Gets code page information                      │
+│ GetCPInfoExW              - Gets extended code page info                    │
+│ GetOEMCP                  - Gets OEM code page                              │
+│ IsDBCSLeadByte            - Checks if byte is DBCS lead byte                │
+│ IsDBCSLeadByteEx          - Checks DBCS lead byte for specific code page    │
+│ IsValidCodePage           - Validates code page                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ UI LANGUAGES (MUI)                                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GetFileMUIInfo            - Gets MUI file information                       │
+│ GetFileMUIPath            - Gets MUI file path                              │
+│ GetProcessPreferredUILanguages - Gets process preferred UI languages        │
+│ GetSystemPreferredUILanguages - Gets system preferred UI languages          │
+│ GetThreadPreferredUILanguages - Gets thread preferred UI languages          │
+│ GetThreadUILanguage       - Gets thread UI language                         │
+│ GetUILanguageInfo         - Gets UI language information                    │
+│ GetUserPreferredUILanguages - Gets user preferred UI languages              │
+│ SetProcessPreferredUILanguages - Sets process preferred UI languages        │
+│ SetThreadPreferredUILanguages - Sets thread preferred UI languages          │
+│ SetThreadUILanguage       - Sets thread UI language                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GEOGRAPHY & GEOID                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ EnumSystemGeoID           - Enumerates geographical IDs                     │
+│ GetGeoInfoW               - Gets geographical information                   │
+│ GetUserGeoID              - Gets user geographical ID                       │
+│ SetUserGeoID              - Sets user geographical ID                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ NATIONAL LANGUAGE SUPPORT (NLS)                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ FindNLSString             - Finds NLS string                                │
+│ FindNLSStringEx           - Extended NLS string search                      │
+│ GetNLSVersion             - Gets NLS version                                │
+│ GetNLSVersionEx           - Extended NLS version                            │
+│ IsNLSDefinedString        - Checks if string is NLS defined                 │
+│ IsValidNLSVersion         - Validates NLS version                           │
+│ LCMapStringA/W/Ex         - Maps string for locale                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ INTERNATIONAL DOMAIN NAMES (IDN)                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ IdnToAscii                - Converts IDN to ASCII (Punycode)                │
+│ IdnToUnicode              - Converts ASCII to IDN (Unicode)                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ MESSAGE FORMATTING                                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ FormatMessageA/W          - Formats system messages                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ CALENDAR INFORMATION                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GetCalendarInfoEx         - Gets calendar information                       │
+│ GetCalendarInfoW          - Gets calendar information                       │
+│ SetCalendarInfoW          - Sets calendar information                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ LANGUAGE NAME UTILITIES                                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ VerLanguageNameA/W        - Gets language name from language ID             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Total: 59 exported functions (all forwarded to kernel32.dll)</pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            <strong>Locale and language functions are system-dependent!</strong><br>
+            • These functions behave differently based on the <strong>installed language packs</strong><br>
+            • UI language functions (MUI) require <strong>multilingual user interface</strong> support<br>
+            • <code>IdnToAscii/IdnToUnicode</code> implement <strong>Punycode</strong> (RFC 3492) for international domain names<br>
+            • <code>GetLocaleInfoEx</code> is preferred over older <code>GetLocaleInfoA/W</code> (Windows Vista+)<br>
+            • <strong>LCID</strong> (Locale ID) is deprecated; use <strong>locale names</strong> (e.g., "en-US") for new code<br>
+            • DBCS functions are primarily for <strong>Asian language support</strong> (Japanese, Chinese, Korean)<br>
+            • On Windows 7, this API Set requires <strong>KB2999226</strong> (Universal C Runtime)
+        </p>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(137, 180, 250, 0.1); border-left: 4px solid #89b4fa; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #89b4fa; font-weight: bold;">🔬 Research Notes (RSDEFD Analysis):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            • Parsed from <code>api-ms-win-core-localization-l1-2-0.dll</code> using RSDEFD<br>
+            • All <strong>59 exports</strong> are <strong>forwarders</strong> to <code>kernel32.dll</code><br>
+            • This is the <strong>complete Windows localization API</strong> set<br>
+            • Includes <strong>IDN support</strong> (Punycode) for international domain names<br>
+            • Provides <strong>both ANSI (A) and Unicode (W)</strong> versions for backward compatibility<br>
+            • <code>Ex</code> suffix functions are extended versions with more parameters (Windows Vista+)<br>
+            • This API Set is part of the <strong>Core Localization</strong> family (l1-2-0 = Level 1, version 2.0)<br>
+            • Essential for <strong>multi-lingual applications</strong> and <strong>proper internationalization</strong><br>
+            • For ReactOS: implement these functions for <strong>complete Windows localization compatibility</strong>
+        </p>
+    </div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
