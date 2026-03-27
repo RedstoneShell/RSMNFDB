@@ -1,0 +1,171 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 1000px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">api-ms-win-core-file-l1-2-0.dll</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">API SET</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">FORWARDER</span>
+        <span style="background: #a6e3a1; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">KERNEL32.DLL</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">Windows 8 / NT 6.2+</span>
+        <span style="background: #89b4fa; color: #11111b; padding: 4px 10px; border-radius: 6px; font-size: 12px;">4 exports</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> 
+        This is an <strong>API Set forwarder DLL</strong> for <strong>core file operations</strong> in Windows.
+        It contains <strong>NO executable code</strong> — only export forwarders to 
+        <code style="background: #313244; padding: 2px 6px; border-radius: 4px;">kernel32.dll</code>.
+        These functions provide extended file operations introduced in Windows 8, including enhanced file creation 
+        and volume management APIs.
+    </p>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px; margin-top: 15px;">
+        <strong style="color: #f9e2af;">Why it exists:</strong> 
+        This API Set provides the <strong>Windows 8+ file API extensions</strong>. 
+        The key function is <code>CreateFile2</code>, which extends the classic <code>CreateFile</code> with additional 
+        parameters for modern Windows features. Also includes volume management functions that work with mount points 
+        and volume names. This API Set helps applications maintain compatibility across Windows versions.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <h3 style="color: #94e2d5; margin-top: 0;">📦 Exported Functions</h3>
+    
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Function</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Forwarded To</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Description</th>
+            </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">CreateFile2</td>
+                <td style="padding: 8px; font-family: monospace;">kernel32.CreateFile2</td>
+                <td style="padding: 8px;">Creates or opens a file with extended parameters (Windows 8+)</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">GetTempPathW</td>
+                <td style="padding: 8px; font-family: monospace;">kernel32.GetTempPathW</td>
+                <td style="padding: 8px;">Retrieves the path of the temporary directory</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">GetVolumeNameForVolumeMountPointW</td>
+                <td style="padding: 8px; font-family: monospace;">kernel32.GetVolumeNameForVolumeMountPointW</td>
+                <td style="padding: 8px;">Gets a volume GUID path for the volume associated with a mount point</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">GetVolumePathNamesForVolumeNameW</td>
+                <td style="padding: 8px; font-family: monospace;">kernel32.GetVolumePathNamesForVolumeNameW</td>
+                <td style="padding: 8px;">Retrieves a list of drive letters and mount points for a specified volume</td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">🔗 Forwarder Example (C):</p>
+        <button onclick="copyCode('code_c')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_c" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 13px;">
+// This DLL contains NO actual implementation
+// All functions are forwarded to kernel32.dll
+
+// CreateFile2 forwarder (Windows 8+)
+#pragma comment(linker, "/export:CreateFile2=kernel32.CreateFile2")
+
+// GetTempPathW forwarder
+#pragma comment(linker, "/export:GetTempPathW=kernel32.GetTempPathW")
+
+// Volume management forwarders
+#pragma comment(linker, "/export:GetVolumeNameForVolumeMountPointW=kernel32.GetVolumeNameForVolumeMountPointW")
+#pragma comment(linker, "/export:GetVolumePathNamesForVolumeNameW=kernel32.GetVolumePathNamesForVolumeNameW")</pre>
+    </div>
+
+    <div style="position: relative; margin-top: 25px;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">📋 Function Details:</p>
+        <button onclick="copyCode('code_exports')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_exports" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #89dceb; font-size: 12px;">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CreateFile2 - Extended File Creation (Windows 8+)                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ HANDLE CreateFile2(                                                        │
+│   LPCWSTR lpFileName,                                                      │
+│   DWORD dwDesiredAccess,                                                   │
+│   DWORD dwShareMode,                                                       │
+│   DWORD dwCreationDisposition,                                             │
+│   LPCREATEFILE2_EXTENDED_PARAMETERS pExtendedParameters                    │
+│ );                                                                         │
+│                                                                             │
+│ Differences from CreateFile:                                                │
+│ • Uses CREATEFILE2_EXTENDED_PARAMETERS structure                           │
+│ • Supports additional flags like FILE_FLAG_OPEN_NO_RECALL                  │
+│ • Better support for Windows 8+ features                                   │
+│ • Extended error information                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GetTempPathW - Get Temporary Directory Path                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DWORD GetTempPathW(                                                        │
+│   DWORD nBufferLength,                                                     │
+│   LPWSTR lpBuffer                                                          │
+│ );                                                                         │
+│                                                                             │
+│ Returns the path of the temporary directory (usually %TEMP% or %TMP%)      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GetVolumeNameForVolumeMountPointW - Volume GUID Path                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ BOOL GetVolumeNameForVolumeMountPointW(                                    │
+│   LPCWSTR lpszVolumeMountPoint,                                            │
+│   LPWSTR lpszVolumeName,                                                   │
+│   DWORD cchBufferLength                                                    │
+│ );                                                                         │
+│                                                                             │
+│ Example: "C:\" → "\\?\Volume{12345678-1234-1234-1234-123456789012}\"       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ GetVolumePathNamesForVolumeNameW - Get Volume Paths                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DWORD GetVolumePathNamesForVolumeNameW(                                    │
+│   LPCWSTR lpszVolumeName,                                                  │
+│   LPWCH lpszVolumePathNames,                                               │
+│   DWORD cchBufferLength,                                                   │
+│   PDWORD lpcchReturnLength                                                 │
+│ );                                                                         │
+│                                                                             │
+│ Returns all drive letters and mount points for a volume                    │
+│ Example: "C:\" and "D:\MountPoint\" for the same volume                    │
+└─────────────────────────────────────────────────────────────────────────────┘</pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            <strong>Windows 8+ only!</strong><br>
+            • This API Set is <strong>not available on Windows 7</strong> or earlier<br>
+            • <code>CreateFile2</code> requires <strong>Windows 8 or Windows Server 2012</strong> minimum<br>
+            • Volume management functions work with <strong>volume GUID paths</strong> (\\?\Volume{...})<br>
+            • For Windows 7 compatibility, use classic <code>CreateFile</code> instead<br>
+            • These functions are part of the <strong>Core File API</strong> family (l1-2-0 = Level 1, version 2.0)<br>
+            • For ReactOS: implement these functions for Windows 8+ API compatibility
+        </p>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(137, 180, 250, 0.1); border-left: 4px solid #89b4fa; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #89b4fa; font-weight: bold;">🔬 Research Notes (RSDEFD Analysis):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            • Parsed from <code>api-ms-win-core-file-l1-2-0.dll</code> using RSDEFD<br>
+            • All <strong>4 exports</strong> are <strong>forwarders</strong> to <code>kernel32.dll</code><br>
+            • This is an <strong>extended file API set</strong> introduced in Windows 8<br>
+            • <code>CreateFile2</code> is the main highlight — extended version of classic CreateFile<br>
+            • Volume management functions are essential for working with <strong>mount points and volume GUIDs</strong><br>
+            • Part of the larger <strong>Core File API family</strong> (other versions: l1-1-0, l1-2-0, l2-1-0)<br>
+            • Not available on Windows 7 — requires Windows 8 or later<br>
+            • For ReactOS: implement these functions for <strong>Windows 8+ application compatibility</strong>
+        </p>
+    </div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
