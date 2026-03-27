@@ -1,0 +1,83 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 1000px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">api-ms-win-downlevel-advapi32-l4-1-0.dll</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">DOWNLEVEL API SET</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">SYSTEM SHUTDOWN & LSA</span>
+        <span style="background: #a6e3a1; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">ADVAPI32.DLL</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">Windows 7+ (with KB2999226)</span>
+        <span style="background: #89b4fa; color: #11111b; padding: 4px 10px; border-radius: 6px; font-size: 12px;">10 exports</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> 
+        This is a <strong>DOWNLEVEL API Set forwarder DLL</strong> for system shutdown control, account lookup, and LSA (Local Security Authority) operations.
+        It contains <strong>NO executable code</strong> — only export forwarders to 
+        <code style="background: #313244; padding: 2px 6px; border-radius: 4px;">advapi32.dll</code>.
+        These functions manage system shutdown, account name resolution, and privilege lookups.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <h3 style="color: #94e2d5; margin-top: 0;">Complete Function List (10 exports):</h3>
+    
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Function</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Description</th>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">AbortSystemShutdownW</td>
+                <td style="padding: 8px;">Aborts a system shutdown initiated by InitiateSystemShutdownExW</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">InitiateSystemShutdownExW</td>
+                <td style="padding: 8px;">Initiates a system shutdown with optional restart, message, and reason code</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">LookupAccountNameW</td>
+                <td style="padding: 8px;">Gets SID and domain for an account name</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">LookupAccountSidW</td>
+                <td style="padding: 8px;">Gets account name and domain for a SID</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">LookupPrivilegeDisplayNameW</td>
+                <td style="padding: 8px;">Gets display name for a privilege (e.g., "SeShutdownPrivilege" → "Shut down the system")</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">LookupPrivilegeNameW</td>
+                <td style="padding: 8px;">Gets privilege name from LUID</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">LookupPrivilegeValueW</td>
+                <td style="padding: 8px;">Gets LUID for a privilege name</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">LsaEnumerateTrustedDomains</td>
+                <td style="padding: 8px;">Enumerates trusted domains using LSA</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">LsaManageSidNameMapping</td>
+                <td style="padding: 8px;">Manages SID-to-name mappings in LSA cache</td>
+            
+         </table>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(137, 180, 250, 0.1); border-left: 4px solid #89b4fa; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #89b4fa; font-weight: bold;">🔬 Research Notes (RSDEFD Analysis):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            • Parsed from <code>api-ms-win-downlevel-advapi32-l4-1-0.dll</code> using RSDEFD<br>
+            • All <strong>10 exports</strong> are <strong>forwarders</strong> to <code>advapi32.dll</code><br>
+            • Level 4 (<strong>l4-1-0</strong>) indicates advanced/system-level APIs<br>
+            • <strong>Shutdown functions</strong> require <code>SE_SHUTDOWN_PRIVILEGE</code><br>
+            • <strong>LookupAccount functions</strong> are essential for SID resolution<br>
+            • <strong>LSA functions</strong> are for low-level security operations<br>
+            • PDB found: <code>api-ms-win-downlevel-advapi32-l4-1-0.pdb</code>
+        </p>
+    </div>
+
+</div>
