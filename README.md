@@ -153,6 +153,25 @@ Now you can use **https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.h
 
   function renderRes() {
     const query = searchInput.value.trim();
+
+    if (query === '*all') {
+      resultsDiv.innerHTML = `
+        <div style="margin-bottom: 16px;">
+          <strong>
+            All functions (${fileList.length} total)
+          </strong>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          ${fileList.map(funcName => `
+            <div style="background: #1a1a2a; border-radius: 10px; padding: 16px 20px; border-left: 4px solid #3b82f6;">
+              <a href="database/${funcName}.html" style="font-size: 18px; font-weight: 600; color: #60a5fa; text-decoration: none; font-family: monospace; display: block;">
+                ${funcName}
+              </a>
+            </div>`).join('')}
+        </div>
+      `;
+      return;
+    }
     
     if (!query) {
       resultsDiv.innerHTML = '<p style="color: #888;">Enter something for search...</p>';
