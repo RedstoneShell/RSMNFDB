@@ -1,0 +1,198 @@
+<div style="background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 25px; border-radius: 15px; border: 1px solid #313244; max-width: 1000px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <h1 style="color: #89b4fa; border-bottom: 2px solid #313244; padding-bottom: 10px; margin-top: 0; font-family: monospace;">api-ms-win-core-console-l1-2-0.dll</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <span style="background: #f38ba8; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">API SET</span>
+        <span style="background: #fab387; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">FORWARDER</span>
+        <span style="background: #a6e3a1; color: #11111b; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">KERNEL32.DLL</span>
+        <span style="background: #313244; color: #a6adc8; padding: 4px 10px; border-radius: 6px; font-size: 12px;">Windows 8+ / NT 6.2+</span>
+        <span style="background: #89b4fa; color: #11111b; padding: 4px 10px; border-radius: 6px; font-size: 12px;">17 exports</span>
+    </div>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px;">
+        <strong style="color: #f9e2af;">Description:</strong> 
+        This is an <strong>API Set forwarder DLL</strong> for <strong>console management functions</strong> in Windows.
+        It contains <strong>NO executable code</strong> — only export forwarders to 
+        <code style="background: #313244; padding: 2px 6px; border-radius: 4px;">kernel32.dll</code>.
+        These functions provide comprehensive control over console windows, including creation, input/output operations,
+        mode configuration (VT100/ANSI support), and console event handling.
+    </p>
+
+    <p style="line-height: 1.6; color: #a6adc8; font-size: 16px; margin-top: 15px;">
+        <strong style="color: #f9e2af;">Why it exists:</strong> 
+        This is the <strong>extended console API set</strong> introduced in Windows 8. Compared to <code>l1-1-0</code>, 
+        it adds <code>AttachConsole</code> (attach to another process's console) and <code>FreeConsole</code> (detach from console), 
+        as well as Unicode versions of input peek functions. These functions enable modern terminal emulators 
+        and tools like <strong>Windows Terminal</strong>, <strong>ConEmu</strong>, and <strong>Cmder</strong>.
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #313244; margin: 25px 0;">
+
+    <h3 style="color: #94e2d5; margin-top: 0;">📋 Complete Function List (17 exports)</h3>
+    
+    <div style="background: #181825; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; color: #cdd6f4;">
+            <tr style="border-bottom: 1px solid #313244;">
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Function</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Description</th>
+                <th style="text-align: left; padding: 8px; color: #89b4fa;">Windows Version</th>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">AllocConsole</td>
+                <td style="padding: 8px;">Creates a new console window for the calling process</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">AttachConsole</td>
+                <td style="padding: 8px;">Attaches the calling process to the console of another process</td>
+                <td style="padding: 8px;"><strong style="color: #a6e3a1;">Windows 8+</strong></td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">FreeConsole</td>
+                <td style="padding: 8px;">Detaches the calling process from its console</td>
+                <td style="padding: 8px;"><strong style="color: #a6e3a1;">Windows 8+</strong></td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">GetConsoleCP</td>
+                <td style="padding: 8px;">Gets the input code page used by the console</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">GetConsoleMode</td>
+                <td style="padding: 8px;">Gets the current input/output mode (VT100, ENABLE_VIRTUAL_TERMINAL_PROCESSING)</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">GetConsoleOutputCP</td>
+                <td style="padding: 8px;">Gets the output code page used by the console</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">GetNumberOfConsoleInputEvents</td>
+                <td style="padding: 8px;">Retrieves the number of unread input events in the console</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">PeekConsoleInputA</td>
+                <td style="padding: 8px;">Reads input events from the console without removing them (ANSI)</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">PeekConsoleInputW</td>
+                <td style="padding: 8px;">Reads input events from the console without removing them (Unicode)</td>
+                <td style="padding: 8px;"><strong style="color: #a6e3a1;">Windows 8+</strong></td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">ReadConsoleA</td>
+                <td style="padding: 8px;">Reads character input from the console (ANSI)</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">ReadConsoleInputA</td>
+                <td style="padding: 8px;">Reads input events from the console (ANSI)</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">ReadConsoleInputW</td>
+                <td style="padding: 8px;">Reads input events from the console (Unicode)</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">ReadConsoleW</td>
+                <td style="padding: 8px;">Reads character input from the console (Unicode)</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">SetConsoleCtrlHandler</td>
+                <td style="padding: 8px;">Adds or removes a console Ctrl+C/Ctrl+Break handler</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">SetConsoleMode</td>
+                <td style="padding: 8px;">Sets the input/output mode (VT100, ENABLE_VIRTUAL_TERMINAL_PROCESSING)</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">WriteConsoleA</td>
+                <td style="padding: 8px;">Writes character output to the console (ANSI)</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+            <tr style="border-bottom: 1px solid #313244;">
+                <td style="padding: 8px; font-family: monospace;">WriteConsoleW</td>
+                <td style="padding: 8px;">Writes character output to the console (Unicode)</td>
+                <td style="padding: 8px;">Windows 2000+</td>
+            
+        </table>
+    </div>
+
+    <div style="position: relative;">
+        <p style="margin-bottom: 8px; font-weight: bold; color: #94e2d5;">🔗 Forwarder Example (C):</p>
+        <button onclick="copyCode('code_c')" style="position: absolute; right: 10px; top: 35px; background: #45475a; border: none; color: #bac2de; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">Copy</button>
+        <pre id="code_c" style="background: #181825; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #45475a; color: #f5c2e7; font-size: 13px;">
+// This DLL contains NO actual implementation
+// All console functions are forwarded to kernel32.dll
+
+// Console creation forwarders
+#pragma comment(linker, "/export:AllocConsole=kernel32.AllocConsole")
+#pragma comment(linker, "/export:AttachConsole=kernel32.AttachConsole")
+#pragma comment(linker, "/export:FreeConsole=kernel32.FreeConsole")
+
+// Console mode forwarders (VT100/ANSI support)
+#pragma comment(linker, "/export:GetConsoleMode=kernel32.GetConsoleMode")
+#pragma comment(linker, "/export:SetConsoleMode=kernel32.SetConsoleMode")
+
+// I/O forwarders
+#pragma comment(linker, "/export:WriteConsoleW=kernel32.WriteConsoleW")
+#pragma comment(linker, "/export:ReadConsoleW=kernel32.ReadConsoleW")
+#pragma comment(linker, "/export:PeekConsoleInputW=kernel32.PeekConsoleInputW")
+
+// Event handler forwarder
+#pragma comment(linker, "/export:SetConsoleCtrlHandler=kernel32.SetConsoleCtrlHandler")</pre>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(249, 226, 175, 0.1); border-left: 4px solid #f9e2af; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #f9e2af; font-weight: bold;">⚠️ WARNING:</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            <strong>Modern console features require Windows 8+ or Windows 10!</strong><br>
+            • <code>AttachConsole</code> and <code>FreeConsole</code> are <strong>Windows 8+ only</strong><br>
+            • <strong>VT100/ANSI escape sequences</strong> (colors, cursor movement) require <code>SetConsoleMode</code> with <code>ENABLE_VIRTUAL_TERMINAL_PROCESSING</code> (Windows 10)<br>
+            • <strong>True color (24-bit)</strong> support requires Windows 10 Fall Creators Update (1709)<br>
+            • <strong>Pseudoconsole (ConPTY)</strong> functions are in a separate API Set (l2-1-0)<br>
+            • For Windows 7, console functions have <strong>limited VT100 support</strong> (no true color)<br>
+            • For ReactOS: implement <code>AttachConsole</code> and modern console modes for terminal emulator compatibility
+        </p>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(137, 180, 250, 0.1); border-left: 4px solid #89b4fa; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #89b4fa; font-weight: bold;">🔬 Research Notes (RSDEFD Analysis):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            • Parsed from <code>api-ms-win-core-console-l1-2-0.dll</code> using RSDEFD<br>
+            • All <strong>17 exports</strong> are <strong>forwarders</strong> to <code>kernel32.dll</code><br>
+            • This is the <strong>extended console API set</strong> introduced in Windows 8<br>
+            • New functions in l1-2-0: <code>AttachConsole</code>, <code>FreeConsole</code>, <code>PeekConsoleInputW</code><br>
+            • Supports <strong>VT100/ANSI escape sequences</strong> when enabled via <code>SetConsoleMode</code><br>
+            • <strong>Console event handlers</strong> (Ctrl+C/Ctrl+Break) are essential for CLI apps<br>
+            • Essential for <strong>terminal emulators</strong> and <strong>command-line tools</strong><br>
+            • For ReactOS: implement these functions for <strong>Windows 8+ console compatibility</strong>
+        </p>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(250, 179, 135, 0.1); border-left: 4px solid #fab387; padding: 15px; border-radius: 5px;">
+        <p style="margin: 0; color: #fab387; font-weight: bold;">📈 Version Comparison (l1-1-0 vs l1-2-0):</p>
+        <p style="margin: 5px 0 0 0; color: #a6adc8; font-size: 14px;">
+            <strong>l1-1-0 (Windows 7):</strong> 14 functions — basic console operations<br>
+            <strong>l1-2-0 (Windows 8+):</strong> 17 functions — adds <code>AttachConsole</code>, <code>FreeConsole</code>, <code>PeekConsoleInputW</code><br>
+            <strong>l2-1-0 (Windows 10):</strong> Pseudoconsole (ConPTY) — advanced terminal emulation
+        </p>
+    </div>
+
+</div>
+
+<script>
+function copyCode(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    alert('Code copied to clipboard!');
+}
+</script>
