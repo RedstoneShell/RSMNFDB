@@ -140,6 +140,13 @@ Now you can use **https://redstoneshell.github.io/RSMNFDB/database/NTStatusFAQ.h
   <p>Type in search something...</p>
 </div>
 
+## Guides
+### How to copy Windows License File?
+1. Download own WLF extractor [WinLicenseFileCopy.cmd](http://redstoneshell.github.io/RSMNFDB/devworks/WinLicenseFileCopy.cmd)
+2. Start by click to "Run as Administrator"
+3. Wait befor script end work
+4. Go to Desktop and find "License_Files", open and find **7B296FB0-376B-497e-B012-9C450...**, and you can analyse his by own instruments or RSDEFD decompiler by uploading a theese files at dropbox.
+
 <script>
   const fileList = ["RtlGetVersion", "NtCreateThreadEx", "LdrLoadDll", "BeepDeviceControl", "CheckSnapshotPresence", "CreateVolumeSnapshot", "ReleaseVolumeSnapshot", "SendSAS", "DCIOpenProvider", "DCICloseProvider", "DCICreatePrimary", "DCICreateOffscreen", "DCICreateOverlay", "DCIDestroy", "DCIDraw", "DCIBeginAccess", "DCIEndAccess", "DCIEnum", "DCISetClipList", "DCISetDestination", "DCISetSrcDestClip", "WinWatchOpen", "WinWatchClose", "WinWatchGetClipList", "WinWatchDidStatusChange", "WinWatchNotify", "api-ms-win-crt-multibyte-l1-1-0", "api-ms-win-crt-math-l1-1-0", "api-ms-win-crt-private-l1-1-0"]; 
   const searchInput = document.getElementById('searchInput');
