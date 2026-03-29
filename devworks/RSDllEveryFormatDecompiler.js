@@ -1,5 +1,7 @@
 /*
     Made by RedstoneShell, provided by RedstoneShell Microsoft Not-documented Functions DB
+    RSDEFD - RedstoneShell Dll Every Format Decompiler. Usiversal research decompiler x64-86, no giant formulas justification,
+    you see all! 
     Copyright (C) 2026 RedstoneShell. All rights reserved
 */
 
@@ -37,6 +39,30 @@ class RSDEFD {
      */
     async scan() {
         try {
+            const fileName = this.options.fileName || "";
+            if (fileName.includes('7B296FB0')) {
+                console.log("Windows Software Licensing file detected");
+                await this.scanWindowsLicense();
+                this.result.success = true;
+                return this.result;
+            }
+            if (this.options.fileExt==="vp") {
+                console.log("Intel VP container detected");
+                this.report = {
+                    fileInfo: { size: this.bytes.length, name: this.options.fileName || "Unknown" },
+                    sections: [],
+                };
+                await this.scanIntelVP();
+                this.result.success = true;
+                this.result.summary = {
+                    fileName: this.options.fileName || "Unknown",
+                    size: this.bytes.length,
+                    type: "Intel VP Container",
+                    sections: this.findVPSections().length,
+                    embeddedFiles: this.findEmbeddedPEFiles().length
+                };
+                return this.result;
+            }
             this.report = {
                 fileInfo: {},
                 dosHeader: {},
@@ -726,7 +752,7 @@ class RSDEFD {
     async scanTextSection() {
         const timeoutId = setTimeout(() => {
             console.error("⚠️ SCAN TIMEOUT! Possible infinite loop in extractStringsFromText or disassemble");
-        }, 30000);
+        }, 50000);
         console.time("scanTextSection");
         
         const textSection = this.report.sections.find(s => s.name === '.text');
@@ -1330,7 +1356,8 @@ class RSDEFD {
         
         const instructions = [];
         let offset = 0;
-        let lastLog = 0;
+        let consecutiveData = 0;
+        let inDataSection = false;
         
         const opcodeTable = {
             0x00: { mnem: "add", len: 2 }, 0x01: { mnem: "add", len: 2 }, 0x02: { mnem: "add", len: 2 }, 0x03: { mnem: "add", len: 2 },
@@ -1365,6 +1392,15 @@ class RSDEFD {
             0x58: { mnem: "pop rax", len: 1 }, 0x59: { mnem: "pop rcx", len: 1 }, 0x5A: { mnem: "pop rdx", len: 1 },
             0x5B: { mnem: "pop rbx", len: 1 }, 0x5C: { mnem: "pop rsp", len: 1 }, 0x5D: { mnem: "pop rbp", len: 1 },
             0x5E: { mnem: "pop rsi", len: 1 }, 0x5F: { mnem: "pop rdi", len: 1 },
+            0x60: { mnem: "pusha", len: 1 }, 0x61: { mnem: "popa", len: 1 },
+            0x62: { mnem: "bound", len: 2 }, 0x63: { mnem: "arpl", len: 2 },
+            0x64: { mnem: "fs", len: 1 },  // prefix
+            0x65: { mnem: "gs", len: 1 },  // prefix
+            0x66: { mnem: "data16", len: 1 }, // prefix
+            0x67: { mnem: "addr16", len: 1 }, // prefix
+            0x68: { mnem: "push", len: 5 }, 0x69: { mnem: "imul", len: 6 }, 0x6A: { mnem: "push", len: 2 },
+            0x6B: { mnem: "imul", len: 3 }, 0x6C: { mnem: "insb", len: 1 }, 0x6D: { mnem: "insw", len: 1 },
+            0x6E: { mnem: "outsb", len: 1 }, 0x6F: { mnem: "outsw", len: 1 },
             0x06: { mnem: "push es", len: 1 }, 0x07: { mnem: "pop es", len: 1 },
             0x0E: { mnem: "push cs", len: 1 }, 0x16: { mnem: "push ss", len: 1 }, 0x17: { mnem: "pop ss", len: 1 },
             0x1E: { mnem: "push ds", len: 1 }, 0x1F: { mnem: "pop ds", len: 1 },
@@ -1407,7 +1443,23 @@ class RSDEFD {
             0xC6: { mnem: "mov", len: 2 }, 0xC7: { mnem: "mov", len: 6 },
             0xFE: { mnem: "inc", len: 2 }, 0xFF: { mnem: "inc", len: 2 },
             0xF6: { mnem: "test", len: 2 }, 0xF7: { mnem: "test", len: 2 },
-            0x0F: { mnem: "nop", len: 2, isTwoByte: true }
+            0x0F: { mnem: "nop", len: 2, isTwoByte: true },
+            0xD8: { mnem: "fadd", len: 2 }, 0xD9: { mnem: "fld", len: 2 },
+            0xDA: { mnem: "fcmovb", len: 2 }, 0xDB: { mnem: "fild", len: 2 },
+            0xDC: { mnem: "fadd", len: 2 }, 0xDD: { mnem: "fld", len: 2 },
+            0xDE: { mnem: "faddp", len: 2 }, 0xDF: { mnem: "fild", len: 2 },
+            0x0F: { mnem: "nop", len: 2, isTwoByte: true },
+            0xF0: { mnem: "lock", len: 1 }, // prefix
+            0xF2: { mnem: "repne", len: 1 }, // prefix
+            0xF3: { mnem: "repe", len: 1 },  // prefix
+            0xF4: { mnem: "hlt", len: 1 },
+            0xF5: { mnem: "cmc", len: 1 },
+            0xF8: { mnem: "clc", len: 1 },
+            0xF9: { mnem: "stc", len: 1 },
+            0xFA: { mnem: "cli", len: 1 },
+            0xFB: { mnem: "sti", len: 1 },
+            0xFC: { mnem: "cld", len: 1 },
+            0xFD: { mnem: "std", len: 1 },
         };
         
         const opcodeTableTwoByte = {
@@ -1423,7 +1475,35 @@ class RSDEFD {
             0xB0: { mnem: "cmpxchg", len: 2 }, 0xB1: { mnem: "cmpxchg", len: 2 },
             0xB6: { mnem: "movzx", len: 2 }, 0xB7: { mnem: "movzx", len: 2 },
             0xBE: { mnem: "movsx", len: 2 }, 0xBF: { mnem: "movsx", len: 2 },
-            0xC7: { mnem: "cmpxchg8b", len: 2 }, 0xC8: { mnem: "bswap", len: 1 }
+            0xC7: { mnem: "cmpxchg8b", len: 2 }, 0xC8: { mnem: "bswap", len: 1 },
+            0x80: { mnem: "jo", len: 5 }, 0x81: { mnem: "jno", len: 5 }, 0x82: { mnem: "jb", len: 5 }, 0x83: { mnem: "jnb", len: 5 }, 0x84: { mnem: "jz", len: 5 }, 0x85: { mnem: "jnz", len: 5 }, 0x86: { mnem: "jbe", len: 5 }, 0x87: { mnem: "jnbe", len: 5 }, 0x88: { mnem: "js", len: 5 }, 0x89: { mnem: "jns", len: 5 }, 0x8A: { mnem: "jp", len: 5 }, 0x8B: { mnem: "jnp", len: 5 }, 0x8C: { mnem: "jl", len: 5 }, 0x8D: { mnem: "jnl", len: 5 }, 0x8E: { mnem: "jle", len: 5 }, 0x8F: { mnem: "jnle", len: 5 },
+            0x40: { mnem: "cmovno", len: 2 }, 0x41: { mnem: "cmovno", len: 2 }, 0x42: { mnem: "cmovb", len: 2 },  0x43: { mnem: "cmovnb", len: 2 }, 0x44: { mnem: "cmovz", len: 2 },  0x45: { mnem: "cmovnz", len: 2 }, 0x46: { mnem: "cmovbe", len: 2 }, 0x47: { mnem: "cmovnbe", len: 2 }, 0x48: { mnem: "cmovs", len: 2 },  0x49: { mnem: "cmovns", len: 2 }, 0x4A: { mnem: "cmovp", len: 2 },  0x4B: { mnem: "cmovnp", len: 2 }, 0x4C: { mnem: "cmovl", len: 2 },  0x4D: { mnem: "cmovnl", len: 2 }, 0x4E: { mnem: "cmovle", len: 2 }, 0x4F: { mnem: "cmovnle", len: 2 },
+            0x10: { mnem: "movups", len: 2 }, 0x11: { mnem: "movups", len: 2 }, 0x12: { mnem: "movlps", len: 2 }, 0x13: { mnem: "movlps", len: 2 },
+            0x14: { mnem: "unpcklps", len: 2 }, 0x15: { mnem: "unpckhps", len: 2 }, 0x16: { mnem: "movhps", len: 2 }, 0x17: { mnem: "movhps", len: 2 },
+            0x28: { mnem: "movaps", len: 2 }, 0x29: { mnem: "movaps", len: 2 }, 0x2A: { mnem: "cvtpi2ps", len: 2 }, 0x2B: { mnem: "movntps", len: 2 },
+            0x2C: { mnem: "cvttps2pi", len: 2 }, 0x2D: { mnem: "cvtps2pi", len: 2 }, 0x2E: { mnem: "ucomiss", len: 2 }, 0x2F: { mnem: "comiss", len: 2 },
+            0x50: { mnem: "movmskps", len: 2 }, 0x51: { mnem: "sqrtps", len: 2 }, 0x52: { mnem: "rsqrtps", len: 2 }, 0x53: { mnem: "rcpps", len: 2 },
+            0x54: { mnem: "andps", len: 2 }, 0x55: { mnem: "andnps", len: 2 }, 0x56: { mnem: "orps", len: 2 }, 0x57: { mnem: "xorps", len: 2 },
+            0x58: { mnem: "addps", len: 2 }, 0x59: { mnem: "mulps", len: 2 }, 0x5A: { mnem: "cvtps2pd", len: 2 }, 0x5B: { mnem: "cvtdq2ps", len: 2 },
+            0x5C: { mnem: "subps", len: 2 }, 0x5D: { mnem: "minps", len: 2 }, 0x5E: { mnem: "divps", len: 2 }, 0x5F: { mnem: "maxps", len: 2 },
+            0x01: { mnem: "sgdt", len: 2 },
+            0x08: { mnem: "invd", len: 1 }, 0x09: { mnem: "wbinvd", len: 1 }, 0x0B: { mnem: "ud2", len: 1 }, 0x1F: { mnem: "nop", len: 2 },
+            0x30: { mnem: "wrmsr", len: 1 }, 0x31: { mnem: "rdtsc", len: 1 }, 0x32: { mnem: "rdmsr", len: 1 }, 0x33: { mnem: "rdpmc", len: 1 }, 0x34: { mnem: "sysenter", len: 1 }, 0x35: { mnem: "sysexit", len: 1 }, 0x40: { mnem: "cmovo", len: 2 },
+            0x41: { mnem: "cmovno", len: 2 }, 0x42: { mnem: "cmovb", len: 2 }, 0x43: { mnem: "cmovnb", len: 2 }, 0x44: { mnem: "cmovz", len: 2 }, 0x45: { mnem: "cmovnz", len: 2 }, 0x46: { mnem: "cmovbe", len: 2 }, 0x47: { mnem: "cmovnbe", len: 2 }, 0x48: { mnem: "cmovs", len: 2 },
+            0x49: { mnem: "cmovns", len: 2 }, 0x4A: { mnem: "cmovp", len: 2 }, 0x4B: { mnem: "cmovnp", len: 2 }, 0x4C: { mnem: "cmovl", len: 2 }, 0x4D: { mnem: "cmovnl", len: 2 }, 0x4E: { mnem: "cmovle", len: 2 }, 0x4F: { mnem: "cmovnle", len: 2 },
+            0x80: { mnem: "jo", len: 5 },  0x81: { mnem: "jno", len: 5 },  0x82: { mnem: "jb", len: 5 },  0x83: { mnem: "jnb", len: 5 },  0x84: { mnem: "jz", len: 5 },  0x85: { mnem: "jnz", len: 5 },  0x86: { mnem: "jbe", len: 5 },  0x87: { mnem: "jnbe", len: 5 },
+            0x88: { mnem: "js", len: 5 },  0x89: { mnem: "jns", len: 5 },  0x8A: { mnem: "jp", len: 5 },  0x8B: { mnem: "jnp", len: 5 },  0x8C: { mnem: "jl", len: 5 },  0x8D: { mnem: "jnl", len: 5 },  0x8E: { mnem: "jle", len: 5 },  0x8F: { mnem: "jnle", len: 5 },  0x90: { mnem: "seto", len: 2 },  0x91: { mnem: "setno", len: 2 },  0x92: { mnem: "setb", len: 2 },  0x93: { mnem: "setnb", len: 2 },  0x94: { mnem: "setz", len: 2 },
+            0x95: { mnem: "setnz", len: 2 }, 0x96: { mnem: "setbe", len: 2 }, 0x97: { mnem: "setnbe", len: 2 }, 0x98: { mnem: "sets", len: 2 }, 0x99: { mnem: "setns", len: 2 }, 0x9A: { mnem: "setp", len: 2 }, 0x9B: { mnem: "setnp", len: 2 }, 0x9C: { mnem: "setl", len: 2 },
+            0x9D: { mnem: "setnl", len: 2 }, 0x9E: { mnem: "setle", len: 2 }, 0x9F: { mnem: "setnle", len: 2 }, 0xA0: { mnem: "push fs", len: 1 }, 0xA1: { mnem: "pop fs", len: 1 }, 0xA2: { mnem: "cpuid", len: 1 }, 0xA3: { mnem: "bt", len: 2 }, 0xA4: { mnem: "shld", len: 3 }, 0xA5: { mnem: "shld", len: 2 },
+            0xA8: { mnem: "push gs", len: 1 }, 0xA9: { mnem: "pop gs", len: 1 }, 0xAA: { mnem: "rsm", len: 1 }, 0xAB: { mnem: "bts", len: 2 }, 0xAC: { mnem: "shrd", len: 3 }, 0xAD: { mnem: "shrd", len: 2 }, 0xAE: { mnem: "fxsave", len: 2 }, 0xAF: { mnem: "imul", len: 2 }, 0xB0: { mnem: "cmpxchg", len: 2 }, 0xB1: { mnem: "cmpxchg", len: 2 },
+            0xB2: { mnem: "lss", len: 2 },  0xB3: { mnem: "btr", len: 2 },  0xB4: { mnem: "lfs", len: 2 },  0xB5: { mnem: "lgs", len: 2 },  0xB6: { mnem: "movzx", len: 2 },  0xB7: { mnem: "movzx", len: 2 },  0xB8: { mnem: "popcnt", len: 2 },  0xB9: { mnem: "ud1", len: 2 },  0xBA: { mnem: "bt", len: 3 },  0xBB: { mnem: "btc", len: 2 },
+            0xBC: { mnem: "bsf", len: 2 }, 0xBD: { mnem: "bsr", len: 2 }, 0xBE: { mnem: "movsx", len: 2 }, 0xBF: { mnem: "movsx", len: 2 }, 0xC0: { mnem: "xadd", len: 2 }, 0xC1: { mnem: "xadd", len: 2 }, 0xC2: { mnem: "cmpps", len: 3 }, 0xC3: { mnem: "movnti", len: 2 }, 0xC4: { mnem: "pinsrw", len: 3 }, 0xC5: { mnem: "pextrw", len: 3 },
+            0xC6: { mnem: "shufps", len: 3 },  0xC7: { mnem: "cmpxchg8b", len: 2 },  0xC8: { mnem: "bswap", len: 1 },  0xC9: { mnem: "bswap", len: 1 },  0xCA: { mnem: "bswap", len: 1 },  0xCB: { mnem: "bswap", len: 1 },  0xCC: { mnem: "bswap", len: 1 },  0xCD: { mnem: "bswap", len: 1 },  0xCE: { mnem: "bswap", len: 1 },
+            0xCF: { mnem: "bswap", len: 1 }, 0xD0: { mnem: "addsubps", len: 2 }, 0xD1: { mnem: "psrlw", len: 2 }, 0xD2: { mnem: "psrld", len: 2 }, 0xD3: { mnem: "psrlq", len: 2 }, 0xD4: { mnem: "paddq", len: 2 }, 0xD5: { mnem: "pmullw", len: 2 }, 0xD6: { mnem: "movq", len: 2 }, 0xD7: { mnem: "pmovmskb", len: 2 },
+            0xD8: { mnem: "psubusb", len: 2 }, 0xD9: { mnem: "psubusw", len: 2 }, 0xDA: { mnem: "pminub", len: 2 }, 0xDB: { mnem: "pand", len: 2 }, 0xDC: { mnem: "paddusb", len: 2 }, 0xDD: { mnem: "paddusw", len: 2 }, 0xDE: { mnem: "pmaxub", len: 2 }, 0xDF: { mnem: "pandn", len: 2 }, 0xE0: { mnem: "pavgb", len: 2 },
+            0xE1: { mnem: "psraw", len: 2 }, 0xE2: { mnem: "psrad", len: 2 }, 0xE3: { mnem: "pavgw", len: 2 }, 0xE4: { mnem: "pmulhuw", len: 2 }, 0xE5: { mnem: "pmulhw", len: 2 }, 0xE6: { mnem: "cvttpd2dq", len: 2 }, 0xE7: { mnem: "movntq", len: 2 }, 0xE8: { mnem: "psubsb", len: 2 }, 0xE9: { mnem: "psubsw", len: 2 }, 0xEA: { mnem: "pminsw", len: 2 }, 0xEB: { mnem: "por", len: 2 }, 0xEC: { mnem: "paddsb", len: 2 }, 0xED: { mnem: "paddsw", len: 2 }, 0xEE: { mnem: "pmaxsw", len: 2 }, 0xEF: { mnem: "pxor", len: 2 },
+            0xF0: { mnem: "lddqu", len: 2 },  0xF1: { mnem: "psllw", len: 2 },  0xF2: { mnem: "pslld", len: 2 },  0xF3: { mnem: "psllq", len: 2 },  0xF4: { mnem: "pmuludq", len: 2 },  0xF5: { mnem: "pmaddwd", len: 2 },  0xF6: { mnem: "psadbw", len: 2 },  0xF7: { mnem: "maskmovq", len: 2 },  0xF8: { mnem: "psubb", len: 2 },  0xF9: { mnem: "psubw", len: 2 },  0xFA: { mnem: "psubd", len: 2 },
+            0xFB: { mnem: "psubq", len: 2 }, 0xFC: { mnem: "paddb", len: 2 }, 0xFD: { mnem: "paddw", len: 2 }, 0xFE: { mnem: "paddd", len: 2 }, 0xFF: { mnem: "paddq", len: 2 }
         };
         
         while (offset < bytes.length) {
@@ -1437,7 +1517,60 @@ class RSDEFD {
                 instBytes.push(bytes[offset + i].toString(16).padStart(2, '0'));
             }
             
-            // REX prefix (x64)
+            const isZeroBlock = opcode === 0x00 && bytes[offset + 1] === 0x00 && bytes[offset + 2] === 0x00;
+            const isDataPattern = (opcode >= 0x20 && opcode <= 0x7E) &&
+                                  bytes[offset + 1] === 0x00 &&        
+                                  (bytes[offset + 2] === 0x00 || bytes[offset + 2] === 0x20);
+            
+            if (isZeroBlock || isDataPattern) {
+                consecutiveData++;
+                if (consecutiveData > 10 && !inDataSection) {
+                    inDataSection = true;
+                    instructions.push({
+                        rva: rva - consecutiveData * 1,
+                        offset: offset - consecutiveData,
+                        bytes: '...',
+                        text: '// ========== DATA SECTION START ==========',
+                        length: 0,
+                        isDataMarker: true
+                    });
+                }
+            } else {
+                consecutiveData = 0;
+                inDataSection = false;
+            }
+            
+            if (inDataSection) {
+                const nextBytes = bytes.slice(offset, offset + 16);
+                const hasCodePattern = nextBytes.some(b => b === 0x55 || b === 0xE8 || b === 0xE9 || b === 0xC3);
+                
+                if (hasCodePattern && consecutiveData < 5) {
+                    inDataSection = false;
+                    instructions.push({
+                        rva: rva,
+                        offset: offset,
+                        bytes: '...',
+                        text: '// ========== CODE SECTION RESUME ==========',
+                        length: 0,
+                        isDataMarker: true
+                    });
+                } else {
+                    const ascii = bytes.slice(offset, Math.min(offset + 16, bytes.length))
+                        .map(b => (b >= 0x20 && b <= 0x7E) ? String.fromCharCode(b) : '.')
+                        .join('');
+                    instructions.push({
+                        rva: rva,
+                        offset: offset,
+                        bytes: instBytes.slice(0, 16).join(' '),
+                        text: `db ${instBytes[0]}`,
+                        length: 1,
+                        isData: true,
+                        asciiPreview: ascii
+                    });
+                    offset++;
+                    continue;
+                }
+            }
             const isREX = (opcode & 0xF0) === 0x40 && opcode >= 0x40 && opcode <= 0x4F;
             let rexW = false;
             let rexR = false;
@@ -1552,6 +1685,24 @@ class RSDEFD {
                 } else {
                     instText = `db ${opcode.toString(16)}`;
                 }
+            }
+
+            if (instText === "ret" && instLength === 3 && bytes.length > offset + 2) {
+                const imm = bytes[offset + 1] | (bytes[offset + 2] << 8);
+                instText = `ret 0x${imm.toString(16)}`;
+            }
+
+            if (opcode === 0xE3) {
+                if (this.is64bit && rexW) {
+                    instText = "jrcxz";
+                } else if (this.is64bit || this.is32bit) {
+                    instText = "jecxz";
+                } else {
+                    instText = "jcxz";
+                }
+                const disp = bytes[offset + 1];
+                instText = `${instText} 0x${(rva + 2 + (disp > 127 ? disp - 256 : disp)).toString(16)}`;
+                instLength = 2;
             }
             
             instructions.push({
@@ -1937,6 +2088,1103 @@ class RSDEFD {
         const names = { 0: "Unknown", 1: "Native", 2: "Windows GUI", 3: "Windows CUI", 5: "OS/2 CUI", 7: "POSIX CUI" };
         return names[subsystem] || `Unknown (${subsystem})`;
     }
+
+    // INTEL DRIVER SETTINGS
+
+    isIntelVP() {
+        if (this.bytes[0] === 0x1A && this.bytes[1] === 0x01 && this.bytes[2] === 0x03) {
+            return true;
+        }
+        const headerOffset = this.findMagicHeader();
+        if (headerOffset !== -1) return true;
+        const sample = new TextDecoder('utf-8').decode(this.bytes.slice(0, 4096));
+        return sample.includes('igdkmd64') || 
+               (sample.includes('IMap') && sample.includes('Relocations')) ||
+               sample.includes('A_PUBLIC_KEY');
+    }
+
+    findMagicHeader() {
+        for (let i = 0; i < Math.min(this.bytes.length - 3, 1024); i++) {
+            if (this.bytes[i] === 0x1A && 
+                this.bytes[i+1] === 0x01 && 
+                this.bytes[i+2] === 0x03) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    parseIntelVPHeader() {
+        let offset = 0;
+        
+        if (this.bytes[0] !== 0x1A) {
+            const magicOffset = this.findMagicHeader();
+            if (magicOffset === -1) return null;
+            offset = magicOffset;
+        }
+        
+        if (offset + 40 > this.bytes.length) return null;
+        
+        try {
+            const header = {
+                magic: this.view.getUint8(offset),
+                versionMinor: this.view.getUint8(offset+1),
+                type: this.view.getUint8(offset+2),
+                reserved: this.view.getUint8(offset+3),
+                unknown1: this.view.getUint32(offset+7, true),
+                entryCount: this.view.getUint16(offset+9, true),
+                offsetA: this.view.getUint32(offset+13, true),
+                offsetB: this.view.getUint32(offset+17, true),
+                flags: this.view.getUint32(offset+21, true),
+                nameCount: this.view.getUint16(offset+23, true),
+                embeddedFiles: [],
+                rawOffset: offset
+            };
+            
+            for (let i = 0; i < header.nameCount; i++) {
+                if (offset + 2 > this.bytes.length) break;
+                const nameLen = this.view.getUint16(offset, true); offset += 2;
+                if (offset + nameLen > this.bytes.length) break;
+                
+                let nameBytes = [];
+                for (let j = 0; j < nameLen; j++) {
+                    nameBytes.push(this.bytes[offset + j]);
+                }
+                offset += nameLen;
+                const name = new TextDecoder('utf-8').decode(new Uint8Array(nameBytes));
+                const endMarker = (offset < this.bytes.length) ? this.view.getUint8(offset) : 0;
+                offset += 1;
+                
+                header.embeddedFiles.push({
+                    name: name,
+                    nameLen: nameLen,
+                    endMarker: endMarker
+                });
+            }
+            
+            return header;
+        } catch (e) {
+            console.warn("Failed to parse Intel VP header:", e);
+            return null;
+        }
+    }
+
+    findEmbeddedPEFiles() {
+        const embedded = [];
+        let offset = 0;
+        
+        while ((offset = this.findMZ(offset)) !== -1) {
+            if (offset + 0x40 > this.bytes.length) break;
+            const e_lfanew = this.view.getUint32(offset + 0x3C, true);
+            if (e_lfanew > 0 && offset + e_lfanew + 4 <= this.bytes.length) {
+                const peSig = this.view.getUint32(offset + e_lfanew, true);
+                if (peSig === 0x00004550) { // "PE\0\0"
+                    let name = this.findPENameNear(offset);
+                    
+                    embedded.push({
+                        offset: offset,
+                        name: name || `embedded_${embedded.length}.pe`,
+                        size: this.getPESize(offset),
+                        e_lfanew: e_lfanew
+                    });
+                }
+            }
+            offset += 2;
+        }
+        
+        return embedded;
+    }
+ 
+    findMZ(start = 0) {
+        for (let i = start; i < this.bytes.length - 1; i++) {
+            if (this.bytes[i] === 0x4D && this.bytes[i + 1] === 0x5A) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    findPENameNear(offset) {
+        const start = Math.max(0, offset - 256);
+        const end = Math.min(this.bytes.length, offset + 256);
+        const context = this.bytes.slice(start, end);
+        const str = new TextDecoder('utf-8').decode(context);
+        
+        const match = str.match(/[a-zA-Z0-9_]+\.(sys|dll|exe|drv)/i);
+        if (match) return match[0];
+        
+        if (str.includes('igdkmd64')) return 'igdkmd64.sys';
+        
+        return null;
+    }
+
+    getPESize(offset) {
+        let nextMZ = this.findMZ(offset + 2);
+        if (nextMZ !== -1 && nextMZ > offset) {
+            return nextMZ - offset;
+        }
+        return this.bytes.length - offset;
+    }
+
+    extractVPVersion() {
+        const str = new TextDecoder('utf-8').decode(this.bytes.slice(0, 4096));
+        const match = str.match(/(\d+\.\d+\.\d+\.\d+)/);
+        return match ? match[0] : null;
+    }
+    
+    findVPSections() {
+        const markers = ['IMap', 'Relocations', 'A_PUBLIC_KEY', 'SIGNER_ATTR'];
+        const sections = [];
+        
+        for (const marker of markers) {
+            const pos = this.findStringInBytes(marker);
+            if (pos !== -1) {
+                let end = this.bytes.length;
+                for (const m of markers) {
+                    const nextPos = this.findStringInBytes(m, pos + marker.length);
+                    if (nextPos !== -1 && nextPos > pos && nextPos < end) {
+                        end = nextPos;
+                    }
+                }
+                sections.push({
+                    name: marker,
+                    offset: pos,
+                    size: Math.min(end - pos, 65536),
+                    type: 'marker'
+                });
+            }
+        }
+        
+        return sections;
+    }
+    
+    findStringInBytes(str, start = 0) {
+        const target = new TextEncoder().encode(str);
+        for (let i = start; i < this.bytes.length - target.length; i++) {
+            let found = true;
+            for (let j = 0; j < target.length; j++) {
+                if (this.bytes[i + j] !== target[j]) {
+                    found = false;
+                    break;
+                }
+            }
+            if (found) return i;
+        }
+        return -1;
+    }
+
+    hasVPSignature() {
+        const str = new TextDecoder('utf-8').decode(this.bytes.slice(0, 8192));
+        return str.includes('A_PUBLIC_KEY') && str.includes('SIGNER_ATTR');
+    }
+
+    parseIMap(offset, size) {
+        if (offset === -1 || size < 32) return null;
+        
+        try {
+            const imap = {
+                rawSize: size,
+                entries: [],
+                version: null,
+                imageCount: 0
+            };
+            
+            let dataOffset = offset;
+            while (dataOffset < offset + size) {
+                const byte = this.bytes[dataOffset];
+                if (byte >= 0x20 && byte <= 0x7E) {
+                    dataOffset++;
+                } else {
+                    break;
+                }
+            }
+            
+            while (dataOffset % 4 !== 0 && dataOffset < offset + size) {
+                dataOffset++;
+            }
+            
+            let pos = dataOffset;
+            let entryIndex = 0;
+            
+            while (pos + 16 <= offset + size && entryIndex < 100) {
+                const entry = {
+                    index: entryIndex,
+                    offset: pos,
+                    rva: this.view.getUint32(pos, true),
+                    size: this.view.getUint32(pos + 4, true),
+                    flags: this.view.getUint32(pos + 8, true),
+                    unknown: this.view.getUint32(pos + 12, true)
+                };
+                
+                if (entry.rva !== 0 || entry.size !== 0) {
+                    imap.entries.push(entry);
+                } else {
+                    if (entryIndex > 0 && entry.rva === 0 && entry.size === 0) {
+                        break;
+                    }
+                }
+                
+                pos += 16;
+                entryIndex++;
+            }
+            
+            const str = new TextDecoder('utf-8').decode(this.bytes.slice(offset, Math.min(offset + 128, this.bytes.length)));
+            const versionMatch = str.match(/(\d+\.\d+\.\d+\.\d+)/);
+            if (versionMatch) {
+                imap.version = versionMatch[1];
+            }
+            
+            const fimapPos = this.findStringInBytes('FIMap', offset);
+            if (fimapPos !== -1) {
+                imap.hasFIMap = true;
+                imap.fimapOffset = fimapPos;
+            }
+            
+            imap.imageCount = imap.entries.length;
+            
+            return imap;
+        } catch (e) {
+            console.warn("Failed to parse IMap:", e);
+            return null;
+        }
+    }
+
+    async scanIntelVP() {
+        console.log("🔍 Scanning Intel VP container...");
+        const header = this.parseIntelVPHeader();
+        const sections = this.findVPSections();
+        const embeddedPE = this.findEmbeddedPEFiles();
+        const version = this.extractVPVersion();
+        const hasSignature = this.hasVPSignature();
+        if (header) {
+            this.result.tables.push({
+                title: "Intel VP Header",
+                icon: "chip",
+                columns: ["Field", "Value"],
+                rows: [
+                    ["Magic", `0x${header.magic.toString(16)}`],
+                    ["Version", `${header.versionMinor}.${header.type}`],
+                    ["Entry Count", header.entryCount],
+                    ["Flags", `0x${header.flags.toString(16)}`],
+                    ["Embedded Files", header.embeddedFiles.map(f => f.name).join(", ") || "None"],
+                    ["Name Count", header.nameCount]
+                ]
+            });
+        }
+        
+        if (sections.length > 0) {
+            this.result.tables.push({
+                title: `📁 VP Sections (${sections.length})`,
+                icon: "sections",
+                columns: ["Name", "Offset", "Size", "Type"],
+                rows: sections.map(s => [
+                    s.name,
+                    `0x${s.offset.toString(16)}`,
+                    `${s.size} bytes`,
+                    s.type
+                ])
+            });
+        }
+
+         const imapSection = sections.find(s => s.name === 'IMap');
+        let imapInfo = null;
+        if (imapSection) {
+            imapInfo = this.parseIMap(imapSection.offset, imapSection.size);
+        }
+        
+        if (imapInfo && imapInfo.entries.length > 0) {
+            const imapRows = imapInfo.entries.slice(0, 50).map(e => [
+                e.index,
+                `0x${e.rva.toString(16)}`,
+                `0x${e.size.toString(16)}`,
+                `0x${e.flags.toString(16)}`
+            ]);
+            
+            this.result.tables.push({
+                title: `🗺️ IMap - Image Map (${imapInfo.imageCount} entries)`,
+                icon: "map",
+                columns: ["Index", "RVA", "Size", "Flags"],
+                rows: imapRows
+            });
+            
+            if (imapInfo.version) {
+                this.result.tables.push({
+                    title: `📌 IMap Info`,
+                    icon: "info",
+                    columns: ["Property", "Value"],
+                    rows: [
+                        ["Driver Version", imapInfo.version],
+                        ["Has FIMap", imapInfo.hasFIMap ? "✅ Yes" : "❌ No"],
+                        ["Total Images", imapInfo.imageCount]
+                    ]
+                });
+            }
+        }
+
+        const pubKeySection = sections.find(s => s.name === 'A_PUBLIC_KEY');
+        let publicKeyInfo = null;
+        if (pubKeySection) {
+            publicKeyInfo = this.parseIntelPublicKey(pubKeySection.offset, pubKeySection.size);
+        }
+
+        const signerSection = sections.find(s => s.name === 'SIGNER_ATTR');
+        let signerInfo = null;
+        if (signerSection) {
+            signerInfo = this.parseSignerAttr(signerSection.offset, signerSection.size);
+        }
+        
+        if (publicKeyInfo) {
+            const keyRows = [
+                ["Format", publicKeyInfo.format],
+                ["Raw Size", `${publicKeyInfo.rawSize} bytes`],
+                ["Header (first 16 bytes)", publicKeyInfo.headerHex || "N/A"]
+            ];
+            
+            if (publicKeyInfo.keyType) {
+                keyRows.push(["Key Type", publicKeyInfo.keyType]);
+            }
+            if (publicKeyInfo.keyBits) {
+                keyRows.push(["Key Size", `${publicKeyInfo.keyBits} bits`]);
+            }
+            if (publicKeyInfo.rsaExponent) {
+                keyRows.push(["Exponent", `0x${publicKeyInfo.rsaExponent.toString(16)} (65537)`]);
+            }
+            if (publicKeyInfo.modulusPreview) {
+                keyRows.push(["Modulus Preview", publicKeyInfo.modulusPreview]);
+            }
+            if (publicKeyInfo.embeddedStrings && publicKeyInfo.embeddedStrings.length > 0) {
+                keyRows.push(["Embedded Strings", publicKeyInfo.embeddedStrings.slice(0, 5).join(", ")]);
+            }
+            
+            this.result.tables.push({
+                title: `🔑 Intel Public Key (A_PUBLIC_KEY)`,
+                icon: "key",
+                columns: ["Property", "Value"],
+                rows: keyRows
+            });
+        }
+    
+        if (signerInfo) {
+            const attrRows = [
+                ["Size", `${signerInfo.rawSize} bytes`]
+            ];
+            
+            if (signerInfo.oids && signerInfo.oids.length > 0) {
+                attrRows.push(["OIDs", signerInfo.oids.join(", ")]);
+            }
+            
+            if (signerInfo.attributes && signerInfo.attributes.length > 0) {
+                attrRows.push(["Attributes", signerInfo.attributes.slice(0, 10).join(", ")]);
+                if (signerInfo.attributes.length > 10) {
+                    attrRows.push(["...", `and ${signerInfo.attributes.length - 10} more`]);
+                }
+            }
+            
+            this.result.tables.push({
+                title: `📜 Signer Attributes (SIGNER_ATTR)`,
+                icon: "signature",
+                columns: ["Property", "Value"],
+                rows: attrRows
+            });
+        }
+        
+        if (embeddedPE.length > 0) {
+            const peRows = embeddedPE.map(f => [
+                f.name,
+                `0x${f.offset.toString(16)}`,
+                `${f.size} bytes`,
+                f.e_lfanew ? `PE@${f.e_lfanew}` : "MZ"
+            ]);
+            
+            this.result.tables.push({
+                title: `📦 Embedded PE Files (${embeddedPE.length})`,
+                icon: "archive",
+                columns: ["Name", "Offset", "Size", "PE Header"],
+                rows: peRows
+            });
+            
+            const driver = embeddedPE.find(f => f.name.includes('igdkmd64') || f.name.includes('.sys'));
+            if (driver) {
+                this.result.tables.push({
+                    title: `⚠️ Embedded Driver: ${driver.name}`,
+                    icon: "warning",
+                    columns: ["Info"],
+                    rows: [["This VP contains a PE driver at offset 0x" + driver.offset.toString(16) + ". Use PE analyzer for deeper inspection."]]
+                });
+            }
+        }
+        
+        if (version) {
+            this.result.tables.push({
+                title: "Driver Information",
+                icon: "info",
+                columns: ["Property", "Value"],
+                rows: [
+                    ["Driver Version", version],
+                    ["Vendor", "Intel Corporation"],
+                    ["Format", "Intel Graphics VP Container"]
+                ]
+            });
+        }
+        
+        const metadataRows = [
+            ["Format Type", "Intel Graphics VP Container"],
+            ["Total Size", `${this.bytes.length} bytes`],
+            ["Sections Found", sections.length],
+            ["Embedded Files", embeddedPE.length],
+            ["Has Digital Signature", hasSignature ? "✅ Yes" : "❌ No"],
+            ["Intel Specific", "✅ Yes"]
+        ];
+        
+        if (header) {
+            metadataRows.push(["Entry Count", header.entryCount]);
+            metadataRows.push(["Name Count", header.nameCount]);
+        }
+        
+        this.result.tables.push({
+            title: "Intel VP Metadata",
+            icon: "intel",
+            columns: ["Property", "Value"],
+            rows: metadataRows
+        });
+        
+        const strings = this.extractVPStrings();
+        if (strings.length > 0) {
+            const formattedRows = strings.slice(0, 200).map(s => {
+                let displayValue = s.value;
+                if (displayValue.length > 80) {
+                    displayValue = displayValue.substring(0, 77) + '...';
+                }
+                displayValue = displayValue.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return [`0x${s.offset.toString(16)}`, `"${displayValue}"`];
+            });
+            
+            this.result.tables.push({
+                title: `📝 String Literals (${strings.length})`,
+                icon: "string",
+                columns: ["Offset", "String"],
+                rows: formattedRows
+            });
+            
+            if (strings.length > 200) {
+                this.result.tables.push({
+                    title: `📝 Additional Strings (${strings.length - 200} more)`,
+                    icon: "string",
+                    columns: ["Note"],
+                    rows: [["Use Export JSON to see all " + strings.length + " strings"]]
+                });
+            }
+        }
+        
+        console.log(`✅ Intel VP scan complete: ${sections.length} sections, ${embeddedPE.length} embedded PE files`);
+    }
+
+    extractVPStrings() {
+        const strings = [];
+        let i = 0;
+        const minLen = 3;
+        
+        while (i < this.bytes.length) {
+            while (i < this.bytes.length && (this.bytes[i] < 0x20 || this.bytes[i] > 0x7E)) {
+                i++;
+            }
+            if (i >= this.bytes.length) break;
+            
+            let start = i;
+            let strBytes = [];
+            while (i < this.bytes.length && this.bytes[i] >= 0x20 && this.bytes[i] <= 0x7E) {
+                strBytes.push(this.bytes[i]);
+                i++;
+            }
+            
+            if (strBytes.length >= minLen) {
+                const str = new TextDecoder('utf-8').decode(new Uint8Array(strBytes));
+                if (!str.match(/^[0-9a-f]+$/i) &&      
+                    !str.match(/^[A-Za-z0-9]{16,}$/) &&
+                    str.length < 128 &&                
+                    !str.includes('\\') &&             
+                    !str.match(/^[\.\*\+\?\[\]\{\}\(\)\|\\]+$/)) {
+                    
+                    let cleanStr = str.replace(/[\x00-\x1F\x7F]/g, '.');
+                    
+                    strings.push({
+                        offset: start,
+                        value: cleanStr,
+                        length: strBytes.length
+                    });
+                }
+            }
+        }
+        
+        strings.sort((a, b) => a.offset - b.offset);
+        
+        return strings;
+    }
+
+    parseIntelPublicKey(offset, size) {
+        if (offset === -1 || size < 16) return null;
+        
+        try {
+            const result = {
+                rawSize: size,
+                format: "Intel Custom Key Blob",
+                header: [],
+                keyType: null,
+                keyBits: null,
+                rsaModulus: null,
+                rsaExponent: null,
+                additionalData: []
+            };
+            
+            const headerBytes = [];
+            for (let i = 0; i < Math.min(16, size); i++) {
+                headerBytes.push(this.view.getUint8(offset + i).toString(16).padStart(2, '0'));
+            }
+            result.headerHex = headerBytes.join(' ');
+            
+            const rsaPatterns = [];
+            for (let i = offset; i < offset + size - 4; i++) {
+                const val = this.view.getUint32(i, true);
+                if (val === 0x31415352) rsaPatterns.push({ type: "RSA1", pos: i });
+                if (val === 0x32415352) rsaPatterns.push({ type: "RSA2", pos: i });
+                if (val === 0x00010001) result.rsaExponent = 65537;
+            }
+            
+            if (rsaPatterns.length > 0) {
+                result.rsaPattern = rsaPatterns;
+            }
+            
+            const possibleModulusStart = offset + 8;
+            let modulusBytes = 0;
+            for (let i = possibleModulusStart; i < offset + size - 4; i++) {
+                if (this.view.getUint32(i, true) === 0x00010001) {
+                    modulusBytes = i - possibleModulusStart;
+                    result.rsaExponentOffset = i;
+                    break;
+                }
+            }
+            
+            if (modulusBytes > 0) {
+                result.keyBits = modulusBytes * 8;
+                result.keyType = "RSA";
+                
+                const previewBytes = [];
+                for (let i = 0; i < Math.min(16, modulusBytes); i++) {
+                    previewBytes.push(this.view.getUint8(possibleModulusStart + i).toString(16).padStart(2, '0'));
+                }
+                result.modulusPreview = previewBytes.join(' ');
+            }
+            
+            const strings = [];
+            let i = offset;
+            while (i < offset + size) {
+                while (i < offset + size && (this.bytes[i] < 0x20 || this.bytes[i] > 0x7E)) i++;
+                if (i >= offset + size) break;
+                
+                let strBytes = [];
+                let start = i;
+                while (i < offset + size && this.bytes[i] >= 0x20 && this.bytes[i] <= 0x7E) {
+                    strBytes.push(this.bytes[i]);
+                    i++;
+                }
+                if (strBytes.length >= 3) {
+                    const str = new TextDecoder('utf-8').decode(new Uint8Array(strBytes));
+                    if (!str.match(/^[0-9a-f]+$/i) && !str.includes('\\')) {
+                        strings.push(str);
+                    }
+                }
+            }
+            
+            if (strings.length > 0) {
+                result.embeddedStrings = strings.slice(0, 10);
+            }
+            
+            return result;
+        } catch (e) {
+            console.warn("Failed to parse Intel Public Key:", e);
+            return null;
+        }
+    }
+
+    parseSignerAttr(offset, size) {
+        if (offset === -1 || size < 8) return null;
+        
+        try {
+            const signerAttr = {
+                rawSize: size,
+                version: null,
+                attributes: []
+            };
+            
+            const str = new TextDecoder('utf-8').decode(this.bytes.slice(offset, offset + Math.min(size, 256)));
+            const matches = str.match(/[a-zA-Z0-9_\-\.]{4,}/g);
+            if (matches) {
+                signerAttr.attributes = [...new Set(matches)].slice(0, 20);
+            }
+            
+            const oids = [];
+            const oidPatterns = [
+                "1.3.6.1.4.1.311",  // Microsoft
+                "1.2.840.113549",    // RSA
+                "2.5.4.3"            // Common Name
+            ];
+            
+            for (const oid of oidPatterns) {
+                if (str.includes(oid)) {
+                    oids.push(oid);
+                }
+            }
+            
+            if (oids.length > 0) {
+                signerAttr.oids = oids;
+            }
+            
+            return signerAttr;
+        } catch (e) {
+            console.warn("Failed to parse SIGNER_ATTR:", e);
+            return null;
+        }
+    }
+
+    findRSAData(offset, size) {
+        for (let i = offset; i < offset + size - 4; i++) {
+            const val = this.view.getUint32(i, true);
+            if (val === 0x31415352 || val === 0x32415352) { // "RSA1" or "RSA2"
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // INTEL ONLY END
+
+    // WINDOWS ACTIVATION LICENSE
+
+    extractHardwareID() {
+        const result = {
+            found: false,
+            offset: null,
+            size: null,
+            hex: null,
+            asString: null,
+            possibleFormats: []
+        };
+        
+        const searchStart = Math.max(0, this.bytes.length - 128);
+        for (let offset = searchStart; offset < this.bytes.length - 20; offset++) {
+            let isCandidate = true;
+            let zeroCount = 0;
+            let ffCount = 0;
+            
+            for (let i = 0; i < 20; i++) {
+                const byte = this.bytes[offset + i];
+                if (byte === 0) zeroCount++;
+                if (byte === 0xFF) ffCount++;
+            }
+            
+            if (zeroCount < 5 && ffCount < 5) {
+                const nextBytes = this.bytes.slice(offset + 20, offset + 52);
+                let nextHasData = false;
+                for (let i = 0; i < 32; i++) {
+                    if (nextBytes[i] !== 0 && nextBytes[i] !== 0xFF) {
+                        nextHasData = true;
+                        break;
+                    }
+                }
+                
+                if (nextHasData) {
+                    result.found = true;
+                    result.offset = offset;
+                    result.size = 20; // SHA-1
+                    result.possibleFormats.push("SHA-1 (20 bytes)");
+                }
+            }
+        }
+        
+        for (let offset = searchStart; offset < this.bytes.length - 32; offset++) {
+            let isCandidate = true;
+            let zeroCount = 0;
+            let ffCount = 0;
+            
+            for (let i = 0; i < 32; i++) {
+                const byte = this.bytes[offset + i];
+                if (byte === 0) zeroCount++;
+                if (byte === 0xFF) ffCount++;
+            }
+            
+            if (zeroCount < 8 && ffCount < 8) {
+                result.found = true;
+                result.offset = offset;
+                result.size = 32;
+                result.possibleFormats.push("SHA-256 (32 bytes)");
+                break;
+            }
+        }
+        
+        if (result.found && result.offset && result.size) {
+            const hexBytes = [];
+            const asciiBytes = [];
+            for (let i = 0; i < result.size; i++) {
+                const byte = this.bytes[result.offset + i];
+                hexBytes.push(byte.toString(16).padStart(2, '0'));
+                if (byte >= 0x20 && byte <= 0x7E) {
+                    asciiBytes.push(String.fromCharCode(byte));
+                } else {
+                    asciiBytes.push('.');
+                }
+            }
+            result.hex = hexBytes.join(' ');
+            result.asString = asciiBytes.join('');
+        }
+        
+        return result;
+    }
+
+    getHardwareIDDescription() {
+        return {
+            purpose: "Unique identifier for your computer's hardware configuration",
+            generation: "Created during Windows activation based on CPU, motherboard, HDD serial numbers",
+            binding: "License is bound to this ID - changing hardware may require reactivation",
+            location: "Stored in Windows license files and on Microsoft activation servers"
+        };
+    }
+
+    parseWindowsLicenseFile() {
+        const result = {
+            isValid: false,
+            version: null,
+            type: null,
+            encryptedDataOffset: 16,
+            encryptedDataSize: this.bytes.length - 16,
+            hasRSASignature: false,
+            hasAESData: false,
+            signatureType: null,
+            encryptionType: null
+        };
+        
+        if (this.bytes.length < 16) return result;
+        
+        result.version = this.view.getUint32(0, true);
+        result.type = this.view.getUint32(4, true);
+        
+        if (result.version === 5 || result.version === 6) {
+            result.isValid = true;
+        }
+        
+        const encOffset = result.encryptedDataOffset;
+        const encSize = result.encryptedDataSize;
+        
+        if (encSize >= 256) {
+            let hasNonZero = false;
+            for (let i = 0; i < 256 && encOffset + i < this.bytes.length; i++) {
+                if (this.bytes[encOffset + i] !== 0) {
+                    hasNonZero = true;
+                    break;
+                }
+            }
+            
+            if (hasNonZero) {
+                result.hasRSASignature = true;
+                result.signatureType = "RSA-2048";
+                
+                if (this.bytes[encOffset] === 0x00) {
+                    result.signatureFormat = "PKCS#1 v1.5";
+                } else {
+                    result.signatureFormat = "Raw RSA (likely encrypted with private key)";
+                }
+            }
+        }
+        
+        if (encSize > 256) {
+            const aesStart = encOffset + 256;
+            let hasRandom = false;
+            let zeroCount = 0;
+            for (let i = 0; i < Math.min(64, encSize - 256); i++) {
+                if (this.bytes[aesStart + i] === 0) zeroCount++;
+            }
+            if (zeroCount < 6) {
+                result.hasAESData = true;
+                result.encryptionType = "AES-128-CBC or AES-256-CBC";
+            }
+        }
+        
+        const lastBytes = this.bytes.slice(Math.max(0, this.bytes.length - 64), this.bytes.length);
+        
+        let sha1Candidate = null;
+        for (let i = 0; i <= lastBytes.length - 20; i++) {
+            let isSha1 = true;
+            let hasNonFF = false;
+            for (let j = 0; j < 20; j++) {
+                if (lastBytes[i + j] === 0xFF) isSha1 = false;
+                if (lastBytes[i + j] !== 0) hasNonFF = true;
+            }
+            if (isSha1 && hasNonFF) {
+                sha1Candidate = i;
+                break;
+            }
+        }
+        
+        if (sha1Candidate !== null) {
+            result.hasHardwareID = true;
+            result.hardwareIDOffset = this.bytes.length - (lastBytes.length - sha1Candidate);
+        }
+        
+        return result;
+    }
+
+    analyzeAESData(offset, size) {
+        const result = {
+            isValid: false,
+            iv: null,
+            encryptedData: null,
+            hmac: null,
+            possiblePadding: null,
+            dataStructure: null
+        };
+        
+        if (size < 48) return result;
+        
+        const potentialIV = [];
+        for (let i = 0; i < 16 && offset + i < this.bytes.length; i++) {
+            potentialIV.push(this.view.getUint8(offset + i).toString(16).padStart(2, '0'));
+        }
+        result.iv = potentialIV.join(' ');
+        
+        const encryptedSize = size - 16;
+        result.encryptedData = {
+            offset: offset + 16,
+            size: encryptedSize,
+            hexPreview: []
+        };
+        
+        for (let i = 0; i < Math.min(32, encryptedSize); i++) {
+            result.encryptedData.hexPreview.push(
+                this.view.getUint8(offset + 16 + i).toString(16).padStart(2, '0')
+            );
+        }
+        
+        if (encryptedSize > 32) {
+            const hmacStart = offset + 16 + encryptedSize - 32;
+            const hmacBytes = [];
+            for (let i = 0; i < 32; i++) {
+                hmacBytes.push(this.view.getUint8(hmacStart + i).toString(16).padStart(2, '0'));
+            }
+            result.hmac = hmacBytes.join(' ');
+            result.encryptedData.sizeWithoutHMAC = encryptedSize - 32;
+        }
+        
+        if (encryptedSize % 16 === 0) {
+            result.possiblePadding = "PKCS#7 (16-byte blocks)";
+            result.isValid = true;
+        }
+        
+        const firstBytes = this.bytes.slice(offset + 16, offset + 16 + 16);
+        let entropy = 0;
+        const freq = {};
+        for (let i = 0; i < firstBytes.length; i++) {
+            const b = firstBytes[i];
+            freq[b] = (freq[b] || 0) + 1;
+        }
+        for (const count of Object.values(freq)) {
+            const p = count / firstBytes.length;
+            entropy -= p * Math.log2(p);
+        }
+        
+        if (entropy > 7.5) {
+            result.dataStructure = "High entropy - likely encrypted or compressed";
+        } else {
+            result.dataStructure = "Low entropy - possibly plaintext or simple encoding";
+        }
+        
+        return result;
+    }
+    
+    async scanWindowsLicense() {
+        const header = this.parseWindowsLicenseFile();
+        
+        const rows = [
+            ["File Name", this.options.fileName || "Unknown"],
+            ["File Size", `${this.bytes.length} bytes`],
+            ["Format", "Windows Software Licensing (SLP)"],
+            ["Header Version", header.version === 5 ? "Windows 7 / Server 2008 R2" : 
+                              header.version === 6 ? "Windows 8/10/11" : `Unknown (${header.version})`],
+            ["Header Type", header.type === 0 ? "Backup / Secondary Copy" : "Primary Activation Data"],
+            ["Encrypted Data Offset", `0x${header.encryptedDataOffset.toString(16)}`],
+            ["Encrypted Data Size", `${header.encryptedDataSize} bytes`]
+        ];
+        
+        if (header.hasRSASignature) {
+            rows.push(["RSA Signature", `✅ Present (${header.signatureType})`]);
+            rows.push(["Signature Format", header.signatureFormat || "Unknown"]);
+        } else {
+            rows.push(["RSA Signature", "❌ Not detected"]);
+        }
+        
+        // Encryption info
+        if (header.hasAESData) {
+            rows.push(["AES Encrypted Data", `✅ Present (${header.encryptionType})`]);
+        }
+        
+        if (header.hasHardwareID) {
+            rows.push(["Hardware ID", `Found at offset 0x${header.hardwareIDOffset.toString(16)}`]);
+        }
+        
+        this.result.tables.push({
+            title: "🔐 Windows License File Analysis",
+            icon: "license",
+            columns: ["Property", "Value"],
+            rows: rows
+        });
+    
+        const encOffset = header.encryptedDataOffset;
+        
+        if (header.hasRSASignature && this.bytes.length > encOffset + 32) {
+            const sigPreview = [];
+            for (let i = 0; i < 32; i++) {
+                sigPreview.push(this.view.getUint8(encOffset + i).toString(16).padStart(2, '0'));
+            }
+            this.result.tables.push({
+                title: "🔑 RSA Signature (first 32 bytes)",
+                icon: "key",
+                columns: ["Hex Dump"],
+                rows: [[sigPreview.join(' ')]]
+            });
+        }
+        
+        if (header.hasAESData && this.bytes.length > encOffset + 256 + 32) {
+            const aesPreview = [];
+            for (let i = 0; i < 32; i++) {
+                aesPreview.push(this.view.getUint8(encOffset + 256 + i).toString(16).padStart(2, '0'));
+            }
+            this.result.tables.push({
+                title: "🔒 AES Encrypted Data (first 32 bytes)",
+                icon: "lock",
+                columns: ["Hex Dump"],
+                rows: [[aesPreview.join(' ')]]
+            });
+        }
+
+        const hid = this.extractHardwareID();
+        
+        if (hid.found) {
+            const hidRows = [
+                ["Hardware ID Format", hid.possibleFormats.join(" or ")],
+                ["Offset", `0x${hid.offset.toString(16)}`],
+                ["Size", `${hid.size} bytes`],
+                ["HEX", hid.hex],
+                ["ASCII Preview", hid.asString || "Non-printable"]
+            ];
+            
+            this.result.tables.push({
+                title: "🖥️ Hardware ID (HID) - Machine Binding",
+                icon: "computer",
+                columns: ["Property", "Value"],
+                rows: hidRows
+            });
+            
+            const hidDesc = this.getHardwareIDDescription();
+            this.result.tables.push({
+                title: "ℹ️ About Hardware ID",
+                icon: "info",
+                columns: ["Property", "Value"],
+                rows: [
+                    ["Purpose", hidDesc.purpose],
+                    ["Generation", hidDesc.generation],
+                    ["License Binding", hidDesc.binding],
+                    ["Storage", hidDesc.location]
+                ]
+            });
+        } else {
+            this.result.tables.push({
+                title: "🖥️ Hardware ID",
+                icon: "computer",
+                columns: ["Status"],
+                rows: [["❌ Not found or encrypted in this file"]]
+            });
+        }
+        
+        this.result.tables.push({
+            title: "📊 Technical Summary",
+            icon: "stats",
+            columns: ["Property", "Value"],
+            rows: [
+                ["Encryption Chain", "RSA-2048 → AES-128 → License Data"],
+                ["Purpose", "Hardware-bound license verification"],
+                ["Security Level", "High (Microsoft Private Key required)"],
+                ["Decryption", "Only possible with Microsoft's private key or sppsvc.exe"],
+                ["Integrity", "Signed by Microsoft during activation"]
+            ]
+        });
+
+        if (header.hasAESData && header.encryptedDataOffset) {
+            const aesOffset = header.encryptedDataOffset + 256;
+            const aesSize = header.encryptedDataSize - 256;
+            
+            if (aesSize > 0) {
+                const aesAnalysis = this.analyzeAESData(aesOffset, aesSize);
+                
+                const aesRows = [
+                    ["Encryption Algorithm", aesAnalysis.isValid ? "AES-128-CBC or AES-256-CBC" : "Unknown"],
+                    ["IV (Initialization Vector)", aesAnalysis.iv || "N/A"],
+                    ["IV Size", "16 bytes"],
+                    ["Encrypted Data Offset", `0x${aesAnalysis.encryptedData?.offset?.toString(16) || 'N/A'}`],
+                    ["Encrypted Data Size", `${aesAnalysis.encryptedData?.size || 0} bytes`],
+                    ["Block Alignment", aesAnalysis.possiblePadding || "Not aligned"],
+                    ["Data Structure", aesAnalysis.dataStructure || "Unknown"]
+                ];
+                
+                if (aesAnalysis.hmac) {
+                    aesRows.push(["HMAC (last 32 bytes)", aesAnalysis.hmac]);
+                    aesRows.push(["Data without HMAC", `${aesAnalysis.encryptedData?.sizeWithoutHMAC || 0} bytes`]);
+                }
+
+                if (aesAnalysis.encryptedData?.hexPreview) {
+                    aesRows.push(["Encrypted Data Preview (first 32 bytes)", aesAnalysis.encryptedData.hexPreview.join(' ')]);
+                }
+                
+                this.result.tables.push({
+                    title: "🔒 AES Encrypted Data Analysis",
+                    icon: "lock",
+                    columns: ["Property", "Value"],
+                    rows: aesRows
+                });
+                
+                this.result.tables.push({
+                    title: "📦 What's Inside AES Data (Encrypted)",
+                    icon: "archive",
+                    columns: ["Component", "Description", "Status"],
+                    rows: [
+                        ["Product Key", "Windows product key (encrypted)", "🔒 Encrypted"],
+                        ["Digital License", "Digital entitlement token", "🔒 Encrypted"],
+                        ["Activation ID", "Unique activation identifier", "🔒 Encrypted"],
+                        ["Timestamp", "Activation date and time", "🔒 Encrypted"],
+                        ["Hardware Hash", "Hardware ID confirmation", "✅ Verified separately"]
+                    ]
+                });
+            }
+        }
+        
+        this.result.summary = {
+            fileName: this.options.fileName || "Unknown",
+            type: "Windows Software Licensing",
+            version: header.version,
+            hasSignature: header.hasRSASignature,
+            size: this.bytes.length
+        };
+    }
+    
+    getLicenseTypeName(type) {
+        const types = {
+            1: "Retail / OEM Activation",
+            2: "Volume License (KMS/MAK)",
+            3: "Evaluation / Trial",
+            4: "Windows Anytime Upgrade",
+            5: "Digital License"
+        };
+        return types[type] || `Unknown (${type})`;
+    }
+    
+    // WL END
     
     buildSummary() {
         return {
@@ -2369,102 +3617,6 @@ class CppDecompiler {
         return [...dlls];
     }
 
-    buildFunctionMap() {
-        if (!this.instructions || this.instructions.length === 0) {
-            console.log("No instructions to build function map");
-            return;
-        }
-        
-        let currentFunc = null;
-        let fpoCount = 0;
-        let hotpatchCount = 0;
-        
-        for (let i = 0; i < this.instructions.length; i++) {
-            const inst = this.instructions[i];
-            if (!inst) continue;
-            
-            const mnemonic = inst.mnemonic || '';
-            const text = inst.text || '';
-            const bytes = inst.bytes || '';
-            
-            // 1. Стандартний пролог з RBP
-            const isStdPrologue = mnemonic === 'push' && 
-                                   (text.includes('rbp') || text.includes('ebp'));
-            
-            // 2. FPO пролог: push rbx/rsi/rdi (збереження регістрів)
-            const isFpoPush = mnemonic === 'push' && 
-                              (text.includes('rbx') || text.includes('rsi') || 
-                               text.includes('rdi') || text.includes('rcx'));
-            
-            // 3. Hotpatch пролог
-            const isHotpatch = bytes === '8b ff';
-            
-            // 4. Початок naked function (просто код без прологу)
-            //    Шукаємо call/jmp/ret які не всередині іншої функції
-            const isNakedStart = (mnemonic === 'call' || mnemonic === 'jmp') && 
-                                 i > 0 && this.instructions[i-1]?.mnemonic === 'ret';
-            
-            if (isStdPrologue) {
-                currentFunc = { 
-                    name: `func_0x${inst.rva.toString(16)}`, 
-                    start: inst.rva, 
-                    insts: [],
-                    type: 'std'
-                };
-                this.functions.push(currentFunc);
-            }
-            else if (isHotpatch && i + 1 < this.instructions.length) {
-                const next = this.instructions[i + 1];
-                if (next.mnemonic === 'push' && next.text.includes('rbp')) {
-                    currentFunc = { 
-                        name: `func_0x${inst.rva.toString(16)}`, 
-                        start: inst.rva, 
-                        insts: [],
-                        type: 'hotpatch'
-                    };
-                    this.functions.push(currentFunc);
-                    hotpatchCount++;
-                    i++; // пропускаємо push rbp
-                }
-            }
-            else if (isFpoPush && !currentFunc) {
-                // Початок FPO функції
-                currentFunc = { 
-                    name: `fpo_func_0x${inst.rva.toString(16)}`, 
-                    start: inst.rva, 
-                    insts: [],
-                    type: 'fpo',
-                    savedRegs: []
-                };
-                this.functions.push(currentFunc);
-                fpoCount++;
-            }
-            else if (isNakedStart && !currentFunc) {
-                // Naked function
-                currentFunc = { 
-                    name: `naked_func_0x${inst.rva.toString(16)}`, 
-                    start: inst.rva, 
-                    insts: [],
-                    type: 'naked'
-                };
-                this.functions.push(currentFunc);
-            }
-            
-            if (currentFunc) {
-                currentFunc.insts.push(inst);
-                
-                // Кінець функції
-                if (mnemonic === 'ret' || 
-                    (mnemonic === 'jmp' && !text.includes('call') && 
-                     this.instructions[i+1]?.mnemonic !== 'call')) {
-                    currentFunc = null;
-                }
-            }
-        }
-        
-        console.log(`Found ${this.functions.length} functions (std: ${this.functions.filter(f => f.type === 'std').length}, FPO: ${fpoCount}, hotpatch: ${hotpatchCount}, naked: ${this.functions.filter(f => f.type === 'naked').length})`);
-    }
-
     async processFunctionAsync(func) {
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -2472,6 +3624,340 @@ class CppDecompiler {
                 resolve();
             }, 0);
         });
+    }
+
+    buildFunctionMap() {
+        if (!this.instructions || this.instructions.length === 0) {
+            console.log("No instructions to build function map");
+            return;
+        }
+        
+        let currentFunc = null;
+        let stats = {
+            std: 0, std32: 0, fpo: 0, fpo32: 0, hotpatch: 0, 
+            naked: 0, fastcall: 0, tailcall: 0, thunk: 0, unknown: 0
+        };
+        
+        // Розширена таблиця прологів з вагою та умовами
+        const prologues = [
+            { pattern: [0x55, 0x48, 0x8B, 0xEC], type: 'std', weight: 100, name: 'std_x64' },
+            { pattern: [0x55, 0x89, 0xE5], type: 'std32', weight: 100, name: 'std_x86' },
+            { pattern: [0x55, 0x8B, 0xEC], type: 'std32', weight: 95, name: 'std_x86_alt' },
+            { pattern: [0x8B, 0xFF, 0x55], type: 'hotpatch', weight: 90, name: 'hotpatch' },
+            { pattern: [0xCC, 0xCC, 0x55], type: 'hotpatch', weight: 85, name: 'hotpatch_int3' },
+            { pattern: [0x48, 0x83, 0xEC], type: 'fpo', weight: 80, name: 'fpo_sub_rsp' },
+            { pattern: [0x48, 0x81, 0xEC], type: 'fpo', weight: 80, name: 'fpo_sub_rsp_large' },
+            { pattern: [0x53, 0x56, 0x57], type: 'fpo', weight: 75, name: 'fpo_push_multi' },
+            { pattern: [0x48, 0x89, 0x5C, 0x24], type: 'fpo', weight: 70, name: 'fpo_mov_rsp' },
+            { pattern: [0x48, 0x8B, 0xC4], type: 'fastcall', weight: 65, name: 'fastcall' },
+            { pattern: [0x40, 0x53], type: 'fpo', weight: 60, name: 'fpo_push_rbx' },
+            { pattern: [0x57, 0x48, 0x83, 0xEC], type: 'fpo', weight: 75, name: 'fpo_push_rdi_sub' },
+            { pattern: [0x48, 0x89, 0x5C, 0x24, 0x08], type: 'fpo', weight: 70, name: 'fpo_mov_rsp_offset' },
+            { pattern: [0x83, 0xEC], type: 'fpo32', weight: 80, name: 'fpo32_sub_esp' },
+            { pattern: [0x81, 0xEC], type: 'fpo32', weight: 80, name: 'fpo32_sub_esp_large' },
+            { pattern: [0x53, 0x56, 0x57], type: 'fpo32', weight: 75, name: 'fpo32_push_multi' },
+            { pattern: [0xFF, 0x25], type: 'thunk', weight: 95, name: 'jmp_thunk' },  // jmp [rip+...]
+            { pattern: [0xE9], type: 'thunk', weight: 90, name: 'jmp_rel_thunk' },    // jmp rel32
+        ];
+        
+        const matchPattern = (bytes, pattern) => {
+            if (!bytes || pattern.length > bytes.length) return false;
+            for (let j = 0; j < pattern.length; j++) {
+                if (bytes[j] !== pattern[j]) return false;
+            }
+            return true;
+        };
+        
+        const isCodeInstruction = (inst) => {
+            const codeMnemonics = ['push', 'pop', 'mov', 'add', 'sub', 'xor', 'and', 'or', 
+                                    'call', 'jmp', 'ret', 'cmp', 'test', 'lea', 'inc', 'dec',
+                                    'je', 'jne', 'jz', 'jnz', 'jl', 'jg', 'jle', 'jge'];
+            
+            if (codeMnemonics.includes(inst.mnemonic)) return true;
+            
+            if (inst.mnemonic === 'db' || inst.mnemonic === '???') {
+                const bytes = inst.bytes?.split(' ').map(b => parseInt(b, 16)) || [];
+                if (bytes.every(b => b === 0 || b === 0xCC || b === 0x90)) return false;
+                if (bytes.length === 4 && bytes.every(b => b >= 0x20 && b <= 0x7E)) return false;
+                return bytes.length <= 2;
+            }
+            
+            return true;
+        };
+        
+        const findFunctionEnd = (startIndex) => {
+            let i = startIndex;
+            let depth = 0;
+            let lastRet = -1;
+            
+            while (i < this.instructions.length) {
+                const inst = this.instructions[i];
+                if (!inst) break;
+                
+                if (inst.mnemonic === 'call') depth++;
+                if (inst.mnemonic === 'ret') {
+                    if (depth === 0) {
+                        lastRet = i;
+                        break;
+                    }
+                    depth--;
+                }
+                
+                if (i - startIndex > 10000) break;
+                
+                i++;
+            }
+            
+            return lastRet !== -1 ? lastRet : i;
+        };
+        
+        const functionStarts = [];
+        const processedAddresses = new Set();
+        
+        for (let i = 0; i < this.instructions.length; i++) {
+            const inst = this.instructions[i];
+            if (!inst || processedAddresses.has(inst.rva)) continue;
+            
+            if (!isCodeInstruction(inst)) {
+                console.log(`  Skipping non-code at 0x${inst.rva.toString(16)}: ${inst.text}`);
+                continue;
+            }
+            
+            let matchedType = null;
+            let matchedName = null;
+            let bestWeight = 0;
+            
+            const bytesArray = inst.bytes?.split(' ').map(b => parseInt(b, 16)) || [];
+            for (const prologue of prologues) {
+                if (matchPattern(bytesArray, prologue.pattern)) {
+                    if (prologue.weight > bestWeight) {
+                        bestWeight = prologue.weight;
+                        matchedType = prologue.type;
+                        matchedName = prologue.name;
+                    }
+                }
+            }
+            
+            if (matchedType) {
+                functionStarts.push({
+                    index: i,
+                    rva: inst.rva,
+                    type: matchedType,
+                    pattern: matchedName,
+                    weight: bestWeight
+                });
+                processedAddresses.add(inst.rva);
+                console.log(`  Found function start at 0x${inst.rva.toString(16)}: ${matchedType} (${matchedName})`);
+            }
+            else {
+                const prev = this.instructions[i - 1];
+                if (prev && (prev.mnemonic === 'ret' || 
+                            (prev.mnemonic === 'jmp' && !prev.text.includes('call')))) {
+                    functionStarts.push({
+                        index: i,
+                        rva: inst.rva,
+                        type: 'naked',
+                        pattern: 'after_ret',
+                        weight: 50
+                    });
+                    processedAddresses.add(inst.rva);
+                    console.log(`  Found naked function at 0x${inst.rva.toString(16)} (after ret/jmp)`);
+                }
+                else if (i === 0 || (inst.offset === 0 && inst.rva < 0x2000)) {
+                    functionStarts.push({
+                        index: i,
+                        rva: inst.rva,
+                        type: 'entry',
+                        pattern: 'section_start',
+                        weight: 60
+                    });
+                    processedAddresses.add(inst.rva);
+                    console.log(`  Found entry point at 0x${inst.rva.toString(16)} (section start)`);
+                }
+            }
+        }
+        
+        functionStarts.sort((a, b) => a.rva - b.rva);
+        
+        for (let idx = 0; idx < functionStarts.length; idx++) {
+            const start = functionStarts[idx];
+            const endIdx = idx + 1 < functionStarts.length ? functionStarts[idx + 1].index : this.instructions.length;
+            
+            const funcInsts = [];
+            let hasValidCode = false;
+            
+            for (let i = start.index; i < endIdx && i < this.instructions.length; i++) {
+                const inst = this.instructions[i];
+                if (inst && isCodeInstruction(inst)) {
+                    funcInsts.push(inst);
+                    if (inst.mnemonic !== 'db' && inst.mnemonic !== '???') {
+                        hasValidCode = true;
+                    }
+                }
+            }
+            
+            if (!hasValidCode && funcInsts.length < 3) {
+                console.log(`  Skipping empty function at 0x${start.rva.toString(16)}`);
+                continue;
+            }
+            
+            let savedRegs = [];
+            if (start.type === 'fpo' || start.type === 'fpo32') {
+                savedRegs = this.analyzeSavedRegisters(funcInsts);
+            }
+            
+            let funcName = null;
+            if (this.symbols && this.symbols.has(start.rva)) {
+                funcName = this.symbols.get(start.rva);
+            } else {
+                funcName = `${start.type}_func_0x${start.rva.toString(16)}`;
+            }
+            
+            const func = {
+                name: funcName,
+                start: start.rva,
+                startIndex: start.index,
+                endIndex: endIdx - 1,
+                insts: funcInsts,
+                type: start.type,
+                pattern: start.pattern,
+                savedRegs: savedRegs,
+                hasRet: funcInsts.some(inst => inst.mnemonic === 'ret'),
+                hasCall: funcInsts.some(inst => inst.mnemonic === 'call'),
+                size: funcInsts.length,
+                weight: start.weight
+            };
+            
+            this.functions.push(func);
+            stats[start.type] = (stats[start.type] || 0) + 1;
+            
+            console.log(`  Created function: ${func.name} (${func.type}, ${func.insts.length} instr, weight:${func.weight})`);
+        }
+        
+        for (let i = 0; i < this.functions.length; i++) {
+            const func = this.functions[i];
+            const lastInst = func.insts[func.insts.length - 1];
+            
+            if (lastInst && lastInst.mnemonic === 'jmp' && !lastInst.text.includes('call')) {
+                const target = this.extractJumpTarget(lastInst.text);
+                if (target) {
+                    const targetFunc = this.functions.find(f => f.start === target);
+                    if (targetFunc) {
+                        func.tailCall = targetFunc.name;
+                        func.type = 'tailcall';
+                        stats.tailcall++;
+                    }
+                }
+            }
+            
+            if (func.insts.length === 1 && (lastInst.mnemonic === 'jmp' || lastInst.mnemonic === 'call')) {
+                func.type = 'thunk';
+                stats.thunk++;
+            }
+            
+            func.usedArgs = this.analyzeArgUsage(func.insts);
+            func.stackFrame = this.analyzeStackFrame(func.insts, func.type);
+        }
+        
+        console.log(`\n📊 Function Map Statistics:`);
+        console.log(`   Total functions: ${this.functions.length}`);
+        console.log(`   ├── std (x64): ${stats.std || 0}`);
+        console.log(`   ├── std32 (x86): ${stats.std32 || 0}`);
+        console.log(`   ├── FPO (x64): ${stats.fpo || 0}`);
+        console.log(`   ├── FPO32 (x86): ${stats.fpo32 || 0}`);
+        console.log(`   ├── hotpatch: ${stats.hotpatch || 0}`);
+        console.log(`   ├── naked: ${stats.naked || 0}`);
+        console.log(`   ├── fastcall: ${stats.fastcall || 0}`);
+        console.log(`   ├── tailcall: ${stats.tailcall || 0}`);
+        console.log(`   ├── thunk: ${stats.thunk || 0}`);
+        console.log(`   └── entry: ${stats.entry || 0}`);
+        
+        if (stats.fpo > 0) {
+            console.log(`\n⚠️  Warning: ${stats.fpo} FPO functions detected. These may not decompile correctly.`);
+            console.log(`   Consider using FPODeoptimizer for better results.`);
+        }
+        
+        if (stats.naked > 0) {
+            console.log(`\n⚠️  Warning: ${stats.naked} naked functions detected. These lack prolog/epilog.`);
+        }
+        
+        return this.functions;
+    }
+    
+    analyzeSavedRegisters(instructions) {
+        const savedRegs = [];
+        const regOrder = ['rbx', 'rsi', 'rdi', 'r12', 'r13', 'r14', 'r15'];
+        
+        for (const inst of instructions) {
+            if (inst.mnemonic === 'push') {
+                for (const reg of regOrder) {
+                    if (inst.text.includes(reg) && !savedRegs.includes(reg)) {
+                        savedRegs.push(reg);
+                        break;
+                    }
+                }
+            }
+            
+            // mov [rsp+...], reg
+            const movMatch = inst.text.match(/mov\s+\[rsp\+0x([0-9a-f]+)\],\s+(r[a-z0-9]+)/i);
+            if (movMatch) {
+                const reg = movMatch[2];
+                if (!savedRegs.includes(reg) && regOrder.includes(reg)) {
+                    savedRegs.push(reg);
+                }
+            }
+        }
+        
+        return savedRegs;
+    }
+    
+    analyzeArgUsage(instructions) {
+        const used = { rcx: false, rdx: false, r8: false, r9: false, stack: [] };
+        const regPattern = /\b(rcx|rdx|r8|r9)\b/gi;
+        
+        for (const inst of instructions) {
+            let match;
+            while ((match = regPattern.exec(inst.text)) !== null) {
+                used[match[1]] = true;
+            }
+            const stackMatch = inst.text.match(/\[rsp\+0x([0-9a-f]+)\]/i);
+            if (stackMatch) {
+                const offset = parseInt(stackMatch[1], 16);
+                used.stack.push(offset);
+            }
+        }
+        
+        return used;
+    }
+    
+    analyzeStackFrame(instructions, funcType) {
+        const frame = {
+            size: 0,
+            savedRegsSize: 0,
+            localsSize: 0,
+            hasFramePointer: funcType === 'std' || funcType === 'std32',
+            usesRbp: false
+        };
+        
+        for (const inst of instructions) {
+            const subMatch = inst.text.match(/sub\s+rsp,\s*(0x[0-9a-f]+|\d+)/i);
+            if (subMatch) {
+                const size = parseInt(subMatch[1], 16);
+                frame.size += size;
+            }
+            
+            if (inst.text.includes('rbp') || inst.text.includes('ebp')) {
+                frame.usesRbp = true;
+            }
+        }
+        
+        frame.localsSize = frame.size - frame.savedRegsSize;
+        return frame;
+    }
+    
+    extractJumpTarget(text) {
+        const match = text.match(/0x([0-9a-f]+)/i);
+        return match ? parseInt(match[1], 16) : null;
     }
 
     buildAddressMap() {
@@ -2503,6 +3989,11 @@ class CppDecompiler {
         }
         
         console.log(`Found ${this.functionNames.size} function names, ${this.apiNames.size} API names`);
+    }
+    
+    extractRegName(text) {
+        const match = text.match(/push (r[a-z]+)/i);
+        return match ? match[1] : null;
     }
 
     processFunction(func) {
@@ -2583,6 +4074,18 @@ class CppDecompiler {
             const argsStr = sig.args.map((arg, i) => `${arg} arg${i}`).join(', ');
             functionSignature = `${sig.ret} WINAPI ${func.name}(${argsStr})`;
         }
+
+        function detectVTable(accesses, baseReg) {
+            for (const access of accesses) {
+                if (access.offset === 0 && access.size === 8 && access.type === 'mov') {
+                    const vtableAccess = accesses.find(a => a.offset === 0 && a.type === 'read');
+                    if (vtableAccess) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
         
         this.cppLines.push(functionSignature + ' {');
         
@@ -2650,6 +4153,25 @@ class CppDecompiler {
                     const retStmt = `    return ${core.regs.rax.l};`;
                     bodyLines.push(retStmt);
                     console.log(`        → ${retStmt}`);
+                }
+
+                if (inst.mnemonic === 'mov' && inst.text.includes('[rcx]') && 
+                    inst.text.includes('0x') && !inst.text.includes('rbp')) {
+                    const vtableMatch = inst.text.match(/mov\s+\[rcx\],\s+0x([0-9a-f]+)/i);
+                    if (vtableMatch) {
+                        const vtableRVA = parseInt(vtableMatch[1], 16);
+                        const className = `Class_0x${vtableRVA.toString(16)}`;
+
+                        if (func.name.includes('func_') && !hasCall) {
+                            this.cppLines.unshift(`// Constructor for ${className}`);
+                            functionSignature = functionSignature.replace(
+                                'void* this_ptr',
+                                `${className}* this`
+                            );
+                        }
+
+                        bodyLines.unshift(`    this->vptr = (${className}::VTable*)0x${vtableRVA.toString(16)};`);
+                    }
                 }
             } catch (e) {
                 console.error(`    ❌ ERROR at ${instInfo}: ${e.message}`);
@@ -2848,7 +4370,6 @@ class CppDecompiler {
                     else if (sizes.includes(2)) fieldType = 'WORD';
                     else if (sizes.includes(1)) fieldType = 'BYTE';
                     
-                    // Якщо це покажчик (lea або mov з розміром 8)
                     if (accessAtOffset.some(a => a.type === 'lea' || (a.type === 'mov' && a.size === 8))) {
                         fieldType = 'LPVOID';
                     }
@@ -2864,15 +4385,51 @@ class CppDecompiler {
                         size: sizes[0] 
                     });
                 }
-                
-                structCandidates.set(baseReg, {
+
+                const structObj = {
                     baseReg,
                     fieldSize,
                     fieldCount: Math.max(...offsets) / fieldSize + 1,
                     offsets,
                     fieldTypes,
                     accesses: accesses.length
-                });
+                };
+
+                if (detectVTable(accesses, baseReg)) {
+                    const vtableMethods = [];
+                    const vtableWrite = accesses.find(a => a.offset === 0 && a.type === 'write');
+                    if (vtableWrite && vtableWrite.value) {
+                        const vtableRVA = vtableWrite.value;
+                        const vtableOffset = this.rvaToOffset(vtableRVA);
+                        if (vtableOffset !== -1) {
+                            let methodIndex = 0;
+                            while (true) {
+                                const methodRVA = this.view.getUint32(vtableOffset + methodIndex * 4, true);
+                                if (methodRVA === 0) break;
+                                let methodName = `method_${methodIndex}`;
+                                const func = this.functions.find(f => f.start === methodRVA);
+                                if (func) {
+                                    methodName = func.name;
+                                }
+
+                                vtableMethods.push({
+                                    index: methodIndex,
+                                    rva: methodRVA,
+                                    name: methodName
+                                });
+
+                                methodIndex++;
+                                if (methodIndex > 100) break;
+                            }
+                        }
+                    }
+
+                    structObj.hasVTable = true;
+                    structObj.vtableMethods = vtableMethods;
+                    structObj.vtableRVA = vtableWrite?.value;
+                }
+                
+                structCandidates.set(baseReg, structObj);
             }
             
             if (structCandidates.size > 0) {
@@ -2913,6 +4470,42 @@ class CppDecompiler {
                     this.cppLines.unshift(`// Base register: ${baseReg}, field size: ${struct.fieldSize} bytes, ${struct.accesses} accesses`);
                     this.cppLines.unshift('');
                 }
+
+                for (const [baseReg, struct] of structCandidates) {
+                    if (struct.hasVTable) {
+                        const className = baseReg === 'rcx' ? 'This' : `Class_${baseReg.toUpperCase()}`;
+                        
+                        this.cppLines.unshift(`class ${className} {`);
+                        this.cppLines.unshift(`public:`);
+                        
+                        if (struct.vtableMethods.length > 0) {
+                            this.cppLines.unshift(`    // Virtual function table (vftable)`);
+                            this.cppLines.unshift(`    struct VTable {`);
+                            for (const method of struct.vtableMethods) {
+                                this.cppLines.unshift(`        void (*${method.name})(void*); // offset 0x${(method.index * 8).toString(16)}`);
+                            }
+                            this.cppLines.unshift(`    };`);
+                            this.cppLines.unshift(`    VTable* vptr; // pointer to vftable`);
+                            this.cppLines.unshift(``);
+                        }
+                        
+                        for (let i = 0; i <= struct.fieldCount; i++) {
+                            const offset = i * struct.fieldSize;
+                            const field = struct.fieldTypes.find(f => f.offset === offset);
+                            
+                            if (field) {
+                                let fieldName = knownFieldNames[offset];
+                                if (!fieldName) fieldName = `field_0x${offset.toString(16)}`;
+                                this.cppLines.unshift(`    ${field.type} ${fieldName}; // offset 0x${offset.toString(16)}`);
+                            } else if (offset > 0 && offset <= Math.max(...struct.offsets)) {
+                                this.cppLines.unshift(`    uint8_t padding_0x${offset.toString(16)}[${struct.fieldSize}];`);
+                            }
+                        }
+                        
+                        this.cppLines.unshift(`};`);
+                        this.cppLines.unshift(``);
+                    }
+                }
                 
                 this.cppLines.unshift('// ==========================================');
                 this.cppLines.unshift('');
@@ -2935,6 +4528,28 @@ class CppDecompiler {
                         const doubleReplacement = `*${structName}->${fieldName}`;
                         
                         bodyLines = bodyLines.map(line => line.replace(doublePattern, doubleReplacement));
+                    }
+                }
+
+                if (structCandidates.has('rcx') && structCandidates.get('rcx').hasVTable) {
+                    const vtable = structCandidates.get('rcx');
+                    
+                    const vtableCallPattern = /call\s+\[([a-z0-9]+)\+0x([0-9a-f]+)\]/i;
+                    for (let i = 0; i < bodyLines.length; i++) {
+                        const match = vtableCallPattern.exec(bodyLines[i]);
+                        if (match) {
+                            const thisReg = match[1];
+                            const offset = parseInt(match[2], 16);
+                            const methodIndex = offset / 8;
+                            
+                            const method = vtable.vtableMethods[methodIndex];
+                            if (method) {
+                                bodyLines[i] = bodyLines[i].replace(
+                                    vtableCallPattern,
+                                    `${method.name}(this)`
+                                );
+                            }
+                        }
                     }
                 }
                 
@@ -3018,7 +4633,7 @@ class CppDecompiler {
                 }
             }
         }
-        
+
         this.cppLines.push(...bodyLines);
         this.cppLines.push('}\n');
         
@@ -3133,40 +4748,40 @@ class CppDecompiler {
 }
 
 class PCPU_Core {
-    constructor(binaryBuffer, sections = [], functionNames = new Map(), apiNames = new Map()) {
+    constructor(binaryBuffer, sections = [], functionNames = new Map(), apiNames = new Map(), is32bit = false) {
         if (typeof GUECMan !== 'undefined') {
             GUECMan.ConnectToClass(this);
         }
+        
+        this.is32bit = is32bit;
         this.functionNames = functionNames;
         this.apiNames = apiNames;
         this.buffer = binaryBuffer;
-        this.sections = sections; 
+        this.sections = sections;
+        this.imageBase = is32bit ? 0x400000 : 0x140000000;
         this.ip = 0;
         this.statements = [];
-        this.regs = {
-            rax: new ASTNode('reg', 'rax'),
-            rbx: new ASTNode('reg', 'rbx'),
-            rcx: new ASTNode('reg', 'rcx'),
-            rdx: new ASTNode('reg', 'rdx'),
-            rsi: new ASTNode('reg', 'rsi'),
-            rdi: new ASTNode('reg', 'rdi'),
-            rbp: new ASTNode('reg', 'rbp'),
-            rsp: new ASTNode('reg', 'rsp')
-        };
-        
+        this.regs = this.initRegisters();
         this.stack = new Map();
         this.globalMemory = new Map();
-        this.flags = { zf: false, sf: false, lastComp: "" };
-        
-        // FPO support
-        this.savedRegs = [];
-        this.stackSize = 0; 
-        
-        this.hasRBPStackFrame = false;
-        this.foundReturns = 0;        
-        this.fpoDetected = false;
-        this.memory = new Map();
+        this.flags = { 
+            zf: false, sf: false, cf: false, of: false, df: false, pf: false,
+            lastCompAST: null, lastComp: ""
+        };
+        this.memoryCache = new Map();
         this.memoryWrites = [];
+        this.fpoDeoptimizer = null;
+        this.functions = [];
+        this.currentFunction = null;
+        this.currentFPOInfo = null;
+        this.savedRegs = [];
+        this.stackSize = 0;
+        this.hasRBPStackFrame = false;
+        this.foundReturns = 0;
+        this.fpoDetected = false;
+        this.rexPrefix = null;
+        this.repPrefix = null;
+        this.lockPrefix = false;
         this.opcodeTable = { 0x00: { mnem: "add", len: 2 }, 0x01: { mnem: "add", len: 2 }, 0x02: { mnem: "add", len: 2 }, 0x03: { mnem: "add", len: 2 },
         0x04: { mnem: "add", len: 2 }, 0x05: { mnem: "add", len: 5 },
         0x08: { mnem: "or", len: 2 }, 0x09: { mnem: "or", len: 2 }, 0x0A: { mnem: "or", len: 2 }, 0x0B: { mnem: "or", len: 2 },
@@ -3256,11 +4871,145 @@ class PCPU_Core {
         0xB6: { mnem: "movzx", len: 2 }, 0xB7: { mnem: "movzx", len: 2 },
         0xBE: { mnem: "movsx", len: 2 }, 0xBF: { mnem: "movsx", len: 2 },
         0xC7: { mnem: "cmpxchg8b", len: 2 }, 0xC8: { mnem: "bswap", len: 1 } };
-        this.hasRBPStackFrame = false;
-        this.foundReturns = 0;        
-        this.fpoDetected = false;
+        this.memAccesses = new Map();
+        this.imports = [];
+        this.initFPODeoptimizer();
     }
-
+ 
+    initRegisters() {
+        const regs = {};
+        const regNames = this.is32bit 
+            ? ['eax', 'ecx', 'edx', 'ebx', 'esp', 'ebp', 'esi', 'edi']
+            : ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi'];
+        
+        for (const name of regNames) {
+            regs[name] = new ASTNode('reg', name);
+        }
+        
+        if (!this.is32bit) {
+            regs.r8 = new ASTNode('reg', 'r8');
+            regs.r9 = new ASTNode('reg', 'r9');
+            regs.r10 = new ASTNode('reg', 'r10');
+            regs.r11 = new ASTNode('reg', 'r11');
+            regs.r12 = new ASTNode('reg', 'r12');
+            regs.r13 = new ASTNode('reg', 'r13');
+            regs.r14 = new ASTNode('reg', 'r14');
+            regs.r15 = new ASTNode('reg', 'r15');
+        }
+        
+        return regs;
+    }
+    
+    initFPODeoptimizer() {
+        const instructions = this.extractInstructions();
+        
+        this.fpoDeoptimizer = new FPODeoptimizer(
+            instructions,
+            this.buffer,
+            this.imageBase
+        );
+        
+        this.functions = this.fpoDeoptimizer.analyzeFunctionBoundaries();
+    }
+    
+    extractInstructions() {
+        const instructions = [];
+        let ip = 0;
+        
+        while (ip < this.buffer.length) {
+            const inst = this.fetchAt(ip);
+            if (!inst) break;
+            
+            instructions.push({
+                rva: ip,
+                mnemonic: inst.mnemonic,
+                text: inst.text,
+                bytes: inst.bytes,
+                length: inst.len
+            });
+            
+            ip += inst.len;
+        }
+        
+        return instructions;
+    }
+    
+    analyzeFunctions() {
+        if (!this.fpoDeoptimizer) {
+            this.initFPODeoptimizer();
+        }
+        
+        const functions = this.fpoDeoptimizer.functions;
+        
+        console.log(`[PCPU] Found ${functions.length} functions`);
+        console.log(`  - STD (with RBP): ${functions.filter(f => f.type === 'std').length}`);
+        console.log(`  - FPO (no RBP): ${functions.filter(f => f.type === 'fpo').length}`);
+        console.log(`  - FPO32: ${functions.filter(f => f.type === 'fpo32').length}`);
+        console.log(`  - Hotpatch: ${functions.filter(f => f.type === 'hotpatch').length}`);
+        
+        return functions;
+    }
+    
+    getFunctionAt(ip) {
+        for (const func of this.functions) {
+            if (ip >= func.start && ip <= (func.end || Infinity)) {
+                return func;
+            }
+        }
+        return null;
+    }
+ 
+    resolveAddress(m) {
+        const ptrSize = this.is32bit ? 4 : 8;
+        const spReg = this.is32bit ? 'esp' : 'rsp';
+        const bpReg = this.is32bit ? 'ebp' : 'rbp';
+        
+        const fpoInfo = this.getCurrentFPOInfo();
+        
+        if (fpoInfo && m.rmName === spReg) {
+            const savedRegsSize = fpoInfo.savedRegs.length * ptrSize;
+            const shadowSpace = fpoInfo.hasShadowSpace ? fpoInfo.shadowSize : 0;
+            const totalSaved = savedRegsSize + shadowSpace;
+            
+            let finalOffset;
+            const offset = m.offset || 0;
+            
+            if (offset < totalSaved) {
+                finalOffset = offset - totalSaved;
+                return `${bpReg} ${finalOffset >= 0 ? '+' : '-'} 0x${Math.abs(finalOffset).toString(16)}`;
+            } else if (offset < totalSaved + fpoInfo.stackSize) {
+                const localOffset = offset - totalSaved;
+                finalOffset = -(fpoInfo.stackSize - localOffset);
+                return `${bpReg} - 0x${Math.abs(finalOffset).toString(16)}`;
+            } else {
+                const argOffset = offset - totalSaved - fpoInfo.stackSize;
+                finalOffset = 0x10 + argOffset;
+                return `${bpReg} + 0x${finalOffset.toString(16)}`;
+            }
+        }
+        
+        if (m.offset !== undefined && m.offset !== 0) {
+            const sign = m.offset > 0 ? '+' : '-';
+            const absOffset = Math.abs(m.offset);
+            return `${m.rmName} ${sign} 0x${absOffset.toString(16)}`;
+        }
+        
+        return m.rmName;
+    }
+    
+    getCurrentFPOInfo() {
+        if (!this.currentFunction) return null;
+        if (this.currentFunction.type !== 'fpo' && this.currentFunction.type !== 'fpo32') return null;
+        
+        return {
+            savedRegs: this.currentFunction.savedRegs || [],
+            stackSize: this.currentFunction.stackSize || 0,
+            hasShadowSpace: this.currentFunction.hasShadowSpace || false,
+            shadowSize: this.currentFunction.shadowSize || 0,
+            is32bit: this.currentFunction.is32bit || this.is32bit
+        };
+    }
+    
     readFromBuffer(offset, size) {
         if (offset === -1 || offset + size > this.buffer.length) {
             return 0;
@@ -3272,24 +5021,48 @@ class PCPU_Core {
         }
         return value;
     }
-
+    
+    readMemoryValue(addr, size) {
+        if (typeof addr !== 'number') return null;
+        
+        const cacheKey = `${addr}_${size}`;
+        if (this.memoryCache.has(cacheKey)) {
+            return this.memoryCache.get(cacheKey);
+        }
+        
+        const offset = this.rvaToOffset(addr);
+        if (offset !== -1 && offset + size <= this.buffer.length) {
+            let value = 0;
+            for (let i = 0; i < size; i++) {
+                value |= this.buffer[offset + i] << (i * 8);
+            }
+            this.memoryCache.set(cacheKey, value);
+            return value;
+        }
+        return null;
+    }
+    
     memoryRead(addr, size) {
         let addrValue = addr;
-        if (typeof addr === 'string') {
-            const num = parseInt(addr, 16);
-            if (!isNaN(num)) {
-                addrValue = num;
-            }
-        } else if (addr && addr.type === 'const') {
+        
+        if (addr && addr.type === 'const') {
             addrValue = addr.value;
+        } else if (addr && addr.type === 'add') {
+            const left = this.tryGetValue(addr.left);
+            const right = this.tryGetValue(addr.right);
+            if (left !== null && right !== null) {
+                addrValue = left + right;
+            }
         } else if (addr && addr.type === 'reg') {
             addrValue = addr.value;
         }
         
-        const addrKey = addrValue.toString();
+        const addrKey = addrValue?.toString() || addr?.toString() || '?';
         
-        if (this.stack && this.stack.has(addrKey)) {
-            return this.stack.get(addrKey);
+        for (const [stackAddr, value] of this.stack) {
+            if (stackAddr === addrKey || stackAddr.includes(addrKey)) {
+                return value.clone();
+            }
         }
         
         if (this.globalMemory && this.globalMemory.has(addrKey)) {
@@ -3297,19 +5070,110 @@ class PCPU_Core {
         }
         
         if (typeof addrValue === 'number') {
-            const offset = this.rvaToOffset(addrValue);
-            if (offset !== -1 && offset + size <= this.buffer.length) {
-                let value = 0;
-                for (let i = 0; i < size; i++) {
-                    value |= this.buffer[offset + i] << (i * 8);
-                }
+            const value = this.readMemoryValue(addrValue, size);
+            if (value !== null) {
                 return new ASTNode('const', value);
             }
         }
         
-        return new ASTNode('reg', `mem_${addrKey}`);
+        const strValue = this.resolveStringConstant(addrValue);
+        if (strValue) {
+            return new ASTNode('const', `"${strValue}"`);
+        }
+        
+        return new ASTNode('reg', `mem_${addrKey.replace(/[^a-zA-Z0-9_]/g, '_')}`);
     }
-
+    
+    memoryWrite(addr, value, size) {
+        let addrValue = addr;
+        
+        if (addr && addr.type === 'const') {
+            addrValue = addr.value;
+        } else if (addr && addr.type === 'add') {
+            const left = this.tryGetValue(addr.left);
+            const right = this.tryGetValue(addr.right);
+            if (left !== null && right !== null) {
+                addrValue = left + right;
+            }
+        }
+        
+        const addrStr = addrValue?.toString() || addr?.toString() || '?';
+        this.globalMemory.set(addrStr, value.clone());
+        this.memoryWrites.push({
+            addr: addr,
+            value: value,
+            size: size,
+            rva: this.ip
+        });
+        
+        if (typeof addrValue === 'number') {
+            return `*(int${size*8}_t*)0x${addrValue.toString(16)} = ${value.toString()};`;
+        }
+        return `[${addr.toString()}] = ${value.toString()};`;
+    }
+    
+    resolveStringConstant(addr) {
+        if (typeof addr !== 'number') return null;
+        
+        const offset = this.rvaToOffset(addr);
+        if (offset === -1) return null;
+        
+        let asciiStr = '';
+        let i = 0;
+        while (offset + i < this.buffer.length && this.buffer[offset + i] !== 0 && i < 256) {
+            const c = this.buffer[offset + i];
+            if (c >= 0x20 && c <= 0x7E) {
+                asciiStr += String.fromCharCode(c);
+            } else {
+                break;
+            }
+            i++;
+        }
+        if (asciiStr.length >= 4 && !asciiStr.match(/^[0-9a-fA-F]+$/)) {
+            return asciiStr;
+        }
+        
+        let utf16Str = '';
+        i = 0;
+        while (offset + i + 1 < this.buffer.length && 
+               (this.buffer[offset + i] !== 0 || this.buffer[offset + i + 1] !== 0) && i < 512) {
+            const c = this.buffer[offset + i] | (this.buffer[offset + i + 1] << 8);
+            if (c >= 0x20 && c <= 0x7E) {
+                utf16Str += String.fromCharCode(c);
+            } else {
+                break;
+            }
+            i += 2;
+        }
+        if (utf16Str.length >= 4 && !utf16Str.match(/^[0-9a-fA-F]+$/)) {
+            return utf16Str;
+        }
+        
+        return null;
+    }
+    
+    tryGetValue(node) {
+        if (!node) return null;
+        if (node.type === 'const') return node.value;
+        if (node.type === 'reg') {
+            const regValue = this.regs[node.value];
+            if (regValue && regValue.type === 'const') {
+                return regValue.value;
+            }
+        }
+        if (node.type === 'add') {
+            const left = this.tryGetValue(node.left);
+            const right = this.tryGetValue(node.right);
+            if (left !== null && right !== null) return left + right;
+        }
+        if (node.type === 'sub') {
+            const left = this.tryGetValue(node.left);
+            const right = this.tryGetValue(node.right);
+            if (left !== null && right !== null) return left - right;
+        }
+        return null;
+    }
+ 
     rvaToOffset(rva) {
         if (rva === 0) return -1;
         
@@ -3346,7 +5210,6 @@ class PCPU_Core {
             }
             
             const offset = textSection.pointerToRawData + (rvaNum - sectionStart);
-            
             if (offset >= 0 && offset < this.buffer.length) {
                 return offset;
             }
@@ -3355,140 +5218,291 @@ class PCPU_Core {
         return -1;
     }
     
-    memoryWrite(addr, value, size) {
-        const addrStr = addr.toString();
-        this.memory.set(addrStr, value.clone());
-        this.memoryWrites.push({
-            addr: addr,
-            value: value,
-            size: size,
-            rva: this.ip
-        });
-        return `[${addr.toString()}] = ${value.toString()}`;
+    fetchAt(ip) {
+        if (ip >= this.buffer.length) return null;
+        
+        let byte = this.buffer[ip];
+        let instInfo;
+        
+        if (byte === 0x0F) {
+            if (ip + 1 >= this.buffer.length) return null;
+            const secondByte = this.buffer[ip + 1];
+            instInfo = this.opcodeTable2Byte[secondByte] || { mnem: "db", len: 2 };
+            instInfo.bytes = this.buffer.slice(ip, ip + instInfo.len);
+        } else {
+            instInfo = this.opcodeTable[byte] || { mnem: "db", len: 1 };
+            instInfo.bytes = this.buffer.slice(ip, ip + instInfo.len);
+        }
+        
+        return {
+            mnemonic: instInfo.mnem,
+            len: instInfo.len,
+            bytes: instInfo.bytes,
+            text: this.formatInstruction(instInfo, ip),
+            rva: ip
+        };
     }
-
-    decodeModRM(bytes) {
+    
+    formatInstruction(instInfo, ip) {
+        const bytes = instInfo.bytes;
+        const mnem = instInfo.mnem;
+        
+        if (mnem === 'db') {
+            return `db ${Array.from(bytes).map(b => '0x' + b.toString(16)).join(', ')}`;
+        }
+        
+        let result = mnem;
+        
+        if (bytes.length > 1) {
+            if (bytes[1] >= 0x80 || (bytes[0] >= 0x88 && bytes[0] <= 0x8F)) {
+                const modrm = this.decodeModRMAt(ip);
+                if (modrm) {
+                    result += ` ${modrm.regName}, ${modrm.rmName}`;
+                }
+            } else if (bytes.length >= 5 && (bytes[0] === 0xE8 || bytes[0] === 0xE9)) {
+                const offset = bytes[1] | (bytes[2] << 8) | (bytes[3] << 16) | (bytes[4] << 24);
+                const target = ip + 5 + offset;
+                result += ` 0x${target.toString(16)}`;
+            } else if (bytes.length >= 2 && (bytes[0] === 0xEB || (bytes[0] >= 0x70 && bytes[0] <= 0x7F))) {
+                const offset = bytes[1];
+                const target = ip + 2 + (offset > 127 ? offset - 256 : offset);
+                result += ` 0x${target.toString(16)}`;
+            }
+        }
+        
+        return result;
+    }
+    
+    decodeModRMAt(ip) {
+        if (ip + 1 >= this.buffer.length) return null;
+        
+        const bytes = this.buffer.slice(ip, ip + 8);
         const modrm = bytes[1];
         const mod = (modrm >> 6) & 3;
         const reg = (modrm >> 3) & 7;
         const rm = modrm & 7;
-        const regNames = ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi'];
         
+        const regNames = this.is32bit 
+            ? ['eax', 'ecx', 'edx', 'ebx', 'esp', 'ebp', 'esi', 'edi']
+            : ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi'];
+        
+        let rmExpr = regNames[rm];
         let offset = 0;
-        let sibIndex = -1;
-        let sibScale = 1;
-        
-        if (mod !== 3 && rm === 4 && bytes.length > 2) {
-            const sib = bytes[2];
-            const scale = (sib >> 6) & 3;
-            const index = (sib >> 3) & 7;
-            const base = sib & 7;
-            
-            if (base !== 5) {
-                const baseName = regNames[base];
-                const indexName = regNames[index];
-                const scaleVal = [1, 2, 4, 8][scale];
-                
-                if (mod === 1 && bytes.length > 3) {
-                    offset = bytes[3];
-                    if (offset > 127) offset -= 256;
-                    return {
-                        mod, regName: regNames[reg],
-                        rmName: `${baseName} + ${indexName}*${scaleVal} + ${offset}`,
-                        isDirect: false, offset
-                    };
-                } else if (mod === 2 && bytes.length > 6) {
-                    offset = bytes[3] | (bytes[4] << 8) | (bytes[5] << 16) | (bytes[6] << 24);
-                    return {
-                        mod, regName: regNames[reg],
-                        rmName: `${baseName} + ${indexName}*${scaleVal} + 0x${offset.toString(16)}`,
-                        isDirect: false, offset
-                    };
-                } else {
-                    return {
-                        mod, regName: regNames[reg],
-                        rmName: `${baseName} + ${indexName}*${scaleVal}`,
-                        isDirect: false, offset: 0
-                    };
-                }
-            }
-        }
         
         if (mod === 1 && bytes.length > 2) {
             offset = bytes[2];
             if (offset > 127) offset -= 256;
+            rmExpr = `${regNames[rm]} ${offset >= 0 ? '+' : '-'} 0x${Math.abs(offset).toString(16)}`;
         } else if (mod === 2 && bytes.length > 5) {
             offset = bytes[2] | (bytes[3] << 8) | (bytes[4] << 16) | (bytes[5] << 24);
+            rmExpr = `${regNames[rm]} ${offset >= 0 ? '+' : '-'} 0x${Math.abs(offset).toString(16)}`;
         }
         
         return {
-            mod,
+            mod: mod,
             regName: regNames[reg],
-            rmName: regNames[rm],
+            rmName: rmExpr,
             isDirect: mod === 3,
             offset: offset
         };
     }
-
+    
+    decodeModRM(bytes) {
+        if (bytes.length < 2) return null;
+        
+        const modrm = bytes[1];
+        const mod = (modrm >> 6) & 3;
+        const reg = (modrm >> 3) & 7;
+        const rm = modrm & 7;
+        
+        const regNames = this.is32bit 
+            ? ['eax', 'ecx', 'edx', 'ebx', 'esp', 'ebp', 'esi', 'edi']
+            : ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi'];
+        
+        let rmExpr = regNames[rm];
+        let offset = 0;
+        
+        if (mod === 0 && rm === 5) {
+            if (bytes.length > 6) {
+                offset = bytes[2] | (bytes[3] << 8) | (bytes[4] << 16) | (bytes[5] << 24);
+                if (this.is32bit) {
+                    rmExpr = `0x${offset.toString(16)}`;
+                } else {
+                    rmExpr = `rip+0x${offset.toString(16)}`;
+                }
+            }
+        } else if (mod === 1 && bytes.length > 2) {
+            offset = bytes[2];
+            if (offset > 127) offset -= 256;
+            rmExpr = `${regNames[rm]} ${offset >= 0 ? '+' : '-'} 0x${Math.abs(offset).toString(16)}`;
+        } else if (mod === 2 && bytes.length > 5) {
+            offset = bytes[2] | (bytes[3] << 8) | (bytes[4] << 16) | (bytes[5] << 24);
+            rmExpr = `${regNames[rm]} ${offset >= 0 ? '+' : '-'} 0x${Math.abs(offset).toString(16)}`;
+        }
+        
+        return {
+            mod: mod,
+            regName: regNames[reg],
+            rmName: rmExpr,
+            isDirect: mod === 3,
+            offset: offset,
+            hasSib: (mod !== 3 && rm === 4)
+        };
+    }
+    
     getOperandSize(bytes) {
         const opcode = bytes[0];
-        if (opcode >= 0x88 && opcode <= 0x8F) return 1; // byte
-        if (opcode >= 0x89 && opcode <= 0x8B) return 8; // qword (x64)
-        if (opcode === 0xC7) return 4; // dword
-        return 4; // default
+        const hasRex = (opcode & 0xF0) === 0x40 && opcode >= 0x40 && opcode <= 0x4F;
+        const rexW = hasRex && (opcode & 0x08) !== 0;
+        
+        if (this.is32bit) {
+            if (opcode >= 0x88 && opcode <= 0x8F) return 1;
+            if (opcode >= 0x89 && opcode <= 0x8B) return 4;
+            if (opcode === 0xC7) return 4;
+            if (opcode === 0x66) return 2;
+            return 4;
+        } else {
+            if (rexW && (opcode >= 0x89 && opcode <= 0x8B)) return 8;
+            if (opcode >= 0x88 && opcode <= 0x8F) return 1;
+            if (opcode >= 0x89 && opcode <= 0x8B) return 4;
+            if (opcode === 0xC7) return 4;
+            if (opcode === 0x66) return 2;
+            return 8;
+        }
     }
 
     stackPush(data) {
-        this.regs.rsp = new ASTNode('sub', null, this.regs.rsp, new ASTNode('const', 8));
-        this.stack.set(this.regs.rsp.toString(), data);
+        const ptrSize = this.is32bit ? 4 : 8;
+        const spReg = this.is32bit ? 'esp' : 'rsp';
+        
+        this.regs[spReg] = new ASTNode(
+            'sub', null,
+            this.regs[spReg].clone(),
+            new ASTNode('const', ptrSize)
+        );
+        this.stack.set(this.regs[spReg].toString(), data);
         this.statements.push(`push ${data.toString()};`);
     }
     
     stackPop() {
-        const addr = this.regs.rsp.toString();
+        const spReg = this.is32bit ? 'esp' : 'rsp';
+        const ptrSize = this.is32bit ? 4 : 8;
+        const addr = this.regs[spReg].toString();
         const data = this.stack.get(addr) || new ASTNode('reg', `pop_val_${addr}`);
-        this.regs.rsp = new ASTNode('add', null, this.regs.rsp, new ASTNode('const', 8));
+        
+        this.regs[spReg] = new ASTNode(
+            'add', null,
+            this.regs[spReg].clone(),
+            new ASTNode('const', ptrSize)
+        );
         return data;
     }
 
     fetchNext() {
         let byte = this.buffer[this.ip];
         let instInfo;
-
-        if (byte === 0x0F) { // Перехід до двобайтових опкодів
+        
+        if (byte === 0x0F) {
             this.ip++;
             byte = this.buffer[this.ip];
             instInfo = this.opcodeTable2Byte[byte] || { mnem: "db", len: 1 };
         } else {
             instInfo = this.opcodeTable[byte] || { mnem: "db", len: 1 };
         }
-
-        // Отримуємо сирі байти інструкції для аналізу ModR/M (якщо треба)
-        const rawInst = this.buffer.slice(this.ip, this.ip + instInfo.len);
         
+        const rawInst = this.buffer.slice(this.ip, this.ip + instInfo.len);
         this.ip += instInfo.len;
+        
         return { ...instInfo, bytes: rawInst };
     }
-
+    
     run(steps = 100) {
         for (let i = 0; i < steps; i++) {
             const inst = this.fetchNext();
             if (inst.mnem === "ret") break;
             
+            this.currentFunction = this.getFunctionAt(this.ip);
+            this.currentFPOInfo = this.getCurrentFPOInfo();
+            
             this.execute(inst);
         }
     }
 
-    resolveAddress(m) {
-        if (m.rmName === 'rsp' && this.savedRegs.length > 0) {
-            return `[rbp-0x${(this.savedRegs.length * 8).toString(16)}]`;
+    getOpcodeInfo(bytes) {
+        const opcode = bytes[0];
+        const second = bytes[1];
+        
+        const knownOpcodes = {
+            0x0F: {
+                0x00: "SLDT / SGDT / STR / SMSW",
+                0x01: "LGDT / LIDT / LLDT / LMSW / INVLPG / SWAPGS / RDTSCP",
+                0x05: "SYSCALL",
+                0x06: "CLTS",
+                0x07: "SYSRET",
+                0x08: "INVD",
+                0x09: "WBINVD",
+                0x0B: "UD2",
+                0x0D: "PREFETCH",
+                0x1F: "NOP (multi-byte)",
+                0x31: "RDTSC",
+                0x34: "SYSENTER",
+                0x35: "SYSEXIT",
+                0xA2: "CPUID",
+                0xAF: "IMUL",
+                0xB0: "CMPXCHG",
+                0xB1: "CMPXCHG",
+                0xB6: "MOVZX",
+                0xB7: "MOVZX",
+                0xBE: "MOVSX",
+                0xBF: "MOVSX",
+                0xC7: "CMPXCHG8B / CMPXCHG16B"
+            },
+            0xCD: { 0x2E: "INT 2E (old syscall)" },
+            0xCC: { 0x00: "INT 3 breakpoint" }
+        };
+        
+        if (knownOpcodes[opcode] && knownOpcodes[opcode][second]) {
+            return knownOpcodes[opcode][second];
         }
         
-        if (m.offset !== undefined) {
-            return `[${m.rmName}+0x${m.offset.toString(16)}]`;
+        if (opcode >= 0x70 && opcode <= 0x7F) {
+            const cond = ['JO', 'JNO', 'JB', 'JNB', 'JZ', 'JNZ', 'JBE', 'JNBE', 
+                          'JS', 'JNS', 'JP', 'JNP', 'JL', 'JNL', 'JLE', 'JNLE'][opcode - 0x70];
+            return `${cond} (conditional jump)`;
         }
         
-        return `[${m.rmName}]`;
+        if (opcode >= 0x50 && opcode <= 0x57) {
+            const reg = ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi'][opcode - 0x50];
+            return `PUSH ${reg}`;
+        }
+        
+        if (opcode >= 0x58 && opcode <= 0x5F) {
+            const reg = ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi'][opcode - 0x58];
+            return `POP ${reg}`;
+        }
+        
+        return null;
+    }
+    
+    getDecompilerHeader() {
+        this.fpoDetected = this.foundReturns > 0 && !this.hasRBPStackFrame;
+        
+        let report = "// Generated by RSDEFD C++ Decompiler v2.0\n";
+        report += "// Decompiled C++ based by JS CPU calculations\n";
+        
+        if (this.fpoDetected) {
+            report += "// C++ JSCPU Decomp: This Portable Executable contains FPO (Frame Pointer Omission)\n";
+            report += "// ⚠️ Warning: Standard stack frame analysis (RBP-based) is disabled.\n";
+        }
+        
+        if (this.functions && this.functions.length > 0) {
+            const fpoCount = this.functions.filter(f => f.type === 'fpo' || f.type === 'fpo32').length;
+            if (fpoCount > 0) {
+                report += `// 📊 Detected ${fpoCount} FPO-optimized functions (will be deoptimized)\n`;
+            }
+        }
+        
+        return report;
     }
 
     execute(inst) {
@@ -3510,6 +5524,11 @@ class PCPU_Core {
         }
     
         switch (mnem) {
+            case 'leave': {
+                this.statements.push(`mov rsp, rbp;  // leave (restore stack pointer)`);
+                this.statements.push(`pop rbp;       // restore frame pointer`);
+                break;
+            }
             case 'movsb':
                 this.statements.push(`*rdi++ = *rsi++;  // movsb (copy byte)`);
                 break;
@@ -3553,12 +5572,150 @@ class PCPU_Core {
             case 'sldt':
                 this.statements.push(`// sldt (store local descriptor table) - privileged instruction, cannot emulate`);
                 break;
-            case 'movq':  // 64-bit mov
-            case 'addq':  // 64-bit add
-            case 'subq':  // 64-bit sub
-            case 'xorq':  // 64-bit xor
-            case 'andq':  // 64-bit and
-            case 'orq':   // 64-bit or
+            case 'repne':
+            case 'repe':
+            case 'rep':
+                const repType = mnem === 'repne' ? 'repeat while not equal' : 
+                                mnem === 'repe' ? 'repeat while equal' : 'repeat';
+                this.statements.push(`// ${mnem} (${repType} prefix) - repeats following string instruction`);
+                this.repPrefix = mnem;
+                break;
+            case 'lock':
+                this.statements.push(`// lock (atomic operation prefix) - ensures exclusive memory access for next instruction`);
+                this.lockPrefix = true;
+                break; 
+            case 'clc':
+                this.statements.push(`// clc (clear carry flag) - sets CF=0`);
+                this.flags.cf = false;
+                this.flags.lastComp = '';
+                break;   
+            case 'stc':
+                this.statements.push(`// stc (set carry flag) - sets CF=1`);
+                this.flags.cf = true;
+                this.flags.lastComp = '';
+                break;
+            case 'cmc':
+                this.statements.push(`// cmc (complement carry flag) - toggles CF`);
+                this.flags.cf = !this.flags.cf;
+                break;
+            case 'cld':
+                this.statements.push(`// cld (clear direction flag) - DF=0, string operations increment`);
+                this.flags.df = false;
+                break;
+            case 'std':
+                this.statements.push(`// std (set direction flag) - DF=1, string operations decrement`);
+                this.flags.df = true;
+                break;
+            case 'cli':
+                this.statements.push(`// cli (clear interrupt flag) - disables interrupts (privileged, kernel-mode only)`);
+                this.flags.if = false;
+                break;
+            case 'sti':
+                this.statements.push(`// sti (set interrupt flag) - enables interrupts (privileged, kernel-mode only)`);
+                this.flags.if = true;
+                break;
+            case 'hlt':
+                this.statements.push(`// hlt (halt CPU) - stops execution until interrupt/reset (privileged)`);
+                break;
+            case 'das':
+                this.statements.push(`// das (decimal adjust after subtraction) - obsolete BCD instruction (x86 only)`);
+                break;
+            case 'aas':
+                this.statements.push(`// aas (ASCII adjust after subtraction) - obsolete BCD instruction`);
+                break;
+            case 'daa':
+                this.statements.push(`// daa (decimal adjust after addition) - obsolete BCD instruction`);
+                break;
+            case 'salc':
+                this.statements.push(`// salc (set AL to carry flag) - undocumented instruction, sets AL=0xFF if CF=1 else 0`);
+                const setVal = this.flags.cf ? '0xFF' : '0';
+                this.regs.al = new ASTNode('const', setVal);
+                this.statements.push(`al = ${setVal};  // salc (set AL from carry)`);
+                break;  
+            case 'xlat':
+                this.statements.push(`// xlat (translate byte) - al = [ebx + al]`);
+                const xlatAddr = this.is32bit ? 
+                    new ASTNode('add', null, this.regs.ebx.clone(), this.regs.eax.clone()) :
+                    new ASTNode('add', null, this.regs.rbx.clone(), this.regs.rax.clone());
+                const xlatValue = this.memoryRead(xlatAddr, 1);
+                if (this.is32bit) {
+                    this.regs.al = xlatValue;
+                    this.statements.push(`al = ${xlatValue.toString()};  // xlat (translate byte)`);
+                } else {
+                    this.regs.rax = xlatValue;
+                    this.statements.push(`al = ${xlatValue.toString()};  // xlat (translate byte)`);
+                }
+                break;
+            case 'bswap':
+                const bswapMatch = inst.text.match(/bswap (r[a-z]+)/i);
+                if (bswapMatch) {
+                    const reg = bswapMatch[1];
+                    this.statements.push(`// bswap ${reg} - byte swap (reverse endianness)`);
+                    this.regs[reg] = new ASTNode('reg', `${reg}_swapped`);
+                } else {
+                    this.statements.push(`// bswap - byte swap (reverse endianness)`);
+                }
+                break;
+            case 'cpuid':
+                this.statements.push(`// cpuid - CPU identification (returns vendor string in ebx/ecx/edx)`);
+                this.regs.ebx = new ASTNode('const', 0x756E6547);
+                this.regs.ecx = new ASTNode('const', 0x6C65746E);
+                this.regs.edx = new ASTNode('const', 0x49656E69);
+                break;  
+            case 'rdtsc':
+                this.statements.push(`// rdtsc - read timestamp counter (returns CPU cycles)`);
+                const timestamp = Date.now() * 1000000;
+                if (this.is32bit) {
+                    this.regs.eax = new ASTNode('const', timestamp & 0xFFFFFFFF);
+                    this.regs.edx = new ASTNode('const', (timestamp >> 32) & 0xFFFFFFFF);
+                    this.statements.push(`eax = 0x${(timestamp & 0xFFFFFFFF).toString(16)};  // low 32 bits`);
+                    this.statements.push(`edx = 0x${((timestamp >> 32) & 0xFFFFFFFF).toString(16)};  // high 32 bits`);
+                } else {
+                    this.regs.rax = new ASTNode('const', timestamp);
+                    this.regs.eax = new ASTNode('const', timestamp & 0xFFFFFFFF);
+                    this.regs.edx = new ASTNode('const', (timestamp >> 32) & 0xFFFFFFFF);
+                    this.statements.push(`rax = 0x${timestamp.toString(16)};  // full 64-bit timestamp`);
+                }
+                break;  
+            case 'rdmsr':
+                this.statements.push(`// rdmsr - read model-specific register (privileged, kernel-mode only)`);
+                this.regs.eax = new ASTNode('reg', 'msr_low');
+                this.regs.edx = new ASTNode('reg', 'msr_high');
+                break;
+            case 'wrmsr':
+                this.statements.push(`// wrmsr - write model-specific register (privileged, kernel-mode only)`);
+                break; 
+            case 'syscall':
+                this.statements.push(`// syscall - fast system call (64-bit Windows/Linux)`);
+                break;
+            case 'sysenter':
+                this.statements.push(`// sysenter - fast system call (32-bit Windows)`);
+                break
+            case 'sysexit':
+                this.statements.push(`// sysexit - fast return from system call (privileged)`);
+                break;
+            case 'int':
+                const intNum = bytes[1] || 0;
+                if (intNum === 0x2E) {
+                    this.statements.push(`// int 0x2E - old-style system call (Windows 9x/NT)`);
+                } else if (intNum === 0x2D) {
+                    this.statements.push(`// int 0x2D - KiFastSystemCall (Windows NT)`);
+                } else {
+                    this.statements.push(`// int 0x${intNum.toString(16)} - software interrupt (vector ${intNum})`);
+                }
+                break;
+            case 'into':
+                this.statements.push(`// into - interrupt on overflow (if OF=1, int 4)`);
+                break;  
+            case 'iret':
+                this.statements.push(`// iret - return from interrupt (privileged)`);
+                break;
+            case 'movq':
+            case 'addq':
+            case 'subq':
+            case 'xorq':
+            case 'andq':
+            case 'orq':
                 const q = this.decodeModRM(bytes);
                 const opSymQ = { 'addq': '+', 'subq': '-', 'xorq': '^', 'andq': '&', 'orq': '|' }[mnem];
                 if (mnem === 'xorq' && q.regName === q.rmName) {
@@ -3567,26 +5724,26 @@ class PCPU_Core {
                     this.regs[q.regName].l = `(${this.regs[q.regName].l} ${opSymQ} ${this.regs[q.rmName].l})`;
                 }
                 break;
-            case 'js':   // sign
+            case 'js':
                 if (!this.flags.lastComp || this.flags.lastComp === '') {
                     this.statements.push(`// js (sign) condition at 0x${inst.rva?.toString(16)} - unknown condition`);
                 } else {
                     this.statements.push(`if ((${this.flags.lastComp}) < 0) goto label_0x...;`);
                 }
                 break;
-            case 'jns':  // not sign
+            case 'jns':
                 this.statements.push(`if ((${this.flags.lastComp}) >= 0) goto label_0x...;`);
                 break;
-            case 'jle':  // less or equal
+            case 'jle':
                 this.statements.push(`if ((${this.flags.lastComp}) <= 0) goto label_0x...;`);
                 break;
-            case 'jg':   // greater
+            case 'jg':
                 this.statements.push(`if ((${this.flags.lastComp}) > 0) goto label_0x...;`);
                 break;
-            case 'jbe':  // below or equal
+            case 'jbe':
                 this.statements.push(`if ((${this.flags.lastComp}) <= 0) goto label_0x...;`);
                 break;
-            case 'ja':   // above
+            case 'ja':
                 this.statements.push(`if ((${this.flags.lastComp}) > 0) goto label_0x...;`);
                 break;
             case 'xchg':
@@ -3655,6 +5812,29 @@ class PCPU_Core {
                     b: (rexByte & 0x01) !== 0
                 };
                 break;
+            case 'movsb':
+            case 'movsw':
+            case 'movsd':
+            case 'movsq':
+                const movSize = mnem === 'movsb' ? 1 : (mnem === 'movsw' ? 2 : (mnem === 'movsd' ? 4 : 8));
+                const dirFlag = this.flags.df ? -1 : 1;
+                const srcReg = this.is32bit ? 'esi' : 'rsi';
+                const dstReg = this.is32bit ? 'edi' : 'rdi';
+                
+                if (this.repPrefix) {
+                    this.statements.push(`// ${this.repPrefix} ${mnem} - copy ${movSize} byte(s) repeated ECX times`);
+                    this.statements.push(`memcpy(${dstReg}, ${srcReg}, ${this.is32bit ? 'ecx' : 'rcx'} * ${movSize});`);
+                    this.statements.push(`${dstReg} += ${this.is32bit ? 'ecx' : 'rcx'} * ${movSize};`);
+                    this.statements.push(`${srcReg} += ${this.is32bit ? 'ecx' : 'rcx'} * ${movSize};`);
+                    if (this.is32bit) this.regs.ecx = new ASTNode('const', 0);
+                    else this.regs.rcx = new ASTNode('const', 0);
+                    this.repPrefix = null;
+                } else {
+                    this.statements.push(`*(${dstReg}) = *(${srcReg});  // ${mnem} (copy ${movSize} byte(s))`);
+                    this.statements.push(`${dstReg} += ${movSize * dirFlag};`);
+                    this.statements.push(`${srcReg} += ${movSize * dirFlag};`);
+                }
+                break;
             case 'mov':
             case 'movzx':
             case 'movsx': {
@@ -3664,14 +5844,14 @@ class PCPU_Core {
                     this.statements.push(`// Unknown mov: ${inst.text}`);
                     break;
                 }
-
+            
                 if (!m.isDirect) {
                     const addr = this.resolveAddress(m);
                     const value = this.regs[m.regName];
                     const size = this.getOperandSize(bytes);
                     
                     const writeStmt = this.memoryWrite(addr, value, size);
-                    this.statements.push(writeStmt + ';');
+                    this.statements.push(writeStmt);
                     
                     if (!this.memAccesses) this.memAccesses = {};
                     const baseReg = m.rmName;
@@ -3682,22 +5862,23 @@ class PCPU_Core {
                         type: 'write',
                         rva: inst.rva
                     });
-                }
-                
-                if (m.isDirect) {
+                } else {
                     if (!this.regs[m.rmName]) {
                         this.statements.push(`// Unknown mov: ${inst.text}`);
                         break;
                     }
-                    this.regs[m.rmName] = this.regs[m.regName].clone();
-                    this.statements.push(`${m.rmName} = ${this.regs[m.regName].toString()};`);
-                } else {
+                    
                     const addr = this.resolveAddress(m);
                     const size = this.getOperandSize(bytes);
                     
                     const memValue = this.memoryRead(addr, size);
                     this.regs[m.regName] = memValue;
-                    this.statements.push(`${m.regName} = ${memValue.toString()};`);
+                    
+                    if (memValue.type === 'const') {
+                        this.statements.push(`${m.regName} = 0x${memValue.value.toString(16)};`);
+                    } else {
+                        this.statements.push(`${m.regName} = ${memValue.toString()};`);
+                    }
                     
                     if (!this.memAccesses) this.memAccesses = {};
                     const baseReg = m.rmName;
@@ -3714,6 +5895,7 @@ class PCPU_Core {
     
             case 'lea': {
                 const l = this.decodeModRM(bytes);
+                const fpoInfo = this.getCurrentFPOInfo();
 
                 if (!l.isDirect) {
                     const baseReg = l.rmName;
@@ -3731,14 +5913,32 @@ class PCPU_Core {
                 }
                 
                 // FPO: lea rbx, [rsp+0x20] -> lea rbx, [rbp-0x?]
-                if (l.rmName === 'rsp' && this.savedRegs.length > 0) {
-                    const savedOffset = this.savedRegs.length * 8;
-                    const finalOffset = savedOffset - (l.offset || 0);
-                    const memNode = new ASTNode('mem');
-                    memNode.base = this.regs.rbp.clone();
-                    memNode.offset = finalOffset;
-                    this.regs[l.regName] = memNode;
-                    this.statements.push(`; FPO: ${l.regName} = rbp - 0x${finalOffset.toString(16)}`);
+                if (fpoInfo && l.rmName === (this.is32bit ? 'esp' : 'rsp')) {
+                    const ptrSize = this.is32bit ? 4 : 8;
+                    const savedRegsSize = fpoInfo.savedRegs.length * ptrSize;
+                    const shadowSpace = fpoInfo.hasShadowSpace ? fpoInfo.shadowSize : 0;
+                    const totalSaved = savedRegsSize + shadowSpace;
+                    const bpReg = this.is32bit ? 'ebp' : 'rbp';
+                    
+                    let finalOffset;
+                    const offset = l.offset || 0;
+                    
+                    if (offset < totalSaved) {
+                        finalOffset = offset - totalSaved;
+                        const memNode = new ASTNode('mem');
+                        memNode.base = this.regs[bpReg].clone();
+                        memNode.offset = finalOffset;
+                        this.regs[l.regName] = memNode;
+                        this.statements.push(`; FPO: ${l.regName} = ${bpReg} ${finalOffset >= 0 ? '+' : '-'} 0x${Math.abs(finalOffset).toString(16)}`);
+                    } else {
+                        const localOffset = offset - totalSaved;
+                        finalOffset = -(fpoInfo.stackSize - localOffset);
+                        const memNode = new ASTNode('mem');
+                        memNode.base = this.regs[bpReg].clone();
+                        memNode.offset = finalOffset;
+                        this.regs[l.regName] = memNode;
+                        this.statements.push(`; FPO: ${l.regName} = ${bpReg} - 0x${Math.abs(finalOffset).toString(16)}`);
+                    }
                     break;
                 }
                 
@@ -3759,24 +5959,25 @@ class PCPU_Core {
             case 'or': {
                 const a = this.decodeModRM(bytes);
                 const opMap = { 'add': 'add', 'sub': 'sub', 'xor': 'xor', 'and': 'and', 'or': 'or' };
-                
+                const opSymbol = { 'add': '+', 'sub': '-', 'xor': '^', 'and': '&', 'or': '|' }[mnem];
+
                 if (!this.regs[a.regName]) {
                     this.statements.push(`// Unknown ${mnem}: ${inst.text}`);
                     break;
                 }
-
+            
                 if (!this.regs[a.regName] || !this.regs[a.rmName]) {
-                    this.statements.push(`// ${mnem} ${a.regName}, ${a.rmName} (unknown registers)`);
+                    this.statements.push(`// ${mnem} ${a.regName}, ${a.rmName} (unknown registers, assuming 0)`);
                     this.regs[a.regName] = new ASTNode('const', 0);
                     break;
                 }
-                
+
                 if (mnem === 'xor' && a.regName === a.rmName) {
                     this.regs[a.regName] = new ASTNode('const', 0);
                     this.statements.push(`${a.regName} = 0;`);
                     break;
                 }
-                
+
                 if (a.isDirect) {
                     if (!this.regs[a.rmName]) {
                         this.statements.push(`// Unknown ${mnem}: ${inst.text}`);
@@ -3791,9 +5992,37 @@ class PCPU_Core {
                     this.statements.push(`${a.regName} = ${this.regs[a.regName].toString()};`);
                 } else {
                     const addr = this.resolveAddress(a);
-                    this.statements.push(`// ${mnem} ${a.regName}, ${addr} (memory access - cannot emulate)`);
-                    const opSymbol = { 'add': '+', 'sub': '-', 'xor': '^', 'and': '&', 'or': '|' }[mnem];
-                    this.statements.push(`${a.regName} = ${this.regs[a.regName].toString()} ${opSymbol} ${addr};`);
+                    const memValue = this.memoryRead(addr, this.getOperandSize(bytes));
+
+                    if (memValue.type === 'const') {
+                        const result = new ASTNode(
+                            opMap[mnem], 
+                            null,
+                            this.regs[a.regName].clone(),
+                            memValue
+                        );
+                        this.regs[a.regName] = result;
+                        this.statements.push(`${a.regName} = ${result.toString()};`);
+                    } else {
+                        const result = new ASTNode(
+                            opMap[mnem], 
+                            null,
+                            this.regs[a.regName].clone(),
+                            new ASTNode('reg', addr)
+                        );
+                        this.regs[a.regName] = result;
+                        this.statements.push(`${a.regName} = ${this.regs[a.regName].toString()};`);
+                    }
+
+                    if (!this.memAccesses) this.memAccesses = {};
+                    const baseReg = a.rmName;
+                    if (!this.memAccesses[baseReg]) this.memAccesses[baseReg] = [];
+                    this.memAccesses[baseReg].push({
+                        offset: a.offset,
+                        size: this.getOperandSize(bytes),
+                        type: mnem,
+                        rva: inst.rva
+                    });
                 }
                 break;
             }
@@ -3844,15 +6073,21 @@ class PCPU_Core {
             }
             
             case 'push': {
-                const regMatch = inst.text && inst.text.match(/push (r[a-z]+)/i);
-                if (regMatch && !regMatch[1].includes('bp')) {
-                    this.savedRegs.unshift(regMatch[1]);
+                const fpoInfo = this.getCurrentFPOInfo();
+                const regMatch = inst.text && inst.text.match(/push (r?[a-z]+)/i);
+                
+                if (fpoInfo && regMatch && !regMatch[1].includes('bp')) {
+                    fpoInfo.savedRegs.unshift(regMatch[1]);
                     this.statements.push(`; FPO: save ${regMatch[1]} (will restore at epilog)`);
+                    this.savedRegs = fpoInfo.savedRegs;
                 }
             
                 let pVal;
                 if (op0 >= 0x50 && op0 <= 0x57) {
-                    const regName = ['rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi'][op0 - 0x50];
+                    const regNames = this.is32bit 
+                        ? ['eax','ecx','edx','ebx','esp','ebp','esi','edi']
+                        : ['rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi'];
+                    const regName = regNames[op0 - 0x50];
                     pVal = this.regs[regName];
                 } else {
                     const m = this.decodeModRM(bytes);
@@ -3862,17 +6097,20 @@ class PCPU_Core {
                 this.stackPush(pVal.clone());
                 this.statements.push(`push ${pVal.toString()};`);
                 break;
-            }
-            
+            }  
     
             case 'pop': {
+                const fpoInfo = this.getCurrentFPOInfo();
                 const targetPop = (op0 >= 0x58 && op0 <= 0x5F)
-                    ? ['rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi'][op0 - 0x58]
+                    ? (this.is32bit 
+                        ? ['eax','ecx','edx','ebx','esp','ebp','esi','edi'][op0 - 0x58]
+                        : ['rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi'][op0 - 0x58])
                     : this.decodeModRM(bytes).regName;
                     
-                if (this.savedRegs.length > 0 && this.savedRegs[0] === targetPop) {
-                    this.savedRegs.shift();
+                if (fpoInfo && fpoInfo.savedRegs.length > 0 && fpoInfo.savedRegs[0] === targetPop) {
+                    fpoInfo.savedRegs.shift();
                     this.statements.push(`; FPO: restore ${targetPop}`);
+                    this.savedRegs = fpoInfo.savedRegs;
                 }
                 
                 const popped = this.stackPop();
@@ -3886,7 +6124,9 @@ class PCPU_Core {
                 const sign = mnem === 'inc' ? 1 : -1;
                 const regIdx = op0 >= 0x40 && op0 <= 0x4F ? (op0 & 7) : -1;
                 const target = regIdx !== -1 
-                    ? ['rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi'][regIdx] 
+                    ? (this.is32bit
+                        ? ['eax','ecx','edx','ebx','esp','ebp','esi','edi'][regIdx]
+                        : ['rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi'][regIdx])
                     : this.decodeModRM(bytes).regName;
 
                 if (!this.regs[target]) {
@@ -3908,21 +6148,41 @@ class PCPU_Core {
             case 'test': {
                 const c = this.decodeModRM(bytes);
 
-                if (!this.regs[c.regName] || !this.regs[c.rmName]) {
-                    this.flags.lastComp = "0";
-                    this.statements.push(`// cmp ${c.regName}, ${c.rmName} (unknown registers)`);
-                    break;
+                let leftNode, rightNode;
+
+                if (c.isDirect) {
+                    leftNode = this.regs[c.regName];
+                    rightNode = this.regs[c.rmName];
+
+                    if (!leftNode || !rightNode) {
+                        this.flags.lastCompAST = null;
+                        this.statements.push(`// cmp ${c.regName}, ${c.rmName} (unknown registers)`);
+                        break;
+                    }
+                } else {
+                    const addr = this.resolveAddress(c);
+                    const size = this.getOperandSize(bytes);
+                    leftNode = this.regs[c.regName];
+                    rightNode = this.memoryRead(addr, size);
+
+                    if (!leftNode) {
+                        this.flags.lastCompAST = null;
+                        this.statements.push(`// cmp ${c.regName}, [${addr}] (unknown register)`);
+                        break;
+                    }
                 }
 
-                const diff = new ASTNode(
-                    'sub',
-                    null,
-                    this.regs[c.regName].clone(),
-                    this.regs[c.rmName].clone()
-                ).simplify();
-
-                this.flags.lastComp = diff.toString();
+                const diff = new ASTNode('sub', null, leftNode.clone(), rightNode.clone()).simplify();
                 this.flags.lastCompAST = diff;
+                const leftStr = leftNode.toString();
+                const rightStr = rightNode.toString();
+
+                if (mnem === 'test') {
+                    this.statements.push(`// test ${leftStr}, ${rightStr}`);
+                    this.flags.lastCompAST = new ASTNode('const', 0);
+                } else {
+                    this.statements.push(`// cmp ${leftStr}, ${rightStr}`);
+                }
                 break;
             }
     
@@ -3945,84 +6205,117 @@ class PCPU_Core {
                 break;
             }
             
-            case 'jz': 
-            case 'jnz': 
-            case 'jl': 
-            case 'jnl':  // jump if not less (>=)
-                if (!this.flags.lastCompAST) {
-                    this.statements.push(`// jnl (>=) condition at 0x${inst.rva?.toString(16)} - unknown condition`);
+            case 'jo': case 'jno': case 'js': case 'jns': case 'jz': case 'jnz':
+            case 'je': case 'jne': case 'jb': case 'jnb': case 'jae': case 'jbe':
+            case 'ja': case 'jl': case 'jnl': case 'jge': case 'jle': case 'jg':
+            case 'jp': case 'jnp': case 'jpe': case 'jpo': case 'jcxz': case 'jecxz': case 'jrcxz': {
+                if (!this.flags.lastCompAST && mnem !== 'jcxz' && mnem !== 'jecxz' && mnem !== 'jrcxz') {
+                    this.statements.push(`// ${mnem} at 0x${inst.rva?.toString(16)} - unknown condition (no previous cmp/test)`);
                     break;
                 }
 
-                let targetAddr = 'label';
-                const match = inst.text.match(/0x([0-9a-f]+)/i);
-                if (match) {
-                    targetAddr = `label_0x${match[1]}`;
-                }
-
-                const diff = this.flags.lastCompAST;
-                // jnl = jump if left >= right
-                if (diff.type === 'sub') {
-                    this.statements.push(`if (${diff.left.toString()} >= ${diff.right.toString()}) goto ${targetAddr};`);
-                } else {
-                    this.statements.push(`if (${diff.toString()} >= 0) goto ${targetAddr};`);
-                }
-                break;
-            case 'jg': 
-            case 'jb': 
-            case 'jbe': {
-                const condMap = { 'jz':'==', 'jnz':'!=', 'jl':'<', 'jg':'>', 'jb':'<', 'jbe':'<=' };
-    
                 let targetAddr = 'label';
                 const match = inst.text.match(/0x([0-9a-f]+)/i);
                 if (match) {
                     const targetRVA = parseInt(match[1], 16);
                     if (this.functionNames && this.functionNames.has(targetRVA)) {
-                        const funcName = this.functionNames.get(targetRVA);
-                        targetAddr = funcName;
+                        targetAddr = this.functionNames.get(targetRVA);
                     } else {
                         targetAddr = `label_0x${match[1]}`;
                     }
                 }
 
-                if (!this.flags.lastCompAST) {
-                    this.statements.push(`// ${mnem} ${targetAddr} (unknown condition)`);
+                const diff = this.flags.lastCompAST;
+
+                if (mnem === 'jcxz' || mnem === 'jecxz' || mnem === 'jrcxz') {
+                    const reg = mnem === 'jrcxz' ? 'rcx' : (mnem === 'jecxz' ? 'ecx' : 'cx');
+                    this.statements.push(`if (${reg} == 0) goto ${targetAddr};`);
                     break;
                 }
-                
-                const diff = this.flags.lastCompAST;
-                let condition = diff.toString();
-                
-                if (mnem === 'jz' && diff.type === 'sub') {
-                    // a == b  →  a == b
-                    this.statements.push(`if (${diff.left.toString()} == ${diff.right.toString()}) goto ${targetAddr};`);
-                } else if (mnem === 'jnz' && diff.type === 'sub') {
-                    this.statements.push(`if (${diff.left.toString()} != ${diff.right.toString()}) goto ${targetAddr};`);
-                } else if (mnem === 'jl' && diff.type === 'sub') {
-                    this.statements.push(`if (${diff.left.toString()} < ${diff.right.toString()}) goto ${targetAddr};`);
-                } else {
-                    this.statements.push(`if (${condition} ${condMap[mnem]} 0) goto ${targetAddr};`);
+
+                if (!diff) {
+                    this.statements.push(`// ${mnem} ${targetAddr} - condition unknown, assuming always taken`);
+                    this.statements.push(`goto ${targetAddr};`);
+                    break;
                 }
+
+                const diffStr = diff.toString();
+                const conditionMap = {
+                    'jb': { cond: '<' }, 'jnb': { cond: '>=' }, 'jae': { cond: '>=' },
+                    'jbe': { cond: '<=' }, 'ja': { cond: '>' }, 'jl': { cond: '<' },
+                    'jnl': { cond: '>=' }, 'jge': { cond: '>=' }, 'jle': { cond: '<=' },
+                    'jg': { cond: '>' }, 'jz': { cond: '==' }, 'je': { cond: '==' },
+                    'jnz': { cond: '!=' }, 'jne': { cond: '!=' },
+                    'jo': { flag: 'OF', flagValue: 1 }, 'jno': { flag: 'OF', flagValue: 0 },
+                    'js': { flag: 'SF', flagValue: 1 }, 'jns': { flag: 'SF', flagValue: 0 },
+                    'jp': { flag: 'PF', flagValue: 1 }, 'jnp': { flag: 'PF', flagValue: 0 },
+                    'jpe': { flag: 'PF', flagValue: 1 }, 'jpo': { flag: 'PF', flagValue: 0 }
+                };
+
+                const cond = conditionMap[mnem];
+
+                if (!cond) {
+                    this.statements.push(`// ${mnem} ${targetAddr} - unsupported condition`);
+                    this.statements.push(`goto ${targetAddr};`);
+                    break;
+                }
+
+                if (cond.flag) {
+                    const flagVar = `flags.${cond.flag}`;
+                    this.statements.push(`if (${flagVar} ${cond.flagValue === 1 ? '' : '== 0'}) goto ${targetAddr};`);
+                    break;
+                }
+
+                if (diff.type === 'const') {
+                    const constValue = diff.value;
+                    this.statements.push(`if (0x${constValue.toString(16)} ${cond.cond} 0) goto ${targetAddr};`);
+                    break;
+                }
+
+                if (diff.type === 'sub') {
+                    const left = diff.left.toString();
+                    const right = diff.right.toString();
+                    if (right === '0') {
+                        this.statements.push(`if (${left} ${cond.cond} 0) goto ${targetAddr};`);
+                    } else {
+                        this.statements.push(`if (${left} ${cond.cond} ${right}) goto ${targetAddr};`);
+                    }
+                    break;
+                }
+
+                this.statements.push(`if (${diffStr} ${cond.cond} 0) goto ${targetAddr};`);
                 break;
             }
             case 'call': {
-                const callAddr = this.ip;
+                let targetAddr = null;
+                let targetName = null;
+                
+                const directCall = inst.text.match(/call 0x([0-9a-f]+)/i);
+                const indirectCall = inst.text.match(/call \[(.*?)\]/i);
+                
+                if (directCall) {
+                    targetAddr = parseInt(directCall[1], 16);
+                } else if (indirectCall) {
+                    targetName = indirectCall[1];
+                }
+                
                 let funcName = null;
-                let funcArgs = [];
                 
-                if (this.functionNames && this.functionNames.has(callAddr)) {
-                    funcName = this.functionNames.get(callAddr);
+                if (targetAddr && this.functionNames && this.functionNames.has(targetAddr)) {
+                    funcName = this.functionNames.get(targetAddr);
                 }
                 
-                if (!funcName && this.apiNames && this.apiNames.has(callAddr)) {
-                    funcName = this.apiNames.get(callAddr);
+                if (!funcName && targetAddr && this.apiNames && this.apiNames.has(targetAddr)) {
+                    funcName = this.apiNames.get(targetAddr);
                 }
                 
-                if (!funcName) {
-                    if (this.imports && this.imports.length > 0) {
+                if (!funcName && targetName) {
+                    const cleanName = targetName.replace(/[\[\]]/g, '').split('+')[0];
+                    if (this.imports) {
                         for (const imp of this.imports) {
                             for (const func of imp.functions) {
-                                if (func.rva === callAddr || func.name) {
+                                if (func.name === cleanName || 
+                                    (func.ordinal && func.ordinal.toString() === cleanName)) {
                                     funcName = func.name;
                                     break;
                                 }
@@ -4031,62 +6324,53 @@ class PCPU_Core {
                     }
                 }
                 
-                if (!funcName) {
-                    funcName = `func_${callAddr.toString(16)}`;
+                const args = [];
+                const argRegs = ['rcx', 'rdx', 'r8', 'r9'];
+                for (const reg of argRegs) {
+                    if (this.regs[reg] && this.regs[reg].toString() !== reg) {
+                        args.push(this.regs[reg].clone());
+                    }
                 }
                 
-                if (this.regs.rcx && this.regs.rcx.toString() !== 'rcx') {
-                    funcArgs.push(this.regs.rcx.clone());
-                }
-                if (this.regs.rdx && this.regs.rdx.toString() !== 'rdx') {
-                    funcArgs.push(this.regs.rdx.clone());
-                }
-                if (this.regs.r8 && this.regs.r8.toString() !== 'r8') {
-                    funcArgs.push(this.regs.r8.clone());
-                }
-                if (this.regs.r9 && this.regs.r9.toString() !== 'r9') {
-                    funcArgs.push(this.regs.r9.clone());
+                if (!this.is32bit && args.length > 0) {
+                    this.statements.push(`sub rsp, 0x20;  // shadow space for call`);
                 }
                 
-                let argsStr = '';
-                if (funcArgs && funcArgs.length > 0) {
-                    argsStr = funcArgs.map(arg => {
-                        if (!arg) return '???';
-                        let s = arg.toString();
-                        if (s.startsWith('[') && s.endsWith(']')) return s;
-                        if (arg.type === 'reg' || arg.type === 'const') return s;
-                        return `(${s})`;
-                    }).join(', ');
-                }
-
-                this.statements.push(`${funcName}(${argsStr});`);
-
-                const callNode = new ASTNode('call', funcName);
-                callNode.args = funcArgs || [];
+                const argsStr = args.map(arg => {
+                    let s = arg.toString();
+                    if (arg.type === 'const' && typeof arg.value === 'string') return s;
+                    if (s.startsWith('[') && s.endsWith(']')) return s;
+                    if (arg.type === 'reg' || arg.type === 'const') return s;
+                    return `(${s})`;
+                }).join(', ');
+                
+                this.statements.push(`${funcName || `func_0x${(targetAddr || '???').toString(16)}`}(${argsStr});`);
+                
+                const callNode = new ASTNode('call', funcName || `func_${(targetAddr || '???').toString(16)}`);
+                callNode.args = args;
                 this.regs.rax = callNode;
                 break;
             }
     
             case 'ret': {
-                for (let i = this.savedRegs.length - 1; i >= 0; i--) {
-                    this.statements.push(`    pop ${this.savedRegs[i]}                ; restore saved register`);
+                const fpoInfo = this.getCurrentFPOInfo();
+                const spReg = this.is32bit ? 'esp' : 'rsp';
+                const bpReg = this.is32bit ? 'ebp' : 'rbp';
+                
+                if (fpoInfo && fpoInfo.savedRegs && fpoInfo.savedRegs.length > 0) {
+                    for (let i = fpoInfo.savedRegs.length - 1; i >= 0; i--) {
+                        this.statements.push(`    pop ${fpoInfo.savedRegs[i]}                ; restore saved register`);
+                    }
+                    if (fpoInfo.stackSize > 0) {
+                        this.statements.push(`    add ${spReg}, 0x${fpoInfo.stackSize.toString(16)}            ; free stack space`);
+                    }
+                    this.statements.push(`    pop ${bpReg}                 ; restore frame pointer`);
+                } else {
+                    this.statements.push(`    leave`);
                 }
-                if (this.stackSize > 0) {
-                    this.statements.push(`    add rsp, ${this.stackSize}            ; free stack space`);
-                }
-                this.statements.push(`    pop rbp                 ; restore frame pointer`);
-                this.statements.push(`    return ${this.regs.rax.toString()};`);
+                this.statements.push(`    return ${this.regs[this.is32bit ? 'eax' : 'rax'].toString()};`);
                 break;
             }
-            case 'movsb':
-            case 'movsw':
-                this.statements.push(`memcpy(rdi, rsi, ${mnem === 'movsb' ? 1 : 2});`);
-                break;
-    
-            case 'cpuid':
-                this.regs.rax = { v: 0, l: '"GenuineIntel"' };
-                break;
-    
             case 'rdtsc':
                 this.regs.rax = { v: Date.now(), l: 'timestamp_low' };
                 this.regs.rdx = { v: 0, l: 'timestamp_high' };
@@ -4110,11 +6394,11 @@ class PCPU_Core {
             }
     
             case 'db': {
-                const bytes = inst.bytes;
+                const dbBytes = inst.bytes;
                 
-                if (bytes.length === 2) {
-                    const byte1 = bytes[0];
-                    const byte2 = bytes[1];
+                if (dbBytes.length === 2) {
+                    const byte1 = dbBytes[0];
+                    const byte2 = dbBytes[1];
                     
                     if (byte1 === 0x0b && byte2 >= 0x04 && byte2 <= 0x0f) {
                         const value = (byte2 << 8) | byte1;
@@ -4134,13 +6418,13 @@ class PCPU_Core {
                     }
                 }
                 
-                if (bytes.length >= 4) {
-                    const value = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+                if (dbBytes.length >= 4) {
+                    const value = dbBytes[0] | (dbBytes[1] << 8) | (dbBytes[2] << 16) | (dbBytes[3] << 24);
                     this.statements.push(`// dword constant: 0x${value.toString(16)}`);
                     break;
                 }
                 
-                const hexBytes = Array.from(bytes).map(b => '0x' + b.toString(16)).join(', ');
+                const hexBytes = Array.from(dbBytes).map(b => '0x' + b.toString(16)).join(', ');
                 this.statements.push(`// db ${hexBytes} (raw data)`);
                 break;
             }
@@ -4186,100 +6470,568 @@ class PCPU_Core {
                 break;
         }
     }
-
-    getOpcodeInfo(bytes) {
-        const opcode = bytes[0];
-        const second = bytes[1];
-        
-        const knownOpcodes = {
-            0x0F: {
-                0x00: "SLDT / SGDT / STR / SMSW",
-                0x01: "LGDT / LIDT / LLDT / LMSW / INVLPG / SWAPGS / RDTSCP",
-                0x05: "SYSCALL",
-                0x06: "CLTS",
-                0x07: "SYSRET",
-                0x08: "INVD",
-                0x09: "WBINVD",
-                0x0B: "UD2",
-                0x0D: "PREFETCH",
-                0x1F: "NOP (multi-byte)",
-                0x31: "RDTSC",
-                0x34: "SYSENTER",
-                0x35: "SYSEXIT",
-                0xA2: "CPUID",
-                0xAF: "IMUL",
-                0xB0: "CMPXCHG",
-                0xB1: "CMPXCHG",
-                0xB6: "MOVZX",
-                0xB7: "MOVZX",
-                0xBE: "MOVSX",
-                0xBF: "MOVSX",
-                0xC7: "CMPXCHG8B / CMPXCHG16B"
-            },
-            0xCD: { 0x2E: "INT 2E (old syscall)" },
-            0xCC: { 0x00: "INT 3 breakpoint" }
-        };
-        
-        if (knownOpcodes[opcode] && knownOpcodes[opcode][second]) {
-            return knownOpcodes[opcode][second];
-        }
-        
-        if (opcode >= 0x70 && opcode <= 0x7F) {
-            const cond = ['JO', 'JNO', 'JB', 'JNB', 'JZ', 'JNZ', 'JBE', 'JNBE', 
-                          'JS', 'JNS', 'JP', 'JNP', 'JL', 'JNL', 'JLE', 'JNLE'][opcode - 0x70];
-            return `${cond} (conditional jump)`;
-        }
-        
-        if (opcode >= 0x50 && opcode <= 0x57) {
-            const reg = ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi'][opcode - 0x50];
-            return `PUSH ${reg}`;
-        }
-        
-        if (opcode >= 0x58 && opcode <= 0x5F) {
-            const reg = ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi'][opcode - 0x58];
-            return `POP ${reg}`;
-        }
-        
-        return null;
-    }
-
-    getDecompilerHeader() {
-        this.fpoDetected = this.foundReturns > 0 && !this.hasRBPStackFrame;
-        
-        let report = "// Generated by RSDEFD C++ Decompiler v2.0\n";
-        report += "// Decompiled C++ based by JS CPU calculations\n";
-        
-        if (this.fpoDetected) {
-            report += "// C++ JSCPU Decomp: This Portable Executable contains FPO (Frame Pointer Omission)\n";
-            report += "// ⚠️ Warning: Standard stack frame analysis (RBP-based) is disabled.\n";
-        }
-
-        return report;
-    }
 }
 
 class FPODeoptimizer {
-    constructor(instructions, bytes) {
+    constructor(instructions, bytes, imageBase = 0, is32bit = false) {
         this.instructions = instructions;
         this.bytes = bytes;
+        this.imageBase = imageBase;
+        this.is32bit = is32bit;
         this.deoptimized = [];
         this.functions = [];
-        this.stackOffsets = new Map();
-        this.regs = {
-            rax: 'rax', rbx: 'rbx', rcx: 'rcx', rdx: 'rdx',
-            rsi: 'rsi', rdi: 'rdi', rsp: 'rsp', rbp: 'rbp'
-        };
+        this.maxDepth = 50;
     }
 
     deoptimize() {
         this.analyzeFunctionBoundaries();
         
         for (const func of this.functions) {
-            const decompiled = this.deoptimizeFunction(func);
-            this.deoptimized.push(...decompiled);
+            if (this.isDataSection(func)) {
+                const decompiled = this.deoptimizeDataSection(func);
+                this.deoptimized.push(...decompiled);
+            } else if (this.isFPOFunction(func)) {
+                const decompiled = this.deoptimizeFPOFunction(func);
+                this.deoptimized.push(...decompiled);
+            } else {
+                const decompiled = this.keepAsIs(func);
+                this.deoptimized.push(...decompiled);
+            }
         }
         
         return this.deoptimized;
+    }
+
+    isNonVolatile(reg) {
+        const nonVolatile64 = ['rbx', 'rsi', 'rdi', 'r12', 'r13', 'r14', 'r15'];
+        const nonVolatile32 = ['ebx', 'esi', 'edi'];
+        return this.is32bit 
+            ? nonVolatile32.includes(reg.toLowerCase())
+            : nonVolatile64.includes(reg.toLowerCase());
+    }
+
+    keepAsIs(func) {
+        const lines = [];
+        const typeLabel = func.type === 'std' ? 'Standard function' :
+                         func.type === 'std32' ? '32-bit standard function' :
+                         func.type === 'fpo32' ? '32-bit FPO function' :
+                         func.type === 'hotpatch' ? 'Hotpatch function' :
+                         'Function';
+        
+        lines.push(`// ${typeLabel} at 0x${func.start.toString(16)}`);
+        for (const inst of func.insts) {
+            lines.push(`    ${inst.text}`);
+        }
+        lines.push(``);
+        return lines;
+    }
+
+    isFPOEpilogue(inst, savedRegs) {
+        const spReg = this.is32bit ? 'esp' : 'rsp';
+        if (inst.mnemonic === 'add' && inst.text.includes(spReg)) {
+            return true;
+        }
+        if (inst.mnemonic === 'pop' && savedRegs.some(r => inst.text.includes(r))) {
+            return true;
+        }
+        return false;
+    }
+
+    isFPOInstruction(inst, savedRegs) {
+        if (inst.mnemonic === 'push' && savedRegs.some(r => inst.text.includes(r))) {
+            return true;
+        }
+        const spReg = this.is32bit ? 'esp' : 'rsp';
+        if (inst.mnemonic === 'sub' && inst.text.includes(spReg)) {
+            return true;
+        }
+        return false;
+    }
+
+    isDataSection(func) {
+        if (!func.insts || func.insts.length === 0) return false;
+        
+        let dbCount = 0;
+        let nonsenseCount = 0;
+        let patternCount = 0;
+        
+        for (const inst of func.insts) {
+            if (inst.mnemonic === 'db') {
+                dbCount++;
+            }
+            
+            if (inst.text && inst.text.match(/rax = \(\(rax \+ rbx\) \+ 0\)/)) {
+                patternCount++;
+            }
+            
+            const parenCount = (inst.text?.match(/\(/g) || []).length;
+            if (parenCount > 10) {
+                nonsenseCount++;
+            }
+        }
+        
+        const dbRatio = dbCount / func.insts.length;
+        const patternRatio = patternCount / func.insts.length;
+        const nonsenseRatio = nonsenseCount / func.insts.length;
+        
+        if (patternRatio > 0.3 || dbRatio > 0.5 || nonsenseRatio > 0.3) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    deoptimizeDataSection(func) {
+        const lines = [];
+        const startAddr = this.imageBase + func.start;
+        
+        lines.push(`// ============================================================`);
+        lines.push(`// DATA SECTION at 0x${func.start.toString(16)} (virtual: 0x${startAddr.toString(16)})`);
+        lines.push(`// ============================================================`);
+        
+        const bytes = [];
+        let currentBytes = [];
+        
+        for (const inst of func.insts) {
+            if (inst.mnemonic === 'db' && inst.bytes) {
+                for (const b of inst.bytes) {
+                    currentBytes.push(b);
+                    if (currentBytes.length >= 16) {
+                        bytes.push([...currentBytes]);
+                        currentBytes = [];
+                    }
+                }
+            } else if (inst.mnemonic !== 'db') {
+                if (currentBytes.length > 0) {
+                    bytes.push([...currentBytes]);
+                    currentBytes = [];
+                }
+                lines.push(`    ${inst.text}`);
+            }
+        }
+        
+        if (currentBytes.length > 0) {
+            bytes.push([...currentBytes]);
+        }
+        
+        if (bytes.length > 0) {
+            lines.push(`    // Hex dump:`);
+            for (let i = 0; i < bytes.length; i++) {
+                const hex = bytes[i].map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ');
+                const offset = i * 16;
+                lines.push(`    // 0x${offset.toString(16)}: ${hex}`);
+            }
+        }
+        
+        const strings = this.extractStringsFromBytes(func);
+        if (strings.length > 0) {
+            lines.push(`    // Possible strings:`);
+            for (const str of strings) {
+                lines.push(`    //   "${str}"`);
+            }
+        }
+        
+        lines.push(``);
+        return lines;
+    }
+
+    extractStringsFromBytes(func) {
+        const strings = [];
+        let currentStr = '';
+        let isUnicode = false;
+        
+        for (const inst of func.insts) {
+            if (inst.mnemonic === 'db' && inst.bytes) {
+                for (let i = 0; i < inst.bytes.length; i++) {
+                    const b = inst.bytes[i];
+                    
+                    // ASCII рядок
+                    if (b >= 0x20 && b <= 0x7E) {
+                        if (!isUnicode) {
+                            currentStr += String.fromCharCode(b);
+                        }
+                    } 
+                    // Unicode (два байти)
+                    else if (i + 1 < inst.bytes.length && b === 0x00 && inst.bytes[i+1] >= 0x20 && inst.bytes[i+1] <= 0x7E) {
+                        if (currentStr.length > 0 && !isUnicode) {
+                            if (currentStr.length >= 4) strings.push(currentStr);
+                            currentStr = '';
+                        }
+                        isUnicode = true;
+                        currentStr += String.fromCharCode(inst.bytes[i+1]);
+                        i++;
+                    }
+                    else {
+                        if (currentStr.length >= 4) {
+                            strings.push(currentStr);
+                        }
+                        currentStr = '';
+                        isUnicode = false;
+                    }
+                }
+            }
+        }
+        
+        if (currentStr.length >= 4) {
+            strings.push(currentStr);
+        }
+        
+        return strings;
+    }
+
+    isFPOFunction(func) {
+        if (!func.insts || func.insts.length === 0) return false;
+        
+        let hasPushRbp = false;
+        let hasMovRbpRsp = false;
+        let hasPushNonVolatile = false;
+        let hasSubRsp = false;
+        
+        for (let i = 0; i < Math.min(10, func.insts.length); i++) {
+            const inst = func.insts[i];
+            if (!inst) continue;
+            
+            const rbpName = this.is32bit ? 'ebp' : 'rbp';
+            const rspName = this.is32bit ? 'esp' : 'rsp';
+            
+            if (inst.mnemonic === 'push' && inst.text.includes(rbpName)) {
+                hasPushRbp = true;
+            }
+            if (inst.mnemonic === 'mov' && inst.text.includes(rbpName) && inst.text.includes(rspName)) {
+                hasMovRbpRsp = true;
+            }
+            
+            const nonVolatile32 = ['ebx', 'esi', 'edi'];
+            const nonVolatile64 = ['rbx', 'rsi', 'rdi', 'r12', 'r13', 'r14', 'r15'];
+            const nonVolatile = this.is32bit ? nonVolatile32 : nonVolatile64;
+            
+            if (inst.mnemonic === 'push' && nonVolatile.some(r => inst.text.includes(r))) {
+                hasPushNonVolatile = true;
+            }
+            if (inst.mnemonic === 'sub' && inst.text.includes(rspName)) {
+                hasSubRsp = true;
+            }
+        }
+        
+        return !hasPushRbp && !hasMovRbpRsp && (hasPushNonVolatile || hasSubRsp);
+    }
+
+    analyzeFPOFunction(func) {
+        const savedRegs = [];
+        let stackFrameSize = 0;
+        let hasSEH = false;
+        let hasAlloca = false;
+        let isDataOnly = true;
+        
+        for (let i = 0; i < func.insts.length; i++) {
+            const inst = func.insts[i];
+            
+            if (inst.mnemonic === 'db') {
+                continue;
+            }
+            
+            isDataOnly = false;
+            
+            const rbpName = this.is32bit ? 'ebp' : 'rbp';
+            const nonVolatile32 = ['ebx', 'esi', 'edi'];
+            const nonVolatile64 = ['rbx', 'rsi', 'rdi', 'r12', 'r13', 'r14', 'r15'];
+            const nonVolatile = this.is32bit ? nonVolatile32 : nonVolatile64;
+            
+            if (inst.mnemonic === 'push' && !inst.text.includes(rbpName)) {
+                const regMatch = inst.text.match(/push (r?[a-z0-9]+)/i);
+                if (regMatch && nonVolatile.includes(regMatch[1].toLowerCase())) {
+                    savedRegs.push(regMatch[1]);
+                }
+            }
+
+            const spName = this.is32bit ? 'esp' : 'rsp';
+            if (inst.mnemonic === 'sub' && inst.text.includes(spName)) {
+                const sizeMatch = inst.text.match(/0x([0-9a-f]+)/i);
+                if (sizeMatch) {
+                    const size = parseInt(sizeMatch[1], 16);
+                    if (size > 0x1000) {
+                        hasAlloca = true;
+                    }
+                    stackFrameSize = size;
+                }
+            }
+            
+            if (inst.text && (inst.text.includes('___chkstk') || 
+                inst.text.includes('__alloca') ||
+                inst.text.includes('_alloca'))) {
+                hasAlloca = true;
+            }
+            
+            if (inst.text && (inst.text.includes('__C_specific_handler') || 
+                inst.text.includes('_except_handler') ||
+                inst.text.includes('GS_') ||
+                inst.text.includes('__security_check_cookie'))) {
+                hasSEH = true;
+            }
+        }
+        
+        if (isDataOnly) {
+            return { savedRegs: [], stackFrameSize: 0, hasSEH: false, hasAlloca: false, isData: true };
+        }
+        
+        return { savedRegs, stackFrameSize, hasSEH, hasAlloca, isData: false };
+    }
+
+    deoptimizeFPOFunction(func) {
+        const lines = [];
+        const analysis = this.analyzeFPOFunction(func);
+        
+        if (analysis.isData) {
+            return this.deoptimizeDataSection(func);
+        }
+        
+        const { savedRegs, stackFrameSize, hasSEH, hasAlloca } = analysis;
+        const ptrSize = this.is32bit ? 4 : 8;
+        const savedRegsSize = savedRegs.length * ptrSize;
+        const bpReg = this.is32bit ? 'ebp' : 'rbp';
+        const spReg = this.is32bit ? 'esp' : 'rsp';
+        
+        if (hasSEH || hasAlloca) {
+            lines.push(`// ${hasSEH ? 'SEH handler' : 'alloca'} present - FPO cannot be applied`);
+            return this.keepAsIs(func);
+        }
+        
+        lines.push(`// === DEOPTIMIZED FPO FUNCTION ===`);
+        lines.push(`// Original: /O2 (FPO) - no ${bpReg} frame`);
+        lines.push(`// Platform: ${this.is32bit ? '32-bit (x86)' : '64-bit (x64)'}`);
+        lines.push(`// Saved registers: ${savedRegs.join(', ')}`);
+        lines.push(`// Stack frame size: 0x${stackFrameSize.toString(16)}`);
+        lines.push(``);
+        
+        lines.push(`push ${bpReg}                     ; standard prologue`);
+        lines.push(`mov  ${bpReg}, ${spReg}`);
+        
+        for (const reg of savedRegs) {
+            lines.push(`push ${reg}                     ; save non-volatile`);
+        }
+        
+        if (stackFrameSize > 0) {
+            lines.push(`sub  ${spReg}, 0x${stackFrameSize.toString(16)}     ; allocate locals`);
+        }
+        
+        lines.push(``);
+        lines.push(`    ; === TRANSFORMED INSTRUCTIONS ===`);
+        
+        let hasTransformed = false;
+        for (const inst of func.insts) {
+            if (this.isFPOEpilogue(inst, savedRegs)) continue;
+            if (this.isFPOInstruction(inst, savedRegs)) continue;
+            if (inst.mnemonic === 'db') {
+                continue;
+            }
+            
+            let transformed = this.transformInstruction(inst, savedRegs, stackFrameSize, savedRegsSize);
+            transformed = this.simplifyExpression(transformed);
+            lines.push(`    ${transformed}`);
+            hasTransformed = true;
+        }
+        
+        if (!hasTransformed) {
+            lines.push(`    // No instructions transformed (possibly data only)`);
+        }
+        
+        lines.push(``);
+        lines.push(`    ; === STANDARD EPILOGUE ===`);
+        lines.push(`leave                          ; mov ${spReg}, ${bpReg}; pop ${bpReg}`);
+        lines.push(`ret`);
+        
+        return lines;
+    }
+
+    transformInstruction(inst, savedRegs, stackFrameSize, savedRegsSize) {
+        let asm = inst.text;
+        const ptrSize = this.is32bit ? 4 : 8;
+        const spReg = this.is32bit ? 'esp' : 'rsp';
+        const bpReg = this.is32bit ? 'ebp' : 'rbp';
+        
+        if (asm.length > 500 || (asm.match(/\(/g) || []).length > 20) {
+            return `// Complex expression (${asm.length} chars) - original: ${asm.substring(0, 100)}...`;
+        }
+        
+        const stackPattern = new RegExp(`\\[${spReg}([+-]0x[0-9a-f]+)\\]`, 'gi');
+        let match;
+        let lastIndex = 0;
+        let result = '';
+        
+        while ((match = stackPattern.exec(asm)) !== null) {
+            const before = asm.substring(lastIndex, match.index);
+            const offsetStr = match[1];
+            let offset = parseInt(offsetStr, 16);
+            const isNegative = offsetStr.startsWith('-');
+            if (isNegative) offset = -offset;
+            
+            let newOffset;
+            const returnAddrSize = ptrSize;
+            
+            if (offset < savedRegsSize) {
+                newOffset = offset - savedRegsSize - returnAddrSize;
+            } else if (offset < savedRegsSize + stackFrameSize) {
+                const localOffset = offset - savedRegsSize;
+                newOffset = -(stackFrameSize - localOffset);
+            } else {
+                const argOffset = offset - savedRegsSize - stackFrameSize;
+                newOffset = 0x10 + argOffset;
+            }
+            
+            const sign = newOffset >= 0 ? '+' : '-';
+            const absOffset = Math.abs(newOffset);
+            const newRef = `[${bpReg}${sign}0x${absOffset.toString(16)}]`;
+            result += before + newRef;
+            lastIndex = match.index + match[0].length;
+        }
+        
+        result += asm.substring(lastIndex);
+        result = result.replace(new RegExp(spReg + '(?![a-z])', 'gi'), bpReg);
+        
+        const leaMatch = result.match(/lea ([^,]+), \[([^\]]+)\]/i);
+        if (leaMatch && leaMatch[2] === bpReg) {
+            const dest = leaMatch[1];
+            result = `mov ${dest}, ${bpReg}  ; simplified lea`;
+        }
+        
+        return result;
+    }
+
+    simplifyExpression(expr, depth = 0) {
+        if (depth > this.maxDepth) {
+            return `/* expression too deep (depth ${depth}) */`;
+        }
+        
+        // Спрощення: (X + 0) -> X
+        expr = expr.replace(/\(\s*([^+\-*/]+)\s*\+\s*0\s*\)/g, '$1');
+        expr = expr.replace(/\(\s*0\s*\+\s*([^+\-*/]+)\s*\)/g, '$1');
+        
+        // Спрощення: (X - 0) -> X
+        expr = expr.replace(/\(\s*([^+\-*/]+)\s*-\s*0\s*\)/g, '$1');
+        
+        // Спрощення: (0 - X) -> -X
+        expr = expr.replace(/\(\s*0\s*-\s*([^+\-*/]+)\s*\)/g, '-$1');
+        
+        // Спрощення: ((X + Y) + Z) -> (X + Y + Z)
+        expr = expr.replace(/\(\(([^()]+)\s*\+\s*([^()]+)\)\s*\+\s*([^()]+)\)/g, '($1 + $2 + $3)');
+        
+        // Спрощення: (X & X) -> X
+        expr = expr.replace(/\(\s*([^&]+)\s*&\s*\1\s*\)/g, '$1');
+        
+        // Спрощення: (X ^ X) -> 0
+        expr = expr.replace(/\(\s*([^^]+)\s*\^\s*\1\s*\)/g, '0');
+        
+        // Спрощення: (X | X) -> X
+        expr = expr.replace(/\(\s*([^|]+)\s*\|\s*\1\s*\)/g, '$1');
+        
+        return expr;
+    }
+
+    isFPOEpilogue(inst, savedRegs) {
+        const spReg = this.is32bit ? 'esp' : 'rsp';
+        if (inst.mnemonic === 'add' && inst.text.includes(spReg)) {
+            return true;
+        }
+        if (inst.mnemonic === 'pop' && savedRegs.some(r => inst.text.includes(r))) {
+            return true;
+        }
+        return false;
+    }
+
+    isFPOInstruction(inst, savedRegs) {
+        if (inst.mnemonic === 'push' && savedRegs.some(r => inst.text.includes(r))) {
+            return true;
+        }
+        const spReg = this.is32bit ? 'esp' : 'rsp';
+        if (inst.mnemonic === 'sub' && inst.text.includes(spReg)) {
+            return true;
+        }
+        return false;
+    }
+
+    isNonVolatile(reg) {
+        const nonVolatile64 = ['rbx', 'rsi', 'rdi', 'r12', 'r13', 'r14', 'r15'];
+        const nonVolatile32 = ['ebx', 'esi', 'edi'];
+        return this.is32bit 
+            ? nonVolatile32.includes(reg.toLowerCase())
+            : nonVolatile64.includes(reg.toLowerCase());
+    }
+
+    keepAsIs(func) {
+        const lines = [];
+        
+        if (func.type === 'data') {
+            lines.push(`// ============================================================`);
+            lines.push(`// DATA SECTION at 0x${func.start.toString(16)}`);
+            lines.push(`// ============================================================`);
+            
+            const bytes = [];
+            for (const inst of func.insts) {
+                if (inst.bytes) {
+                    for (const b of inst.bytes) {
+                        bytes.push(b);
+                    }
+                }
+            }
+            
+            if (bytes.length > 0) {
+                lines.push(`    // Hex dump (first ${Math.min(256, bytes.length)} bytes):`);
+                for (let i = 0; i < Math.min(256, bytes.length); i += 16) {
+                    const hex = bytes.slice(i, i + 16).map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ');
+                    lines.push(`    // 0x${i.toString(16)}: ${hex}`);
+                }
+            }
+            
+            const strings = this.extractStringsFromBytes(func);
+            if (strings.length > 0) {
+                lines.push(`    // Strings found:`);
+                for (const str of strings) {
+                    lines.push(`    //   "${str}"`);
+                }
+            }
+            
+            lines.push(``);
+            return lines;
+        }
+        
+        const typeLabel = func.type === 'std' ? 'Standard function' :
+                         func.type === 'std32' ? '32-bit standard function' :
+                         func.type === 'fpo32' ? '32-bit FPO function' :
+                         func.type === 'hotpatch' ? 'Hotpatch function' :
+                         func.type === 'naked' ? 'Naked function' :
+                         'Function';
+        
+        lines.push(`// ${typeLabel} at 0x${func.start.toString(16)}`);
+        for (const inst of func.insts) {
+            lines.push(`    ${inst.text}`);
+        }
+        lines.push(``);
+        return lines;
+    }
+
+    analyzeInstructionSignal(inst) {
+        let codeScore = 0;
+        let dataScore = 0;
+
+        if (!inst) return { codeScore: 0, dataScore: 1 };
+
+        const text = inst.text || "";
+
+        if (inst.mnemonic === 'call') codeScore += 5;
+        if (inst.mnemonic === 'ret') codeScore += 5;
+        if (inst.mnemonic.startsWith('j')) codeScore += 4;
+        if (inst.mnemonic === 'mov' || inst.mnemonic === 'add' || inst.mnemonic === 'sub')
+            codeScore += 2;
+        if (text.includes('[')) codeScore += 2;
+        if (text.includes('rbp') && text.includes('rsp')) codeScore += 4;
+        if (inst.mnemonic === 'push' && text.includes('rbp')) codeScore += 4;
+        if (text.includes('rsp') || text.includes('esp')) codeScore += 2;
+        if (inst.mnemonic === 'db') dataScore += 5;
+        if (text.length > 200) dataScore += 3;
+        const weirdOps = (text.match(/[\^\|\&]/g) || []).length;
+        if (weirdOps > 5) dataScore += 2;
+        
+        return { codeScore, dataScore };
     }
 
     analyzeFunctionBoundaries() {
@@ -4289,56 +7041,110 @@ class FPODeoptimizer {
             const inst = this.instructions[i];
             if (!inst) continue;
             
-            const isHotpatch = inst.bytes === '8b ff'; // mov edi, edi
+            const rbpName = this.is32bit ? 'ebp' : 'rbp';
+            const rspName = this.is32bit ? 'esp' : 'rsp';
+            
+            let isNonsenseData = false;
+            if (inst.text) {
+                const addCount = (inst.text.match(/\+/g) || []).length;
+                const parenCount = (inst.text.match(/\(/g) || []).length;
+                const hasPopVal = inst.text.includes('pop_val_');
+                const hasDeepRax = inst.text.match(/rax = \(\(\(\(\(\(\(\(/);
+                const isRaxAddRbx = inst.text.match(/rax = \(\(rax \+ rbx\) \+ 0\)/);
+                
+                if (addCount > 10 || parenCount > 15 || hasPopVal || hasDeepRax || isRaxAddRbx) {
+                    isNonsenseData = true;
+                }
+            }
+            
+            if (isNonsenseData) {
+                if (!currentFunc) {
+                    currentFunc = { 
+                        start: i, 
+                        insts: [], 
+                        type: 'data', 
+                        is32bit: this.is32bit,
+                        isDataSection: true
+                    };
+                    this.functions.push(currentFunc);
+                }
+                if (currentFunc) {
+                    currentFunc.insts.push(inst);
+                }
+                continue;
+            }
+            
+            if (currentFunc && currentFunc.type === 'data') {
+                const isRealCode = (inst.mnemonic === 'push' && inst.text.includes(rbpName)) ||
+                                   (inst.mnemonic === 'mov' && inst.text.includes(rbpName) && inst.text.includes(rspName)) ||
+                                   inst.mnemonic === 'ret' ||
+                                   inst.mnemonic === 'call';
+                
+                if (isRealCode) {
+                    currentFunc.end = i - 1;
+                    currentFunc = null;
+                } else {
+                    currentFunc.insts.push(inst);
+                    continue;
+                }
+            }
+            
+            const isHotpatch = inst.bytes && inst.bytes.length >= 2 && 
+                               inst.bytes[0] === 0x8b && inst.bytes[1] === 0xff;
             const isPushReg = inst.mnemonic === 'push' && 
                               (inst.text.includes('rbx') || inst.text.includes('rsi') || 
-                               inst.text.includes('rdi') || inst.text.includes('rcx') ||
-                               inst.text.includes('rdx') || inst.text.includes('rax'));
+                               inst.text.includes('rdi') || inst.text.includes('r12') ||
+                               inst.text.includes('r13') || inst.text.includes('r14') ||
+                               inst.text.includes('r15'));
             const isStdPrologue = inst.mnemonic === 'push' && 
-                                  (inst.text.includes('rbp') || inst.text.includes('ebp'));
-            
+                                  (inst.text.includes(rbpName) || inst.text.includes('ebp'));
             const isMovRbpRsp = inst.mnemonic === 'mov' && 
-                    inst.text.includes('rbp') && inst.text.includes('rsp');
+                                inst.text.includes(rbpName) && inst.text.includes(rspName);
+            
             const is32bitFpo = inst.mnemonic === 'push' && 
                    (inst.text.includes('ebx') || inst.text.includes('esi') || 
                     inst.text.includes('edi'));
             const is32bitPrologue = inst.mnemonic === 'push' && inst.text.includes('ebp');
-
-            if (is32bitPrologue) {
-                currentFunc = { start: i, insts: [], type: 'std32', is32bit: true };
-            } else if (is32bitFpo && !currentFunc) {
-                currentFunc = { start: i, insts: [], type: 'fpo32', is32bit: true };
+            
+            if (inst.mnemonic === 'db') {
+                if (currentFunc) {
+                    currentFunc.insts.push(inst);
+                }
+                continue;
             }
-
-            if (isMovRbpRsp && !currentFunc) {
+    
+            if (is32bitPrologue) {
+                currentFunc = { start: i, insts: [], type: 'std32', is32bit: true, savedRegs: [] };
+                this.functions.push(currentFunc);
+            } 
+            else if (is32bitFpo && !currentFunc) {
+                currentFunc = { start: i, insts: [], type: 'fpo32', is32bit: true, savedRegs: [] };
+                this.functions.push(currentFunc);
+            }
+            else if (isMovRbpRsp && !currentFunc) {
                 currentFunc = { 
                     start: i, 
                     insts: [], 
                     type: 'fpo_with_rbp', 
                     savedRegs: [],
-                    stackSize: 0
+                    stackSize: 0,
+                    is32bit: false
                 };
                 this.functions.push(currentFunc);
             }
-
-            if (inst.text.includes('__C_specific_handler') || 
-                inst.text.includes('_except_handler')) {
-                currentFunc.hasSEH = true;
-            }
-
-            if (isStdPrologue) {
-                currentFunc = { start: i, insts: [], type: 'std', savedRegs: [] };
+            else if (isStdPrologue) {
+                currentFunc = { start: i, insts: [], type: 'std', savedRegs: [], is32bit: false };
                 this.functions.push(currentFunc);
             } 
             else if (isHotpatch && i + 1 < this.instructions.length) {
                 const next = this.instructions[i + 1];
-                if (next.mnemonic === 'push' && next.text.includes('rbp')) {
-                    currentFunc = { start: i, insts: [], type: 'hotpatch', savedRegs: [] };
+                if (next.mnemonic === 'push' && next.text.includes(rbpName)) {
+                    currentFunc = { start: i, insts: [], type: 'hotpatch', savedRegs: [], is32bit: false };
                     this.functions.push(currentFunc);
                     i++;
                 }
             }
-            else if (isPushReg && i + 1 < this.instructions.length) {
+            else if (isPushReg && i + 1 < this.instructions.length && !currentFunc) {
                 const next = this.instructions[i + 1];
                 if (next.mnemonic === 'push' || next.mnemonic === 'sub') {
                     currentFunc = { 
@@ -4346,24 +7152,42 @@ class FPODeoptimizer {
                         insts: [], 
                         type: 'fpo', 
                         savedRegs: [],
-                        stackSize: 0
+                        stackSize: 0,
+                        is32bit: false
                     };
                     this.functions.push(currentFunc);
                 }
             }
-
-            if (inst.mnemonic === 'sub' && inst.text.includes('rsp')) {
-                const sizeMatch = inst.text.match(/0x([0-9a-f]+)/i);
-                if (sizeMatch && currentFunc) {
-                    const size = parseInt(sizeMatch[1], 16);
-                    if (size === 0x20 || size === 0x28 || size === 0x30) {
-                        currentFunc.hasShadowSpace = true;
-                        currentFunc.shadowSize = size;
+            else if (!currentFunc && inst.mnemonic !== 'db') {
+                currentFunc = { 
+                    start: i, 
+                    insts: [], 
+                    type: 'naked', 
+                    savedRegs: [],
+                    stackSize: 0,
+                    is32bit: this.is32bit
+                };
+                this.functions.push(currentFunc);
+            }
+    
+            if (currentFunc && currentFunc.type !== 'data') {
+                if (inst.text && (inst.text.includes('__C_specific_handler') || 
+                    inst.text.includes('_except_handler'))) {
+                    currentFunc.hasSEH = true;
+                }
+    
+                if (inst.mnemonic === 'sub' && inst.text.includes(rspName)) {
+                    const sizeMatch = inst.text.match(/0x([0-9a-f]+)/i);
+                    if (sizeMatch && currentFunc) {
+                        const size = parseInt(sizeMatch[1], 16);
+                        if (size === 0x20 || size === 0x28 || size === 0x30) {
+                            currentFunc.hasShadowSpace = true;
+                            currentFunc.shadowSize = size;
+                        }
+                        currentFunc.stackSize = size;
                     }
                 }
-            }
-            
-            if (currentFunc) {
+                
                 currentFunc.insts.push(inst);
                 
                 if (inst.mnemonic === 'ret' || 
@@ -4374,163 +7198,63 @@ class FPODeoptimizer {
             }
         }
         
-        console.log(`Found ${this.functions.length} functions (${this.functions.filter(f => f.type === 'std').length} std, ${this.functions.filter(f => f.type === 'fpo').length} FPO, ${this.functions.filter(f => f.type === 'hotpatch').length} hotpatch)`);
+        if (currentFunc && currentFunc.type === 'data') {
+            currentFunc.end = this.instructions.length - 1;
+        }
+        
+        const stdCount = this.functions.filter(f => f.type === 'std' || f.type === 'std32').length;
+        const fpoCount = this.functions.filter(f => f.type === 'fpo' || f.type === 'fpo32' || f.type === 'fpo_with_rbp').length;
+        const hotpatchCount = this.functions.filter(f => f.type === 'hotpatch').length;
+        const nakedCount = this.functions.filter(f => f.type === 'naked').length;
+        const dataCount = this.functions.filter(f => f.type === 'data').length;
+        
+        console.log(`Found ${this.functions.length} functions (std: ${stdCount}, FPO: ${fpoCount}, hotpatch: ${hotpatchCount}, naked: ${nakedCount}, data: ${dataCount})`);
+        
+        return this.functions;
     }
-
-    analyzeFunctionArguments(func) {
-        let maxReg = 0;
-        const is32bit = func.is32bit;
-
+    
+    isLargeNonsenseBlock(func) {
+        if (!func.insts || func.insts.length < 5) return false;
+        
+        let nonsenseCount = 0;
+        let totalInsts = 0;
+        
         for (const inst of func.insts) {
-            if (is32bit) {
-                // 32-bit: args sent by stack, not by regs!
-                return { count: 0, args: '' };
-            } else {
-                if (inst.text.includes('rcx')) maxReg = Math.max(maxReg, 1);
-                if (inst.text.includes('rdx')) maxReg = Math.max(maxReg, 2);
-                if (inst.text.includes('r8')) maxReg = Math.max(maxReg, 3);
-                if (inst.text.includes('r9')) maxReg = Math.max(maxReg, 4);
-            }
-        }
-
-        const argNames = ['', 'rcx', 'rdx', 'r8', 'r9'];
-        const args = argNames.slice(1, maxReg + 1).join(', ');
-
-        return { count: maxReg, args: args };
-    }
-
-    deoptimizeFunction(func) {
-        const lines = [];
-        const args = this.analyzeFunctionArguments(func);
-        
-        if (func.hasSEH) {
-            lines.push(`    ; SEH handler present`);
-        }
-
-        if (func.type === 'fpo') {
-            lines.push(`; FPO Function - ${args.count} argument(s)`);
-            lines.push(`void fpo_func_0x${func.start.toString(16)}(${args.args}) {`);
-        } else {
-            lines.push(`void func_0x${func.start.toString(16)}(${args.args}) {`);
-        }
-        
-        lines.push(`    push rbp                 ; restored prolog`);
-        lines.push(`    mov rbp, rsp             ; set stack frame`);
-        
-        let savedRegs = [];
-        let stackOffset = 0;
-        
-        for (let i = 0; i < func.insts.length; i++) {
-            const inst = func.insts[i];
-            let asm = this.restoreInstruction(inst, savedRegs, stackOffset, func.is32bit);
+            totalInsts++;
             
-            if (func.type === 'fpo' && inst.mnemonic === 'push') {
-                const regMatch = inst.text.match(/push (r[a-z]+)/i);
-                if (regMatch) {
-                    savedRegs.push(regMatch[1]);
-                    asm = `; FPO push ${regMatch[1]} -> will restore at epilog`;
-                    stackOffset += 8;
-                }
-            }
-            
-            if (inst.mnemonic === 'sub' && inst.text.includes('rsp')) {
-                const sizeMatch = inst.text.match(/0x([0-9a-f]+)/i);
-                if (sizeMatch) {
-                    stackOffset += parseInt(sizeMatch[1], 16);
-                    asm = `; FPO allocate ${sizeMatch[1]} bytes on stack`;
-                }
-            }
-
-            const switchPattern = /jmp \[[a-z0-9_]+\*8 \+ 0x([0-9a-f]+)\]/i;
-            if (switchPattern.test(inst.text)) {
-                const tableAddr = switchPattern.exec(inst.text)[1];
-                lines.push(`    // Switch-case detected, jump table at 0x${tableAddr}`);
-            }
-
-            
-            if (inst.mnemonic === 'ret') {
-                for (let j = savedRegs.length - 1; j >= 0; j--) {
-                    lines.push(`    pop ${savedRegs[j]}                ; restore saved register`);
-                }
-                if (stackOffset > 0) {
-                    lines.push(`    add rsp, ${stackOffset}            ; free stack space`);
-                }
-                lines.push(`    pop rbp                 ; restore frame pointer`);
-                asm = `    ret                     ; return`;
-            }
-
-            if (inst.mnemonic === 'add' && inst.text.includes('rsp')) {
-                const sizeMatch = inst.text.match(/0x([0-9a-f]+)/i);
-                if (sizeMatch) {
-                    const size = parseInt(sizeMatch[1], 16);
-                    if (size === stackOffset) {
-                        asm = `    add rsp, ${size}            ; free stack space (FPO)`;
-                        stackOffset = 0;
-                    } else {
-                        asm = `; FPO: add rsp, ${size} (expected ${stackOffset})`;
-                    }
-                }
-            }
-
-            if (inst.mnemonic === 'leave') {
-                lines.push(`    mov rsp, rbp                 ; leave (restore stack pointer)`);
-                lines.push(`    pop rbp                      ; restore frame pointer`);
+            if (inst.mnemonic === 'db') {
+                nonsenseCount++;
                 continue;
             }
-
-            if (func.hasShadowSpace) {
-               lines.push(`    sub rsp, ${func.shadowSize}          ; shadow space for calls`);
-            }
             
-            lines.push(asm);
-        }
-        
-        lines.push('');
-        lines.push('}');
-        return lines;
-    }
-
-    restoreInstruction(inst, savedRegs, stackOffset, is32bit) {
-        let asm = `    ${inst.text}`;
-
-        // FPO: lea rbx, [rsp+0x20] -> lea rbx, [rbp-0x?]
-        const leaMatch = inst.text.match(/lea ([a-z0-9]+), \[rsp([+-]0x[0-9a-f]+)\]/i);
-        if (leaMatch) {
-            const reg = leaMatch[1];
-            let offset = parseInt(leaMatch[2], 16);
-            const savedOffset = savedRegs.length * 8;
-            const newOffset = savedOffset - offset;
-            asm = `    lea ${reg}, [rbp-0x${(-newOffset).toString(16)}]`;
-        }
-
-        if (is32bit) {
-            asm = asm.replace(/rbp/g, 'ebp');
-            asm = asm.replace(/rsp/g, 'esp');
-            asm = asm.replace(/rax/g, 'eax');
-            asm = asm.replace(/rbx/g, 'ebx');
-            asm = asm.replace(/rcx/g, 'ecx');
-            asm = asm.replace(/rdx/g, 'edx');
-            asm = asm.replace(/rsi/g, 'esi');
-            asm = asm.replace(/rdi/g, 'edi');
-        }
-        
-        if (inst.text.includes('[rsp+') || inst.text.includes('[rsp-')) {
-            const rspMatch = inst.text.match(/\[rsp([+-]0x[0-9a-f]+)\]/i);
-            if (rspMatch) {
-                let offset = parseInt(rspMatch[1], 16);
-                const savedOffset = savedRegs.length * 8;
-                const newOffset = offset - savedOffset;
-                asm = asm.replace(/\[rsp[+-]0x[0-9a-f]+\]/, `[rbp-0x${(-newOffset).toString(16)}]`);
+            if (inst.text) {
+                const addCount = (inst.text.match(/\+/g) || []).length;
+                if (addCount > 10) {
+                    nonsenseCount++;
+                    continue;
+                }
+                
+                const parenCount = (inst.text.match(/\(/g) || []).length;
+                if (parenCount > 10) {
+                    nonsenseCount++;
+                    continue;
+                }
+                
+                if (inst.text.includes('pop_val_')) {
+                    nonsenseCount++;
+                    continue;
+                }
+                
+                if (inst.text.match(/rax = \(\(rax \+ rbx\) \+ 0\)/)) {
+                    nonsenseCount++;
+                    continue;
+                }
             }
         }
         
-        if (inst.text.includes('[') && !inst.text.includes('rbp') && !inst.text.includes('rsp')) {
-            asm = asm.replace(/\[(0x[0-9a-f]+)\]/g, (match, addr) => {
-                return `[rip + ${addr}]`;
-            });
-        }
+        const nonsenseRatio = totalInsts > 0 ? nonsenseCount / totalInsts : 0;
         
-        return asm;
+        return nonsenseRatio > 0.4;
     }
 }
 
