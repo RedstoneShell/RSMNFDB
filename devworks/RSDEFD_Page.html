@@ -229,8 +229,8 @@
         <div class="dropzone" id="dropzone">
             <div class="dropzone-icon">📦</div>
             <div class="dropzone-text">Drop DLL file here or click to select</div>
-            <div class="dropzone-hint">Supports: .dll, .exe, .ocx, .sys | Max size: 100MB</div>
-            <input type="file" id="fileInput" accept=".dll,.exe,.ocx,.sys" style="display: none;">
+            <div class="dropzone-hint">Supports: .dll, .exe, .ocx, .sys, .vp (Intel Driver Settings), .C7483456-A289-439d-8115-601632D005A0 (Windows License Files) | Max size: 100MB</div>
+            <input type="file" id="fileInput" accept=".dll,.exe,.ocx,.sys,.vp,.C7483456-A289-439d-8115-601632D005A0" style="display: none;">
         </div>
 
         <div class="loader" id="loader">
@@ -287,6 +287,12 @@
         async function processFile(file) {
             if (!file) return;
 
+            // Get file extension
+            const fileName = file.name;
+            const fileExt = fileName.split('.').pop().toLowerCase();
+            
+            console.log(`Processing file: ${fileName}, extension: ${fileExt}`);
+
             dropzone.style.display = 'none';
             loader.style.display = 'block';
             resultsDiv.style.display = 'none';
@@ -294,7 +300,13 @@
 
             try {
                 const buffer = await file.arrayBuffer();
-                const scanner = new RSDEFD(buffer, { verbose: false, extractResources: true });
+                
+                const scanner = new RSDEFD(buffer, { 
+                    verbose: false, 
+                    extractResources: true,
+                    fileName: fileName,
+                    fileExt: fileExt
+                });
                 
                 const result = await scanner.scan();
 
@@ -319,7 +331,7 @@
                 });
 
                 currentResult = result;
-                renderResults(result, file.name);
+                renderResults(result, file.name, fileExt);
             } catch (error) {
                 console.error('Scan error:', error);
                 alert(`Scan failed: ${error.message}`);
@@ -396,7 +408,10 @@
             const icons = { 
                 'file':'📄','shield':'🔒','export':'📤','forward':'↪️','code':'💻',
                 'import':'📥','delay':'⏱️','bound':'🔗','sections':'📁',
-                'info':'ℹ️','tls':'🧵','exception':'⚠️','reloc':'🔄','debug':'🐛', 'database':'📊'
+                'info':'ℹ️','tls':'🧵','exception':'⚠️','reloc':'🔄','debug':'🐛', 
+                'database':'📊', 'intel':'🟦', 'chip':'💠', 'archive':'🗄️', 
+                'string':'📝', 'stats':'📈', 'deopt':'🔧', 'cpp':'C',
+                'key':'🔑', 'signature':'📜', 'map':'M', 'license':'W', 'computer':'PC'
             };
             const icon = icons[table.icon] || '📋';
             
