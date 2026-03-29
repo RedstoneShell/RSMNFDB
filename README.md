@@ -111,6 +111,33 @@ Why 2 license files? Is maked by three project conflict by MIT License, is a RSD
         
         Decompile with own RSDEFD decompiler
     </a>
+
+    <a href="https://redstoneshell.github.io/RSMNFDB/devworks/HexPro.html" target="_blank" style="
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #313244;
+        color: #cdd6f4;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-family: 'Segoe UI', sans-serif;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: 1px solid #45475a;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    " onmouseover="this.style.background='#45475a'; this.style.transform='translateY(-2px)';" 
+       onmouseout="this.style.background='#313244'; this.style.transform='translateY(0)';"
+       onclick="gtag('event', 'click_rsdefd', {'event_category': 'Tool'});">
+        
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="20" height="20" rx="3" stroke="#89b4fa" stroke-width="1.5" fill="none"/>
+            <path d="M8 8L16 16M16 8L8 16" stroke="#89b4fa" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="12" cy="12" r="3" stroke="#89b4fa" stroke-width="1.5" fill="none"/>
+        </svg>
+        
+        Research files by HexPro
+    </a>
     
     <button onclick="window.open('database/NTStatusFAQ.html', '_blank')" style="
         display: inline-flex;
