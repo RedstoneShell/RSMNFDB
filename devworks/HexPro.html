@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HexPro - Specialized Hex analyzer for own targets. Fully free! We not accept not-free by price instruments!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0a0e1a;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            padding: 20px;
+            color: #cdd6f4;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            color: #89b4fa;
+            margin-bottom: 15px;
+        }
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn {
+            background: #313244;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: #cdd6f4;
+            font-family: monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            background: #45475a;
+        }
+        .btn-primary {
+            background: #89b4fa;
+            color: #11111b;
+        }
+        .btn-primary:hover {
+            background: #cba6f7;
+        }
+        .search-box {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: #1e1e2e;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid #313244;
+        }
+        .search-box input {
+            background: none;
+            border: none;
+            color: #cdd6f4;
+            font-family: monospace;
+            outline: none;
+            width: 250px;
+        }
+        .entropy-box {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: #1e1e2e;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid #cba6f7;
+        }
+        .entropy-box select, .entropy-box input {
+            background: #313244;
+            border: none;
+            color: #cdd6f4;
+            font-family: monospace;
+            outline: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .info-bar {
+            background: #11111b;
+            padding: 8px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .hex-container {
+            height: 55vh;
+            overflow-y: auto;
+            background: #1e1e2e;
+            border-radius: 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            position: relative;
+        }
+        .hex-view {
+            position: relative;
+        }
+        .hex-line {
+            display: flex;
+            font-family: monospace;
+            border-bottom: 1px solid #2a2a3a;
+            min-height: 28px;
+        }
+        .hex-line:hover {
+            background: rgba(137, 180, 250, 0.1);
+        }
+        .offset {
+            color: #89b4fa;
+            padding: 4px 12px;
+            width: 100px;
+            text-align: right;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .hex-bytes {
+            padding: 4px 8px;
+            flex: 1;
+            font-family: monospace;
+            letter-spacing: 1px;
+            word-break: break-all;
+        }
+        .hex-bytes span {
+            display: inline-block;
+            width: 24px;
+            text-align: center;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        .hex-bytes span:hover {
+            background: #89b4fa;
+            color: #11111b;
+            border-radius: 4px;
+        }
+        .ascii {
+            padding: 4px 12px;
+            width: 200px;
+            color: #a6e3a1;
+            font-family: monospace;
+            flex-shrink: 0;
+        }
+        .highlight {
+            background: #f9e2af;
+            color: #11111b;
+            border-radius: 4px;
+        }
+        .search-result {
+            background: #f38ba8;
+            color: #11111b;
+            border-radius: 4px;
+        }
+        .status {
+            color: #a6adc8;
+            font-size: 0.8rem;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #313244;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #89b4fa;
+            transition: width 0.3s;
+        }
+        .chunk-info {
+            font-size: 0.7rem;
+            color: #6c7086;
+        }
+        .results-panel {
+            background: #11111b;
+            border-radius: 8px;
+            margin-top: 15px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .results-panel h4 {
+            color: #89b4fa;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        .result-item {
+            font-family: monospace;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-bottom: 1px solid #313244;
+            cursor: pointer;
+        }
+        .result-item:hover {
+            background: #313244;
+        }
+        .result-item .offset {
+            display: inline-block;
+            width: 100px;
+            color: #cba6f7;
+        }
+        .result-item .entropy-val {
+            display: inline-block;
+            width: 60px;
+            color: #a6e3a1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>HexPro - Professional Free Advanced Hex Editor</h1>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                📂 Open File
+            </button>
+            <input type="file" id="fileInput" onchange="loadFileChunked(this.files[0])">
+            
+            <div class="search-box">
+                <span>🔎</span>
+                <input type="text" id="searchInput" placeholder="Hex or text..." onkeyup="debouncedSearch()">
+                <button class="btn" style="padding: 4px 12px;" onclick="search()">Find</button>
+                <button class="btn" style="padding: 4px 12px;" onclick="searchNext()">Next</button>
+                <button class="btn" style="padding: 4px 12px;" onclick="clearSearch()">Clear</button>
+                <button class="btn" onclick="searchPrev()">◀ Prev</button>
+                <button class="btn" onclick="searchNext()">Next ▶</button>
+                <input type="text" id="matchIndex" placeholder="1" size="3" style="background:#1e1e2e; border:1px solid #313244; color:#cdd6f4; padding:4px 8px; border-radius:6px; text-align:center;">
+                <span id="matchCount" style="color:#a6adc8;">/0</span>
+            </div>
+            
+            <div class="entropy-box">
+                <span>📊 Entropy</span>
+                <select id="entropyOp">
+                    <option value=">">&gt;</option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                    <option value=">=">&gt;=</option>
+                    <option value="<=">&lt;=</option>
+                </select>
+                <input type="text" id="entropyVal" placeholder="0.0-8.0" value="7.5" size="5">
+                <span>window</span>
+                <input type="text" id="windowSize" placeholder="bytes" value="256" size="5">
+                <span>step</span>
+                <input type="text" id="stepSize" placeholder="bytes" value="64" size="5">
+                <button class="btn" style="padding: 4px 12px;" onclick="searchByEntropy()">🚀 Search</button>
+            </div>
+            
+            <button class="btn" onclick="findStrings()">🔤 Find Strings</button>
+        </div>
+
+        <div id="infoBar" class="info-bar" style="display: none;"></div>
+        <div class="progress-bar" id="progressBar" style="display: none;">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <div class="hex-container" id="hexContainer">
+            <button class="btn" onclick="forceLoadRemaining()">📥 Load All</button>
+            <div class="hex-view" id="hexView"></div>
+        </div>
+        <div id="chunkInfo" class="chunk-info" style="margin-top: 10px;"></div>
+        
+        <div id="resultsPanel" class="results-panel" style="display: none;">
+            <h4>📊 Entropy Search Results</h4>
+            <div id="resultsList"></div>
+        </div>
+    </div>
+
+    <script>
+        let fileHandle = null;
+        let fileSize = 0;
+        let fileName = "";
+        let chunkSize = 1024 * 1024;
+        let loadedChunks = new Map();
+        let currentSearch = null;
+        let searchResults = [];
+        let entropyResults = [];
+        let searchIndex = 0;
+        let scrollTimeout = null;
+        let visibleStart = 0;
+        let visibleEnd = 0;
+        let lineHeight = 28;
+        let container = null;
+        let viewport = null;
+        
+        class FileChunkReader {
+            constructor(file, size) {
+                this.file = file;
+                this.size = size;
+                this.cache = new Map();
+            }
+            
+            async readChunk(offset, length) {
+                const chunkIndex = Math.floor(offset / chunkSize);
+                const cacheKey = chunkIndex;
+                
+                if (this.cache.has(cacheKey)) {
+                    return this.cache.get(cacheKey);
+                }
+                
+                const start = chunkIndex * chunkSize;
+                const end = Math.min(start + chunkSize, this.size);
+                const blob = this.file.slice(start, end);
+                const buffer = await blob.arrayBuffer();
+                const data = new Uint8Array(buffer);
+                this.cache.set(cacheKey, { offset: start, data });
+                
+                const progress = (this.cache.size / Math.ceil(this.size / chunkSize)) * 100;
+                document.getElementById('progressFill').style.width = progress + '%';
+                document.getElementById('chunkInfo').innerHTML = `📦 Loaded ${this.cache.size}/${Math.ceil(this.size / chunkSize)} chunks (${progress.toFixed(0)}%)`;
+                
+                return { offset: start, data };
+            }
+            
+            async getByte(offset) {
+                const chunk = await this.readChunk(offset, 1);
+                return chunk.data[offset - chunk.offset];
+            }
+            
+            async getBytes(offset, length) {
+                const result = new Uint8Array(length);
+                let remaining = length;
+                let pos = offset;
+                let outPos = 0;
+                
+                while (remaining > 0) {
+                    const chunk = await this.readChunk(pos, remaining);
+                    const chunkOffset = pos - chunk.offset;
+                    const chunkRemaining = chunk.data.length - chunkOffset;
+                    const copyLen = Math.min(remaining, chunkRemaining);
+                    result.set(chunk.data.subarray(chunkOffset, chunkOffset + copyLen), outPos);
+                    pos += copyLen;
+                    outPos += copyLen;
+                    remaining -= copyLen;
+                }
+                
+                return result;
+            }
+            
+            async getByteRangeSync(startOffset, endOffset) {
+                const length = endOffset - startOffset;
+                return await this.getBytes(startOffset, length);
+            }
+        }
+        
+        let reader = null;
+        
+        function calculateEntropy(data) {
+            const freq = new Array(256).fill(0);
+            for (let i = 0; i < data.length; i++) {
+                freq[data[i]]++;
+            }
+            
+            let entropy = 0;
+            for (let i = 0; i < 256; i++) {
+                if (freq[i] > 0) {
+                    const p = freq[i] / data.length;
+                    entropy -= p * Math.log2(p);
+                }
+            }
+            return entropy;
+        }
+        
+        async function searchByEntropy() {
+            if (!reader) {
+                alert("Please open a file first");
+                return;
+            }
+            
+            const op = document.getElementById('entropyOp').value;
+            const val = parseFloat(document.getElementById('entropyVal').value);
+            const windowSize = parseInt(document.getElementById('windowSize').value);
+            const stepSize = parseInt(document.getElementById('stepSize').value);
+            
+            if (isNaN(val) || val < 0 || val > 8) {
+                alert("Entropy value must be between 0.0 and 8.0");
+                return;
+            }
+            if (isNaN(windowSize) || windowSize < 16) {
+                alert("Window size must be at least 16 bytes");
+                return;
+            }
+            if (isNaN(stepSize) || stepSize < 1) {
+                alert("Step size must be at least 1");
+                return;
+            }
+            
+            entropyResults = [];
+            document.getElementById('progressBar').style.display = 'block';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('infoBar').innerHTML = `
+                <span>📁 ${fileName}</span>
+                <span>📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                <span>📊 Scanning entropy (op=${op} val=${val})...</span>
+            `;
+            
+            const totalWindows = Math.ceil((fileSize - windowSize) / stepSize) + 1;
+            let processed = 0;
+            
+            for (let offset = 0; offset + windowSize <= fileSize; offset += stepSize) {
+                const data = await reader.getBytes(offset, windowSize);
+                const entropy = calculateEntropy(data);
+                
+                let match = false;
+                switch (op) {
+                    case '>': match = entropy > val; break;
+                    case '<': match = entropy < val; break;
+                    case '=': match = Math.abs(entropy - val) < 0.01; break;
+                    case '>=': match = entropy >= val; break;
+                    case '<=': match = entropy <= val; break;
+                }
+                
+                if (match) {
+                    entropyResults.push({ offset, entropy, windowSize });
+                }
+                
+                processed++;
+                if (processed % 10 === 0) {
+                    document.getElementById('progressFill').style.width = (processed / totalWindows * 100) + '%';
+                    await new Promise(r => setTimeout(r, 0));
+                }
+            }
+            
+            document.getElementById('progressBar').style.display = 'none';
+            
+            const panel = document.getElementById('resultsPanel');
+            const listDiv = document.getElementById('resultsList');
+            
+            if (entropyResults.length === 0) {
+                listDiv.innerHTML = '<div style="color: #f38ba8;">No matches found</div>';
+                panel.style.display = 'block';
+                document.getElementById('infoBar').innerHTML = `
+                    <span>📁 ${fileName}</span>
+                    <span>📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                    <span>📊 No entropy matches found</span>
+                `;
+                return;
+            }
+            
+            let resultsHtml = '';
+            for (let i = 0; i < Math.min(entropyResults.length, 500); i++) {
+                const r = entropyResults[i];
+                resultsHtml += `
+                    <div class="result-item" onclick="goToOffset(${r.offset})">
+                        <span class="offset">0x${r.offset.toString(16)}</span>
+                        <span class="entropy-val">entropy: ${r.entropy.toFixed(4)}</span>
+                        <span class="status">[${r.windowSize} bytes]</span>
+                    </div>
+                `;
+            }
+            
+            if (entropyResults.length > 500) {
+                resultsHtml += `<div class="result-item">... and ${entropyResults.length - 500} more</div>`;
+            }
+            
+            listDiv.innerHTML = resultsHtml;
+            panel.style.display = 'block';
+            
+            document.getElementById('infoBar').innerHTML = `
+                <span>📁 ${fileName}</span>
+                <span>📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                <span>📊 Found ${entropyResults.length} entropy matches (${op} ${val})</span>
+            `;
+        }
+        
+        async function goToOffset(offset) {
+            const lineNum = Math.floor(offset / 16);
+            container.scrollTop = lineNum * lineHeight;
+            await new Promise(r => setTimeout(r, 100));
+            await renderVisibleLines();
+            
+            // Highlight the found offset
+            const allSpans = document.querySelectorAll('.hex-bytes span');
+            allSpans.forEach(span => span.classList.remove('search-result'));
+            
+            const span = document.querySelector(`span[data-offset="${offset}"]`);
+            if (span) {
+                span.classList.add('search-result');
+                setTimeout(() => {
+                    span.classList.remove('search-result');
+                }, 2000);
+            }
+        }
+        
+        async function loadFileChunked(file) {
+            if (!file) return;
+            
+            fileName = file.name;
+            fileSize = file.size;
+            loadedChunks.clear();
+            searchResults = [];
+            entropyResults = [];
+            
+            document.getElementById('progressBar').style.display = 'block';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('infoBar').style.display = 'flex';
+            document.getElementById('infoBar').innerHTML = `
+                <span>📁 ${fileName}</span>
+                <span>📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                <span>🔢 ${fileSize.toLocaleString()} bytes</span>
+                <span class="status">⏳ Loading chunks...</span>
+            `;
+            document.getElementById('resultsPanel').style.display = 'none';
+            
+            reader = new FileChunkReader(file, fileSize);
+            
+            // Preload first few chunks
+            await reader.readChunk(0, chunkSize);
+            if (fileSize > chunkSize) await reader.readChunk(chunkSize, chunkSize);
+            if (fileSize > chunkSize * 2) await reader.readChunk(chunkSize * 2, chunkSize);
+            
+            document.getElementById('infoBar').innerHTML = `
+                <span>📁 ${fileName}</span>
+                <span>📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                <span>🔢 ${fileSize.toLocaleString()} bytes</span>
+                <span class="status">✅ Ready</span>
+            `;
+            
+            setTimeout(() => {
+                document.getElementById('progressBar').style.display = 'none';
+            }, 1000);
+            
+            setupVirtualScroll();
+            renderVisibleLines();
+        }
+        
+        function setupVirtualScroll() {
+            container = document.getElementById('hexContainer');
+            viewport = document.getElementById('hexView');
+            
+            const totalLines = Math.ceil(fileSize / 16);
+            const totalHeight = totalLines * lineHeight;
+            viewport.style.height = totalHeight + 'px';
+            viewport.style.position = 'relative';
+            
+            container.addEventListener('scroll', () => {
+                if (scrollTimeout) clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(renderVisibleLines, 50);
+            });
+        }
+        
+        async function renderVisibleLines() {
+            if (!container || !reader) return;
+                
+            const scrollTop = container.scrollTop;
+            const containerHeight = container.clientHeight;
+                
+            const startLine = Math.floor(scrollTop / lineHeight);
+            const endLine = Math.min(
+                Math.ceil((scrollTop + containerHeight) / lineHeight) + 10,
+                Math.ceil(fileSize / 16)
+            );
+                
+            if (startLine === visibleStart && endLine === visibleEnd) return;
+                
+            visibleStart = startLine;
+            visibleEnd = endLine;
+                
+            const startOffset = startLine * 16;
+            const endOffset = Math.min(endLine * 16, fileSize);
+                
+            const requiredChunks = new Set();
+            for (let offset = startOffset; offset < endOffset; offset += chunkSize) {
+                requiredChunks.add(Math.floor(offset / chunkSize));
+            }
+            
+            const minChunk = Math.max(0, Math.floor(startOffset / chunkSize) - 2);
+            const maxChunk = Math.min(Math.ceil(fileSize / chunkSize), Math.ceil(endOffset / chunkSize) + 2);
+            for (let chunkIdx = minChunk; chunkIdx <= maxChunk; chunkIdx++) {
+                requiredChunks.add(chunkIdx);
+            }
+            
+            for (const chunkIdx of requiredChunks) {
+                await reader.readChunk(chunkIdx * chunkSize, chunkSize);
+            }
+            
+            let html = '';
+            for (let line = startLine; line < endLine; line++) {
+                const offset = line * 16;
+                const bytes = [];
+                const asciiChars = [];
+                
+                for (let j = 0; j < 16; j++) {
+                    const idx = offset + j;
+                    if (idx < fileSize) {
+                        const byte = await reader.getByte(idx);
+                        bytes.push(`<span data-offset="${idx}" data-byte="${byte.toString(16).padStart(2, '0')}" onclick="copyByte(${idx})">${byte.toString(16).padStart(2, '0')}</span>`);
+                        asciiChars.push(byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : '.');
+                    } else {
+                        bytes.push('<span style="opacity:0.3">--</span>');
+                        asciiChars.push(' ');
+                    }
+                }
+                
+                html += `
+                    <div class="hex-line" style="position: absolute; top: ${line * lineHeight}px; left: 0; right: 0;">
+                        <div class="offset">0x${offset.toString(16).padStart(8, '0')}</div>
+                        <div class="hex-bytes">${bytes.join(' ')}</div>
+                        <div class="ascii">${asciiChars.join('')}</div>
+                    </div>
+                `;
+            }
+            
+            viewport.innerHTML = html;
+            
+            const loadedChunksCount = reader.cache.size;
+            const totalChunks = Math.ceil(fileSize / chunkSize);
+            document.getElementById('chunkInfo').innerHTML = `📦 Loaded ${loadedChunksCount}/${totalChunks} chunks (${Math.round(loadedChunksCount/totalChunks*100)}%) | Viewing offset 0x${(startLine*16).toString(16)} - 0x${(endLine*16).toString(16)}`;
+        }
+
+        async function copyByte(offset) {
+            const byte = await reader.getByte(offset);
+            const hex = byte.toString(16).padStart(2, '0');
+            navigator.clipboard.writeText(hex);
+            
+            const span = document.querySelector(`span[data-offset="${offset}"]`);
+            if (span) {
+                const original = span.style.background;
+                span.style.background = '#89b4fa';
+                span.style.color = '#11111b';
+                setTimeout(() => {
+                    span.style.background = original;
+                    span.style.color = '';
+                }, 200);
+            }
+        }
+        
+        async function search() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query || !reader) return;
+
+            searchResults = [];
+            searchIndex = 0;
+
+            let searchBytes = [];
+            const cleanQuery = query.replace(/\s/g, '');
+            if (cleanQuery.match(/^[0-9a-fA-F]+$/) && cleanQuery.length % 2 === 0) {
+                for (let i = 0; i < cleanQuery.length; i += 2) {
+                    searchBytes.push(parseInt(cleanQuery.substr(i, 2), 16));
+                }
+            } else {
+                searchBytes = Array.from(new TextEncoder().encode(query));
+            }
+
+            document.getElementById('infoBar').innerHTML += `<span class="status">🔍 Searching ${searchBytes.length} bytes...</span>`;
+
+            const chunkCount = Math.ceil(fileSize / chunkSize);
+            for (let chunkIdx = 0; chunkIdx < chunkCount; chunkIdx++) {
+                const chunk = await reader.readChunk(chunkIdx * chunkSize, chunkSize);
+                const data = chunk.data;
+                const baseOffset = chunk.offset;
+
+                for (let i = 0; i <= data.length - searchBytes.length; i++) {
+                    let match = true;
+                    for (let j = 0; j < searchBytes.length; j++) {
+                        if (data[i + j] !== searchBytes[j]) {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        searchResults.push(baseOffset + i);
+                    }
+                }
+            }
+
+            document.getElementById('matchCount').innerText = `/${searchResults.length}`;
+            document.getElementById('matchIndex').value = searchResults.length > 0 ? "1" : "";
+
+            document.getElementById('infoBar').innerHTML = `
+                <span>📁 ${fileName}</span>
+                <span>📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                <span>🔢 ${fileSize.toLocaleString()} bytes</span>
+                <span>🔍 Found ${searchResults.length} matches</span>
+            `;
+
+            if (searchResults.length > 0) {
+                highlightSearch(0);
+            } else {
+                alert('Not found');
+            }
+        }
+
+        async function highlightSearch(index) {
+            if (searchResults.length === 0) return;
+            if (index < 0) index = 0;
+            if (index >= searchResults.length) index = searchResults.length - 1;
+
+            searchIndex = index;
+            const offset = searchResults[searchIndex];
+
+            const lineNum = Math.floor(offset / 16);
+            container.scrollTop = Math.max(0, (lineNum - 5) * lineHeight);
+            await new Promise(r => setTimeout(r, 100));
+            await renderVisibleLines();
+
+            const allSpans = document.querySelectorAll('.hex-bytes span');
+            allSpans.forEach(span => span.classList.remove('search-result'));
+
+            const query = document.getElementById('searchInput').value.trim();
+            const cleanQuery = query.replace(/\s/g, '');
+            let len;
+            if (cleanQuery.match(/^[0-9a-fA-F]+$/) && cleanQuery.length % 2 === 0) {
+                len = cleanQuery.length / 2;
+            } else {
+                len = query.length;
+            }
+
+            for (let i = 0; i < len; i++) {
+                const span = document.querySelector(`span[data-offset="${offset + i}"]`);
+                if (span) span.classList.add('search-result');
+            }
+
+            document.getElementById('matchIndex').value = searchIndex + 1;
+            document.getElementById('matchCount').innerText = `/${searchResults.length}`;
+
+            document.getElementById('infoBar').innerHTML = `
+                <span>📁 ${fileName}</span>
+                <span>📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                <span>🔢 ${fileSize.toLocaleString()} bytes</span>
+                <span>🔍 Found ${searchResults.length} matches</span>
+                <span>📍 Offset: 0x${offset.toString(16)} (${searchIndex + 1}/${searchResults.length})</span>
+            `;
+        }
+
+        function searchNext() {
+            if (searchResults.length === 0) return;
+            let newIndex = searchIndex + 1;
+            if (newIndex >= searchResults.length) newIndex = 0;
+            highlightSearch(newIndex);
+        }
+
+        function searchPrev() {
+            if (searchResults.length === 0) return;
+            let newIndex = searchIndex - 1;
+            if (newIndex < 0) newIndex = searchResults.length - 1;
+            highlightSearch(newIndex);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const matchInput = document.getElementById('matchIndex');
+            if (matchInput) {
+                matchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        const val = parseInt(matchInput.value);
+                        if (!isNaN(val) && val >= 1 && val <= searchResults.length) {
+                            highlightSearch(val - 1);
+                        }
+                    }
+                });
+            }
+        });
+        
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            searchResults = [];
+            searchIndex = 0;
+            const allSpans = document.querySelectorAll('.hex-bytes span');
+            allSpans.forEach(span => span.classList.remove('search-result'));
+            if (reader) {
+                document.getElementById('infoBar').innerHTML = `
+                    <span>📁 ${fileName}</span>
+                    <span>📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                    <span>🔢 ${fileSize.toLocaleString()} bytes</span>
+                    <span class="status">✅ Ready</span>
+                `;
+            }
+        }
+        
+        async function findStrings() {
+            if (!reader) return;
+            
+            document.getElementById('infoBar').innerHTML += `<span class="status">🔤 Scanning strings...</span>`;
+            
+            const strings = [];
+            let currentString = '';
+            let currentOffset = 0;
+            
+            const chunkCount = Math.ceil(fileSize / chunkSize);
+            for (let chunkIdx = 0; chunkIdx < chunkCount; chunkIdx++) {
+                const chunk = await reader.readChunk(chunkIdx * chunkSize, chunkSize);
+                const data = chunk.data;
+                const baseOffset = chunk.offset;
+                
+                for (let i = 0; i < data.length; i++) {
+                    const byte = data[i];
+                    if (byte >= 32 && byte <= 126) {
+                        if (currentString === '') currentOffset = baseOffset + i;
+                        currentString += String.fromCharCode(byte);
+                    } else {
+                        if (currentString.length >= 4) {
+                            strings.push({ offset: currentOffset, string: currentString });
+                        }
+                        currentString = '';
+                    }
+                }
+            }
+            
+            document.getElementById('infoBar').innerHTML = `
+                <span>📁 ${fileName}</span>
+                <span>📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                <span>🔤 Found ${strings.length} strings</span>
+                <button class="btn" style="padding: 2px 8px;" onclick="showStrings(${encodeURIComponent(JSON.stringify(strings.slice(0, 100)))})">Show</button>
+            `;
+        }
+        
+        function showStrings(stringsJson) {
+            const strings = JSON.parse(stringsJson);
+            let msg = "📝 Found strings (first 100):\n\n";
+            strings.forEach(s => {
+                msg += `0x${s.offset.toString(16)}: "${s.string}"\n`;
+            });
+            alert(msg);
+        }
+        
+        function debouncedSearch() {
+            if (window.searchTimeout) clearTimeout(window.searchTimeout);
+            window.searchTimeout = setTimeout(search, 500);
+        }
+    
+        async function forceLoadRemaining() {
+            if (!reader) return;
+            const totalChunks = Math.ceil(fileSize / chunkSize);
+            const loaded = reader.cache.size;
+
+            document.getElementById('progressBar').style.display = 'block';
+
+            for (let i = loaded; i < totalChunks; i++) {
+                await reader.readChunk(i * chunkSize, chunkSize);
+                document.getElementById('progressFill').style.width = ((i+1) / totalChunks * 100) + '%';
+                await new Promise(r => setTimeout(r, 0));
+            }
+
+            document.getElementById('progressBar').style.display = 'none';
+            document.getElementById('chunkInfo').innerHTML = `✅ Full file loaded! ${reader.cache.size}/${totalChunks} chunks`;
+            
+            renderVisibleLines();
+        }
+    </script>
+</body>
+</html>
